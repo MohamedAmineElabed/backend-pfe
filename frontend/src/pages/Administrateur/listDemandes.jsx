@@ -75,96 +75,96 @@ const ListDemandes = () => {
   
   return (
   <>
-  <Siderbar/>
-  <div style={{ marginLeft: "200px" }} className="p-4">
-  <div className="card shadow-sm border-0 rounded-4">
-  <div className="container mt-4">
-    <h2 className="mb-4">Liste des demandes</h2>
+    <Siderbar />
+    <div style={{ marginLeft: "200px" }} className="p-4">
+      <div className="card shadow-sm border-0 rounded-4">
+        <div className="card-body">
+          <h2 className="mb-4 text-center text-primary">Liste des demandes</h2>
 
-    {loading ? (
-      <p>Chargement en cours...</p>
-    ) : isEmpty? <div className="alert alert-warning text-center">
-        Liste des demandes est vide.
+          {loading ? (
+            <p className="text-center">Chargement en cours...</p>
+          ) : isEmpty ? (
+            <div className="alert alert-warning text-center">
+              Liste des demandes est vide.
+            </div>
+          ) : (
+            <div className="table-responsive">
+              <table className="table table-striped table-hover align-middle">
+                <thead className="table-dark">
+                  <tr>
+                    <th>ID</th>
+                    <th>Nom</th>
+                    <th>Prénom</th>
+                    <th>Téléphone</th>
+                    <th>Email</th>
+                    <th>Organisme</th>
+                    <th>Type Organisme</th>
+                    <th>Rôle</th>
+                    <th>État</th>
+                    <th>Date Création</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {demandes.map((demande) => (
+                    <tr key={demande.id}>
+                      <td>{demande.id}</td>
+                      <td>{demande.nom}</td>
+                      <td>{demande.prenom}</td>
+                      <td>{demande.telephone}</td>
+                      <td>{demande.email}</td>
+                      <td>{demande.organisme}</td>
+                      <td>{demande.typeOrganisme}</td>
+                      <td>{demande.role}</td>
+
+                      <td>
+                        <span
+                          className={`badge ${
+                            demande.etat === "validé"
+                              ? "bg-success"
+                              : demande.etat === "refusé"
+                              ? "bg-danger"
+                              : "bg-warning text-dark"
+                          }`}
+                        >
+                          {demande.etat}
+                        </span>
+                      </td>
+
+                      <td>
+                        {demande.created_at
+                          ? new Date(demande.created_at).toLocaleDateString()
+                          : "-"}
+                      </td>
+
+                      <td>
+                        {demande.etat !== "validé" && (
+                          <button
+                            className="btn btn-success btn-sm me-1"
+                            onClick={() => handleValider(demande.id)}
+                          >
+                            <i className="bi bi-check-lg"></i> Valider
+                          </button>
+                        )}
+                        {demande.etat !== "refusé" && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleRefuser(demande.id)}
+                          >
+                            <i className="bi bi-x-lg"></i> Refuser
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
-    
-    :(
-
-      <table className="table table-hover align-middle">
-        <thead className="table-primary">
-          <tr>
-            <th>ID</th>
-            <th>Nom</th>
-            <th>Prénom</th>
-            <th>Telephone</th>
-            <th>Email</th>
-            <th>Organisme</th>
-            <th>Type Organisme</th>
-            <th>Rôle</th>
-            <th>Etat</th>
-            <th>Date Création</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {demandes.map((demande) => (
-            <tr key={demande.id}>
-              <td>{demande.id}</td>
-              <td>{demande.nom}</td>
-              <td>{demande.prenom}</td>
-              <td>{demande.telephone}</td>
-              <td>{demande.email}</td>
-              <td>{demande.organisme}</td>
-              <td>{demande.typeOrganisme}</td>
-              <td>{demande.role}</td>
-              
-
-              <td>
-                <span
-                  className={demande.etat === "validé"? "badge bg-success"
-                      :demande.etat === "refusé"
-                        ? "badge bg-danger"
-                        : "badge bg-warning"
-                  }
-                >
-                  {demande.etat}
-                </span>
-              </td>
-
-              <td>
-                {demande.created_at? new Date(demande.created_at).toLocaleDateString(): "-"}
-              </td>
-
-              <td>
-                {demande.etat !== "validé" && (
-                  <button
-                    className="btn btn-success btn-sm me-2"
-                    //disabled={isValidating || isRefusing} // Désactiver le bouton pendant la validation ou le refus
-                    onClick={() => handleValider(demande.id)}
-                  >
-                    Valider
-                  </button>
-                )}
-                {demande.etat !== "refusé" && (
-                  <button
-                    className="btn btn-danger btn-sm"
-                    //disabled={isValidating || isRefusing} // Désactiver le bouton pendant la validation ou le refus
-                    onClick={() => handleRefuser(demande.id)}
-                  >
-                    Refuser
-                  </button>
-                )}
-              </td>
-              
-
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )}
-  </div>
-  </div>
-  </div>
   </>
 );
 };

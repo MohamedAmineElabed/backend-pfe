@@ -37,9 +37,14 @@ const PasswordTab = ({ user }) => {
     toast.error("les mots de passe ne correspond pas!");
     return;
   }
+   const requestBody = {
+    userId: passwordData.userId,
+    oldPassword: passwordData.oldPassword,
+    newPassword: passwordData.newPassword
+  };
 
   try {
-      const response = await axios.put(`${backendUrl}/users/update-password`,passwordData)
+      const response = await axios.put(`${backendUrl}/users/update-password`,requestBody)
       toast.success("mise à jour avec success!")
       // Clear fields after success
     setPasswordData({
@@ -50,17 +55,15 @@ const PasswordTab = ({ user }) => {
   });
 
     } catch (error) {
-      if (error.response && error.response.data) {
-        toast.error("Erreur lors de mise à jour profil");
-        toast.error("Mot de passe incorrect");
-      }
-      console.log(error);
+        toast.error("faible mot de passe");
+        //toast.error(error.response?.data?.message || "Erreur serveur");
+        console.log(error);
       } 
   }
     
   return (
     <Card className="p-4 border-0 shadow-sm" 
-    style={{ background:"#faf9f6", border:"1px solid #dbd8d0", borderRadius:14, padding:24, maxWidth:800 }}>
+    style={{ background:"#faf9f6", border:"1px solid #dbd8d0", borderRadius:14, padding:24 }}>
       <h5 className="mb-4">Mot de Passe</h5>
 
       <Form>
@@ -87,8 +90,17 @@ const PasswordTab = ({ user }) => {
           <Form.Control type="password" name="confirmPassword" value={passwordData.confirmPassword} onChange={handleChange}
           placeholder='******' required  />
         </Form.Group>
-
       </Form>
+      <small className="text-muted d-block mb-3 mt-2">
+                    Le mot de passe doit contenir :
+                    <ul className="mb-0 ms-3">
+                      <li>Au moins 8 caractères</li>
+                      <li>Au moins une lettre majuscule</li>
+                      <li>Au moins une lettre minuscule</li>
+                      <li>Au moins un chiffre</li>
+                      <li>Au moins un caractère spécial</li>
+                    </ul>
+        </small>
 
       {isEditing &&(
           <div className="d-flex justify-content-end gap-2 mt-4">
