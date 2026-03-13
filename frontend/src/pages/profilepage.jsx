@@ -9,12 +9,16 @@ import { toast } from "react-toastify";
 import axios from 'axios';
 import ProfileInfoTab from './profileInfoTab.jsx';
 import PasswordTab from './passwordTab.jsx';
+import SiderbarAdmin from '../components/siderbarAdmin.jsx';
+
+
 
 
 function Profilepage({}) {
     const navigate = useNavigate(); // Hook pour la navigation  
     const[user,setUser] = useState(null); // État pour stocker les informations de l'utilisateur
     const {backendUrl, userData} = useContext(AppContext); // Récupération de l'URL du backend depuis le contexte
+    const SidebarComponent = userData.role === "ADMIN" ? SiderbarAdmin : Siderbar;
     const[loading,setLoading] = useState(false); // État pour indiquer si les données sont en cours de chargement
 
     if (!userData) {
@@ -50,7 +54,8 @@ function Profilepage({}) {
     return (
       <>
       <div className="d-flex">
-      <Siderbar/>
+      
+        <SidebarComponent/>
       <div className="flex-grow-1 p-4" style={{ marginLeft: "180px" }}>
         {/*HEADER */}
       <div  style={{ marginBottom:22 }}>

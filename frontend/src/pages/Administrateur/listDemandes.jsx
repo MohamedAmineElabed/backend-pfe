@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { AppContext } from "../../context/AppContext.jsx";
 import { toast } from "react-toastify";
-import Siderbar from "../../components/siderbar.jsx";
+import SiderbarAdmin from "../../components/siderbarAdmin.jsx";
 
 const ListDemandes = () => {
   const [demandes, setDemandes] = useState([]);
@@ -12,12 +12,15 @@ const ListDemandes = () => {
   const [loading, setLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(false); // État pour indiquer si une validation est en cours 
   const[isRefusing, setIsRefusing] = useState(false); // État pour indiquer si un refus est en cours
+  const [selectedDemande, setSelectedDemande] = useState(null);
+  const [showDescription, setShowDescription] = useState(false);
 
   // Fonction pour récupérer les demandes depuis le backend
   const fetchDemandes=async() =>{
     try{
         setLoading(true);
         const response = await axios.get(`${backendUrl}/demandes`);
+        console.log("API response:", response.data);
         setDemandes(response.data);
         setIsEmpty(response.data.length === 0);
 
@@ -27,6 +30,18 @@ const ListDemandes = () => {
         setLoading(false);
     }
   }
+  //pour supprimer les demandes
+  const deleteDemande = async (id) => {
+    const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette demande ?");
+    if (!confirmDelete) return;
+    try {
+      await axios.delete(`${backendUrl}/demandes/${id}`);
+      setDemandes((prev) => prev.filter((d) => d.id !== id));
+      toast.success("Demande supprimée");
+    } catch (error) {
+    toast.error("Erreur lors de la suppression");
+  }
+};
 
   // Utilisation de useEffect pour charger les demandes au montage du composant
   useEffect(() => {
@@ -75,7 +90,7 @@ const ListDemandes = () => {
   
   return (
   <>
-    <Siderbar />
+    <SiderbarAdmin />
     <div style={{ marginLeft: "200px" }} className="p-4">
       <div className="card shadow-sm border-0 rounded-4">
         <div className="card-body">
@@ -92,30 +107,28 @@ const ListDemandes = () => {
               <table className="table table-striped table-hover align-middle">
                 <thead className="table-dark">
                   <tr>
-                    <th>ID</th>
+                    {/*<th>ID</th>*/}
                     <th>Nom</th>
                     <th>Prénom</th>
-                    <th>Téléphone</th>
                     <th>Email</th>
                     <th>Organisme</th>
-                    <th>Type Organisme</th>
-                    <th>Rôle</th>
+                    <th>Poste</th>
                     <th>État</th>
-                    <th>Date Création</th>
+                    <th>Date création demande</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
 
                 <tbody>
                   {demandes.map((demande) => (
-                    <tr key={demande.id}>
-                      <td>{demande.id}</td>
+                    <tr key={demande.id}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => setSelectedDemande(demande) || setShowDescription(true)}>
+                      {/*<td>{demande.id}</td>*/}
                       <td>{demande.nom}</td>
                       <td>{demande.prenom}</td>
-                      <td>{demande.telephone}</td>
                       <td>{demande.email}</td>
-                      <td>{demande.organisme}</td>
-                      <td>{demande.typeOrganisme}</td>
+                      <td>{demande.nomOrganisme}</td>
                       <td>{demande.role}</td>
 
                       <td>
@@ -139,10 +152,11 @@ const ListDemandes = () => {
                       </td>
 
                       <td>
+                        <div className="d-flex gap-2">
                         {demande.etat !== "validé" && (
                           <button
                             className="btn btn-success btn-sm me-1"
-                            onClick={() => handleValider(demande.id)}
+                            onClick={(e) => { e.stopPropagation(); handleValider(demande.id); }}
                           >
                             <i className="bi bi-check-lg"></i> Valider
                           </button>
@@ -150,18 +164,68 @@ const ListDemandes = () => {
                         {demande.etat !== "refusé" && (
                           <button
                             className="btn btn-danger btn-sm"
-                            onClick={() => handleRefuser(demande.id)}
+                            onClick={(e) => { e.stopPropagation(); handleRefuser(demande.id); }}
                           >
                             <i className="bi bi-x-lg"></i> Refuser
                           </button>
                         )}
+                        <button
+                          className="btn btn-outline-danger btn-sm"
+                          onClick={(e) => {e.stopPropagation();deleteDemande(demande.id);}}>
+                            <i className="bi bi-trash"></i>
+                            </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              
             </div>
           )}
+          {showDescription && selectedDemande && (
+  <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
+    <div className="modal-dialog modal-lg modal-dialog-centered">
+      <div className="modal-content p-4">
+        <h5 className="mb-4 text-center">Description</h5>
+
+        <div className="row">
+          {/* Responsable details */}
+          <div className="col-md-6">
+            <h6>Responsable</h6>
+            <ul className="list-unstyled">
+              <li><strong>Nom :</strong> {selectedDemande.nom || "-"}</li>
+              <li><strong>Prénom :</strong> {selectedDemande.prenom || "-"}</li>
+              <li><strong>Email :</strong> {selectedDemande.email || "-"}</li>
+              <li><strong>Poste dans organisme :</strong> {selectedDemande.role || "-"}</li>
+            </ul>
+          </div>
+
+          {/* Organisme details */}
+          <div className="col-md-6">
+            <h6>Organisme</h6>
+            <ul className="list-unstyled">
+              <li><strong>Nom :</strong> {selectedDemande.nomOrganisme || "-"}</li>
+              <li><strong>Adresse :</strong> {selectedDemande.adresse || "-"}</li>
+              <li><strong>N°Fax :</strong> {selectedDemande.fax || "-"}</li>
+              <li><strong>Téléphone :</strong> {selectedDemande.telephone || "-"}</li>
+              <li><strong>Email organisme :</strong> {selectedDemande.emailOrganisme || "-"}</li>
+              <li><strong>Secteur :</strong> {selectedDemande.secteur || "-"}</li>
+              <li><strong>Type :</strong> {selectedDemande.typeOrganisme || "-"}</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="d-flex justify-content-end mt-3">
+          <button className="btn btn-secondary" onClick={() => setShowDescription(false)}>
+            Fermer
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+          
         </div>
       </div>
     </div>

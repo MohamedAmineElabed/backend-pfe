@@ -1,10 +1,10 @@
 import React from "react";
-import Siderbar from "../../components/siderbar";
+import SiderbarAdmin from "../../components/siderbarAdmin";
 
 function HomePageAdmin() {
   return (
     <>
-    <Siderbar/>
+    <SiderbarAdmin/>
     <div style={{ display: "flex" }}>
       <div style={{ marginLeft: "220px", width: "100%" }}>
         <div className="container mt-5 text-center">

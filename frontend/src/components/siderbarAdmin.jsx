@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AppContext } from "../context/AppContext.jsx";
 import "bootstrap/dist/css/bootstrap.min.css";
 
-function Siderbar() {
+function SiderbarAdmin() {
   const navigate = useNavigate();
   const { isloggedIn, setIsloggedIn, userData } = React.useContext(AppContext);
 
@@ -22,7 +22,7 @@ function Siderbar() {
 
         <nav className="nav flex-column gap-2 flex-grow-1">
           <Link
-            to="/homepage"
+            to="/homepageAdmin"
             className="nav-link text-white rounded hover-bg-secondary"
           >
             Home
@@ -30,11 +30,33 @@ function Siderbar() {
 
           <Link
             to="/profilepage"
-            className="nav-link text-white rounded hover-bg-secondary"
-          >
+            className="nav-link text-white rounded hover-bg-secondary">
             Profile
           </Link>
 
+            <Link
+            to="/listDemandes"
+            className="nav-link text-white rounded hover-bg-secondary">
+            Liste des demandes
+            </Link>
+
+            <Link
+            to="/principes"
+            className="nav-link text-white rounded hover-bg-secondary">
+            Principes
+            </Link>
+
+            <Link
+            to="/listUtilisateurs"
+            className="nav-link text-white rounded hover-bg-secondary">
+            Liste utilisateurs
+          </Link>
+
+          <Link
+            to="/listOrganismes"
+            className="nav-link text-white rounded hover-bg-secondary">
+            Liste organismes
+          </Link>
         </nav>
 
         <button className="btn btn-danger mt-auto w-100" onClick={handleLogout}>
@@ -55,4 +77,4 @@ function Siderbar() {
   );
 }
 
-export default Siderbar;
+export default SiderbarAdmin;

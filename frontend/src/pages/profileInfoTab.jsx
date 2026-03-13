@@ -1,76 +1,110 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
-import { useContext} from 'react';
-import { AppContext } from '../context/AppContext.jsx';
+import React, { useEffect, useState, useContext } from 'react';
 import { Card, Form, Row, Col, Button } from "react-bootstrap";
-import axios from 'axios';
 import { toast } from "react-toastify";
+import axios from "axios";
+import { AppContext } from "../context/AppContext.jsx";
 
 const ProfileInfoTab = ({ user }) => {
   const { backendUrl } = useContext(AppContext);
-  const [isEditing,setIsEditing]=useState(false);
-  const [formData,setFormData]=useState({
-    id: user?.id || "",
-    nom: user?.nom || "",
-    prenom: user?.prenom || "",
-    email: user?.email || "",
-    telephone: user?.telephone || "",
-    organisme: user?.organisme || "",
-    role: user?.role || ""
+
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [formData, setFormData] = useState({
+    id: "",
+    nom: "",
+    prenom: "",
+    email: "",
+    telephone: "",
+    organisme: null, // objet organisme ou null
+    role: ""
   });
-  useEffect(()=>{
-    if(user){
-      setFormData({
-        id: user?.id || "",
-        nom: user?.nom || "",
-        prenom: user?.prenom || "",
-        email: user?.email || "",
-        telephone: user?.telephone || "",
-        organisme: user?.organisme || "",
-        role: user?.role || ""
 
-      })
-    }
+  // Initialisation des données utilisateur
+  useEffect(() => {
+    if (!user) return;
 
-  },[user]);
+    console.log("USER:", user); // pour vérifier si organisme est présent
 
-  const handleChange=(e)=>{
-    setFormData({...formData,[e.target.name]: e.target.value})
-  }
-
-  const handleCancel=()=>{
-    setIsEditing(false);
     setFormData({
-      id: user?.id || "",
-      nom: user?.nom || "",
-      prenom: user?.prenom || "",
-      email: user?.email || "",
-      telephone: user?.telephone || "",
-      organisme: user?.organisme || "",
-      role: user?.role || ""
+      id: user.id || "",
+      nom: user.nom || "",
+      prenom: user.prenom || "",
+      email: user.email || "",
+      telephone: user.telephone || "",
+      organisme: user.organisme
+        ? { id: user.organisme.id, nomOrganisme: user.organisme.nomOrganisme }
+        : null,
+      role: user.role || ""
     });
-  }
-  
-  const handlesave=async()=>{
+  }, [user]);
+
+  // Gestion des changements de formulaire
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "organisme") {
+      setFormData({
+        ...formData,
+        organisme: formData.organisme
+          ? { ...formData.organisme, nomOrganisme: value }
+          : { nomOrganisme: value }
+      });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
+  };
+
+  // Annuler les modifications
+  const handleCancel = () => {
+    setIsEditing(false);
+    if (!user) return;
+
+    setFormData({
+      id: user.id || "",
+      nom: user.nom || "",
+      prenom: user.prenom || "",
+      email: user.email || "",
+      telephone: user.telephone || "",
+      organisme: user.organisme
+        ? { id: user.organisme.id, nomOrganisme: user.organisme.nomOrganisme }
+        : null,
+      role: user.role || ""
+    });
+  };
+
+  // Sauvegarder les modifications
+  const handleSave = async () => {
     try {
-        const response = await axios.put(`${backendUrl}/users/update`,formData)
-        toast.success("mise à jour avec success!")
-        setIsEditing(false);
-      } catch (error) {
-        toast.error("Erreur lors de mise à jour profil");
-        console.log(error);
-      } 
-  }
+      const payload = {
+        ...formData,
+        // On envoie uniquement l'ID de l'organisme
+        organisme: formData.organisme ? { id: formData.organisme.id } : null
+      };
+
+      await axios.put(`${backendUrl}/users/update`, payload);
+
+      toast.success("Mise à jour réussie !");
+      setIsEditing(false);
+
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour du profil");
+      console.error(error.response?.data || error);
+    }
+  };
 
   return (
-    <Card className="p-4 border-0 shadow-sm" 
-    style={{ background:"#faf9f6", border:"1px solid #dbd8d0", borderRadius:14, padding:24 }}>
+    <Card
+      className="p-4 border-0 shadow-sm"
+      style={{ background: "#faf9f6", border: "1px solid #dbd8d0", borderRadius: 14, padding: 24 }}
+    >
       <h5 className="mb-4">Informations</h5>
-      {!isEditing &&(
+
+      {!isEditing && (
         <Button
           size="sm"
           className="position-absolute top-0 end-0 m-3"
-          onClick={() => setIsEditing(true)}>
+          onClick={() => setIsEditing(true)}
+        >
           Modifier
         </Button>
       )}
@@ -80,54 +114,69 @@ const ProfileInfoTab = ({ user }) => {
           <Col md={6}>
             <Form.Group className="mb-3">
               <Form.Label>Nom</Form.Label>
-              { /*to allow the user to edit informations we need value + onChange + name*/}
-              <Form.Control type="text"  name="nom" value={formData.nom || ""} readOnly={!isEditing}   onChange={handleChange}
- />
+              <Form.Control
+                type="text"
+                name="nom"
+                value={formData.nom}
+                readOnly={!isEditing}
+                onChange={handleChange}
+              />
             </Form.Group>
           </Col>
 
           <Col md={6}>
             <Form.Group className="mb-3">
               <Form.Label>Prénom</Form.Label>
-              <Form.Control type="text" name="prenom" value={formData.prenom || ""} readOnly={!isEditing}   onChange={handleChange}
- />
+              <Form.Control
+                type="text"
+                name="prenom"
+                value={formData.prenom}
+                readOnly={!isEditing}
+                onChange={handleChange}
+              />
             </Form.Group>
           </Col>
         </Row>
 
         <Form.Group className="mb-3">
-          <Form.Label>Email</Form.Label> 
-          <Form.Control type="email" name="email" value={formData.email || ""} readOnly={!isEditing}   onChange={handleChange}
- />
-        </Form.Group>
-
-        <Form.Group className="mb-3">
-          <Form.Label>Numéro telephone</Form.Label>
-          { /*to allow the user to edit informations we need value + onChange + name*/}
-          <Form.Control type="text"  name="telephone" value={formData.telephone || ""} readOnly={!isEditing}   onChange={handleChange}
- />
+          <Form.Label>Email</Form.Label>
+          <Form.Control
+            type="email"
+            name="email"
+            value={formData.email}
+            readOnly={!isEditing}
+            onChange={handleChange}
+          />
         </Form.Group>
 
         <Form.Group className="mb-3">
           <Form.Label>Organisme</Form.Label>
-          <Form.Control type="text" name="organisme" value={formData.organisme || ""} readOnly={!isEditing}   onChange={handleChange}
- />
+          <Form.Control
+            type="text"
+            name="organisme"
+            value={formData.organisme ? formData.organisme.nomOrganisme : ""}
+            readOnly
+          />
         </Form.Group>
 
         <Form.Group className="mb-3">
           <Form.Label>Rôle</Form.Label>
-          <Form.Control type="text" name="role" value={formData.role || ""} readOnly={!isEditing || formData.role=="ADMIN"}   onChange={handleChange}
- />
+          <Form.Control
+            type="text"
+            name="role"
+            value={formData.role}
+            readOnly={!isEditing || formData.role === "ADMIN"}
+            onChange={handleChange}
+          />
         </Form.Group>
 
-        {/*button enregistrer et annuler */}
-        {isEditing &&(
+        {isEditing && (
           <div className="d-flex justify-content-end gap-2 mt-4">
             <Button variant="secondary" onClick={handleCancel}>
               Annuler
             </Button>
 
-            <Button variant="success" onClick={handlesave}>
+            <Button variant="success" onClick={handleSave}>
               Enregistrer
             </Button>
           </div>

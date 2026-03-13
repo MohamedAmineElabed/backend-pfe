@@ -17,6 +17,15 @@ const Login = () => {
   const [typeOrganisme, setTypeOrganisme] = useState('');
   const [role, setRole] = useState('');
   const [telephone, setTelephone] = useState('');
+  const [description, setDescription] = useState('');
+  const[adresse,setAdresse]=useState('');
+  const[fax,setFax]=useState('');
+  const[emailOrganisme,setEmailOrganisme]=useState('');
+  const[secteur,setSecteur]=useState('');
+  const[dateCreation,setDateCreation]=useState('');
+
+
+
 
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -26,6 +35,8 @@ const Login = () => {
 
   const { backendUrl, setIsloggedIn, setUserData } = useContext(AppContext);
   const navigate = useNavigate();
+
+  
 
   const phoneRegex = /^[0-9]+$/;
 
@@ -37,7 +48,7 @@ const Login = () => {
     try {
       if (iscreateAccount) {
         const response = await axios.post(`${backendUrl}/demandes/registerDemande`, {
-          nom, prenom, email, organisme, typeOrganisme, role, telephone
+          nom, prenom, email, nomOrganisme:organisme, typeOrganisme, role, telephone, description,adresse,secteur,fax,dateCreation,emailOrganisme
         });
 
         if (response.status === 201) {
@@ -49,10 +60,16 @@ const Login = () => {
         const response = await axios.post(`${backendUrl}/login`, { email, password });
 
         if (response.status === 200) {
+          const loggedInUser = response.data;  //pour déterminer le role de user
           setUserData(response.data);
           localStorage.setItem("userData", JSON.stringify(response.data));
           setIsloggedIn(true);
-          navigate('/homePageAdmin');
+          if (loggedInUser.role === "ADMIN") {
+            navigate('/homePageAdmin');
+          } else {
+            navigate('/homePage');
+      }
+
           toast.success("Connexion réussie !");
         }
       }
@@ -136,25 +153,50 @@ const Login = () => {
                     <h6 className="text-muted mb-3">Informations personnelles</h6>
                     <input className="form-control mb-3" placeholder="Nom" value={nom} onChange={e => setNom(e.target.value)} required />
                     <input className="form-control mb-3" placeholder="Prénom" value={prenom} onChange={e => setPrenom(e.target.value)} required />
-                    <input className="form-control mb-3" placeholder="Téléphone" value={telephone}
-                    onChange={e => {const value = e.target.value;
-                      // Allow only digits and max 8 characters
-                      if (/^\d{0,8}$/.test(value)) {setTelephone(value);}
-                    }} required />
                     <input className="form-control mb-3" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
+                    <input className="form-control mb-3" placeholder="Role" value={role} onChange={e => setRole(e.target.value)} required />
                   </div>
 
                   <div className="col-md-6">
                     <h6 className="text-muted mb-3">Informations d'organisme</h6>
-                    <input className="form-control mb-3" placeholder="Organisme" value={organisme} onChange={e => setOrganisme(e.target.value)} required />
+                    <input className="form-control mb-3" placeholder="Nom d'organisme" value={organisme} onChange={e => setOrganisme(e.target.value)} required />
                     <select className="form-control mb-3" value={typeOrganisme} onChange={e => setTypeOrganisme(e.target.value)} required>
                       <option value="">Type d'organisme</option>
                       <option value="publique">Publique</option>
                       <option value="prive">Privé</option>
                       <option value="societe civile">Société civile</option>
                     </select>
-                    <input className="form-control mb-3" placeholder="Role" value={role} onChange={e => setRole(e.target.value)} required />
+                    <input className="form-control mb-3" placeholder="Téléphone" value={telephone}
+                    onChange={e => {const value = e.target.value;
+                      // Allow only digits and max 8 characters
+                      if (/^\d{0,8}$/.test(value)) {setTelephone(value);}
+                    }} required />
+                    <input className="form-control mb-3" placeholder="Adresse" 
+                    value={adresse} onChange={e => setAdresse(e.target.value)} required />
+
+                    <input className="form-control mb-3" placeholder="N° fax" 
+                    value={fax} onChange={e => setFax(e.target.value)} required />
+
+                    <input className="form-control mb-3" placeholder="Email de l'organisme" type="email"
+                    value={emailOrganisme} onChange={e => setEmailOrganisme(e.target.value)} required />
+
+                    <input className="form-control mb-3" placeholder="Secteur d'activité" 
+                    value={secteur} onChange={e => setSecteur(e.target.value)} required />
+
+                    <input className="form-control mb-3" placeholder="Date création" type="date"
+                    value={dateCreation} onChange={e => setDateCreation(e.target.value)} required />
+
+
+                    
                   </div>
+                  {/*<textarea
+                      className="form-control mb-3"
+                      placeholder="Description de la demande"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      rows="3"
+                      required
+                    />*/}
                 </>
               )}
             </div>
