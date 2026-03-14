@@ -8,6 +8,7 @@ import {Tabs,Tab,Container,Spinner} from "react-bootstrap"
 import { toast } from "react-toastify";
 import axios from 'axios';
 import ProfileInfoTab from './profileInfoTab.jsx';
+import OrganismeInfoTab from './organismeInfoTab.jsx';
 import PasswordTab from './passwordTab.jsx';
 import SiderbarAdmin from '../components/siderbarAdmin.jsx';
 
@@ -39,7 +40,7 @@ function Profilepage({}) {
      console.log("UserData Context =", userData);
       console.log("UserData ID =", userData?.id);
 
-    fetchInfo();
+    if (userData?.id) fetchInfo();
   }, [backendUrl,userData]);
 
   if (loading) {
@@ -70,8 +71,15 @@ function Profilepage({}) {
     {/* Main Content */}
     <div className="flex-grow-1 p-4">
       <Tabs defaultActiveKey="info" className="mb-3">
-        <Tab eventKey="info" title="Informations">
+        <Tab eventKey="info" title="Informations Personelles">
           <ProfileInfoTab user={user} />
+        </Tab>
+        <Tab eventKey="infoOrganisme" title="Informations sur l'Organisme">
+          {user?.organisme ? (
+            <OrganismeInfoTab org={user.organisme} />
+            ) : (
+            <p>Chargement des informations de l'organisme...</p>
+  )}
         </Tab>
         <Tab eventKey="password" title="Mot de Passe">
           <PasswordTab user={user} />

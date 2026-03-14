@@ -41,7 +41,7 @@ function SiderbarAdmin() {
             </Link>
 
             <Link
-            to="/principes"
+            to=""
             className="nav-link text-white rounded hover-bg-secondary">
             Principes
             </Link>

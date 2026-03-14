@@ -14,8 +14,6 @@ const ProfileInfoTab = ({ user }) => {
     nom: "",
     prenom: "",
     email: "",
-    telephone: "",
-    organisme: null, // objet organisme ou null
     role: ""
   });
 
@@ -30,10 +28,6 @@ const ProfileInfoTab = ({ user }) => {
       nom: user.nom || "",
       prenom: user.prenom || "",
       email: user.email || "",
-      telephone: user.telephone || "",
-      organisme: user.organisme
-        ? { id: user.organisme.id, nomOrganisme: user.organisme.nomOrganisme }
-        : null,
       role: user.role || ""
     });
   }, [user]);
@@ -44,11 +38,7 @@ const ProfileInfoTab = ({ user }) => {
 
     if (name === "organisme") {
       setFormData({
-        ...formData,
-        organisme: formData.organisme
-          ? { ...formData.organisme, nomOrganisme: value }
-          : { nomOrganisme: value }
-      });
+        ...formData,});
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -64,10 +54,6 @@ const ProfileInfoTab = ({ user }) => {
       nom: user.nom || "",
       prenom: user.prenom || "",
       email: user.email || "",
-      telephone: user.telephone || "",
-      organisme: user.organisme
-        ? { id: user.organisme.id, nomOrganisme: user.organisme.nomOrganisme }
-        : null,
       role: user.role || ""
     });
   };
@@ -75,10 +61,9 @@ const ProfileInfoTab = ({ user }) => {
   // Sauvegarder les modifications
   const handleSave = async () => {
     try {
-      const payload = {
-        ...formData,
+      const payload = {...formData,
         // On envoie uniquement l'ID de l'organisme
-        organisme: formData.organisme ? { id: formData.organisme.id } : null
+        //organisme: formData.organisme ? { id: formData.organisme.id } : null
       };
 
       await axios.put(`${backendUrl}/users/update`, payload);
@@ -149,15 +134,7 @@ const ProfileInfoTab = ({ user }) => {
           />
         </Form.Group>
 
-        <Form.Group className="mb-3">
-          <Form.Label>Organisme</Form.Label>
-          <Form.Control
-            type="text"
-            name="organisme"
-            value={formData.organisme ? formData.organisme.nomOrganisme : ""}
-            readOnly
-          />
-        </Form.Group>
+        
 
         <Form.Group className="mb-3">
           <Form.Label>Rôle</Form.Label>

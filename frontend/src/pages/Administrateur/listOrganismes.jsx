@@ -65,7 +65,7 @@ const ListUtilisateurs = () => {
     // Close modal
     setShowModeEditing(false);
   } catch (error) {
-    toast.error("Erreur lors de la modification de l'organisme");
+    toast.error("Organisme existe déja");
     console.error(error.response?.data || error);
   }
 };
@@ -76,10 +76,10 @@ const ListUtilisateurs = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${backendUrl}/organismes`);
-      //const filteredOrganismes = response.data.filter(org => org.responsable.role !== "ADMIN");
-      //setOrganismes(filteredOrganismes);
-      setOrganismes(response.data);
-      setIsEmpty(response.data.length === 0);
+      const filteredOrganismes = response.data.filter(org => org.responsable?.role !== "ADMIN");    //org.responsable?.role iptional chaing pour verifier si le responsable existe ou non
+      setOrganismes(filteredOrganismes);
+      //setOrganismes(response.data);
+      setIsEmpty(filteredOrganismes.length === 0);
     } catch (err) {
       toast.error("Erreur lors de la récupération des organismes");
     } finally {
@@ -87,7 +87,8 @@ const ListUtilisateurs = () => {
     }
   };
 
-  const handleAddOrganisme = async () => {
+  const handleAddOrganisme = async (e) => {
+  e.preventDefault();
   try {
     // Send newOrganisme to backend
     const response = await axios.post(`${backendUrl}/organismes/createOrganisme`, newOrganisme);
@@ -184,10 +185,10 @@ const ListUtilisateurs = () => {
                 <td>{org.telephone || "-"}</td>
                 <td>{org.fax || "-"}</td>
                 <td>{org.dateCreation || "-"}</td>
-                <td>{org.responsable?.nom || "-"}</td>
+                <td>{org.responsable ? `${org.responsable.nom} ${org.responsable.prenom}` : "-"}</td>
                 <td>{org.responsable?.email || "-"}</td>
                 <td className="text-end">
-                  <button
+                  {/*<button
                     className="btn btn-outline-primary btn-sm me-2"
                     onClick={() => {
                       setShowModeEditing(true);
@@ -195,7 +196,8 @@ const ListUtilisateurs = () => {
                     }}
                   >
                     <i className="bi bi-pen"></i>
-                  </button>
+                  </button>*/}
+                  
                   <button
                     className="btn btn-outline-danger btn-sm"
                     onClick={() => deleteOrganisme(org.id)}
@@ -210,7 +212,7 @@ const ListUtilisateurs = () => {
       </div>
     )}
 
-          {showModeEditing && selectedOrganisme && (
+       {/*   {showModeEditing && selectedOrganisme && (
   <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
     <div className="modal-dialog modal-lg modal-dialog-centered">
       <div className="modal-content p-4">
@@ -247,7 +249,7 @@ const ListUtilisateurs = () => {
         value={selectedOrganisme?.type || ""}
         onChange={handleChange}
         className="form-control mb-2"
-      />*/}
+      />
       <select name="type" className="form-control mb-3" value={selectedOrganisme.type} onChange={e => {setType(e.target.value),handleChange}}>
           <option value="">Type d'organisme</option>
           <option value="publique">Publique</option>
@@ -285,7 +287,7 @@ const ListUtilisateurs = () => {
             Sauvegarder
           </button>
 
-          <button className="btn btn-secondary" onClick={() => setShowModeEditing(false)}>
+          <button className="btn btn-secondary" {/*onClick={() => setShowModeEditing(false)}>
             Annuler
           </button>
         </div>
@@ -296,7 +298,7 @@ const ListUtilisateurs = () => {
 
     </div>
   </div>
-)}
+)}*/}
         {/*Mode ajouter organisme*/}
         {showAddModal && (
   <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
@@ -305,70 +307,95 @@ const ListUtilisateurs = () => {
         <h5 className="mb-4 text-center">Ajouter un organisme</h5>
 
         <div className="row">
+      
       <form onSubmit={handleAddOrganisme}>
-      <input
-        type="text"
-        placeholder="Nom d'organisme"
-        name="nomOrganisme"
-        value={newOrganisme.nomOrganisme}
-        onChange={handleChangeNew}
-        className="form-control mb-2" required
-        />
 
-      <input
-        type="text"
-        name="adresse"
-        placeholder="adresse de l'organisme"
-        value={newOrganisme?.adresse}
-        onChange={handleChangeNew}
-        className="form-control mb-2" required
-      />
+  <input
+    type="text"
+    placeholder="Nom d'organisme"
+    name="nomOrganisme"
+    value={newOrganisme.nomOrganisme}
+    onChange={handleChangeNew}
+    className="form-control mb-2"
+    required
+  />
 
-      <input
-        type="email"
-        name="emailOrganisme"
-        placeholder="Email de l'organisme"
-        value={newOrganisme?.emailOrganisme}
-        onChange={handleChangeNew}
-        className="form-control mb-2" required
-      />
-      <select name="type" className="form-control mb-3" value={newOrganisme.type} onChange={handleChangeNew} required>
-          <option value="">Choisir type d'organisme</option>
-          <option value="publique">Publique</option>
-          <option value="prive">Privé</option>
-          <option value="societe civile">Société civile</option>
-      </select>
+  <input
+    type="text"
+    name="adresse"
+    placeholder="adresse de l'organisme"
+    value={newOrganisme.adresse}
+    onChange={handleChangeNew}
+    className="form-control mb-2"
+    required
+  />
 
-      <input
-        type="text"
-        name="telephone"
-        placeholder="Numéro de telephone"
-        value={newOrganisme?.telephone}
-        onChange={handleChangeNew}
-        className="form-control mb-2" required
-      />
+  <input
+    type="email"
+    name="emailOrganisme"
+    placeholder="Email de l'organisme"
+    value={newOrganisme.emailOrganisme}
+    onChange={handleChangeNew}
+    className="form-control mb-2"
+    required
+  />
 
-      <input
-        type="text"
-        name="fax"
-        placeholder="Numéro de fax"
-        value={newOrganisme?.fax}
-        onChange={handleChangeNew}
-        className="form-control mb-2" required
-      />
+  <select
+    name="type"
+    className="form-control mb-3"
+    value={newOrganisme.type}
+    onChange={handleChangeNew}
+    required
+  >
+    <option value="">Choisir type d'organisme</option>
+    <option value="publique">Publique</option>
+    <option value="prive">Privé</option>
+    <option value="societe civile">Société civile</option>
+  </select>
 
-      <input
-        type="date"
-        name="dateCreation"
-        placeholder="date de création d'organisme"
-        value={newOrganisme?.dateCreation}
-        onChange={handleChangeNew}
-        className="form-control mb-2" required
-      />
-      </form>
-        </div>
+  <input
+    type="text"
+    name="telephone"
+    placeholder="Numéro de telephone"
+    value={newOrganisme.telephone}
+    onChange={handleChangeNew}
+    className="form-control mb-2"
+    required
+  />
 
-        <div className="d-flex justify-content-end mt-3">
+  <input
+    type="text"
+    name="fax"
+    placeholder="Numéro de fax"
+    value={newOrganisme.fax}
+    onChange={handleChangeNew}
+    className="form-control mb-2"
+    required
+  />
+
+  <input
+    type="date"
+    name="dateCreation"
+    value={newOrganisme.dateCreation}
+    onChange={handleChangeNew}
+    className="form-control mb-2"
+    required
+  />
+
+  <div className="d-flex justify-content-end mt-3">
+    <button type="submit" className="btn btn-primary me-2">
+      Sauvegarder
+    </button>
+
+    <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+      Annuler
+    </button>
+  </div>
+
+</form>
+
+
+     {/* <div className="d-flex justify-content-end mt-3">
           <button className="btn btn-primary me-2" onClick={handleAddOrganisme}>
             Sauvegarder
           </button>
@@ -376,7 +403,10 @@ const ListUtilisateurs = () => {
           <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
             Annuler
           </button>
+        </div>*/}
+      
         </div>
+
       </div>
 
 
