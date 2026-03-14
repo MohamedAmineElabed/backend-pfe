@@ -32,6 +32,7 @@ const ListUtilisateurs = () => {
   //pour changer vers mode editing
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
     setSelectedOrganisme((prev) => ({
     ...prev,
     [name]: value,

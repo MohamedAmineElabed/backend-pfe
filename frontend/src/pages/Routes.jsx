@@ -8,6 +8,7 @@ import HomePageAdmin from "./Administrateur/homePageAdmin.jsx";
 import VerifyAccount from "../components/verifyAccount.jsx";
 import ListUtilisateurs from "./Administrateur/listUtilisateurs";
 import ListOrganismes from "./Administrateur/listOrganismes";
+import Principes from "./Administrateur/principes.jsx";
 function AppRoutes(){
     return(
             <Routes>
@@ -21,6 +22,7 @@ function AppRoutes(){
                 <Route path="/verifyAccount/:demandeId" element={<VerifyAccount />} />
                 <Route path="/listUtilisateurs" element={<ListUtilisateurs />}/>
                 <Route path="/listOrganismes" element={<ListOrganismes />}/>
+                <Route path="/principes" element={<Principes />}/>
 
                 
             </Routes>

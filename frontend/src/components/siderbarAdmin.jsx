@@ -41,7 +41,7 @@ function SiderbarAdmin() {
             </Link>
 
             <Link
-            to=""
+            to="/principes"
             className="nav-link text-white rounded hover-bg-secondary">
             Principes
             </Link>
@@ -69,7 +69,7 @@ function SiderbarAdmin() {
           }
           .hover-bg-secondary:hover {
             background-color: #495057 !important;
-            padding-left: 12px;
+            /*padding-left: 8px;*/
           }
         `}</style>
       </div>
