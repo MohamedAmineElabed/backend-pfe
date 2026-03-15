@@ -54,7 +54,7 @@ function CardProfil({user}){
           <div style={{ background:"#f0f4ff", border:"1px solid #dbe4ff", borderRadius:10, padding:"14px 20px", textAlign:"center", flexShrink:0 }}>
             <div style={{ fontSize:"1.4rem" }}>⬡</div>
             <div style={{ fontWeight:700, fontSize:"0.82rem" }}></div>
-            <div style={{ fontSize:"0.68rem", color:"#78746c", fontFamily:"monospace" }}>{formData?.typeOrganisme}</div>
+            <div style={{ fontSize:"0.68rem", color:"#78746c", fontFamily:"monospace" }}>{formData?.organisme.type}</div>
           </div>
     </div>
     </>
