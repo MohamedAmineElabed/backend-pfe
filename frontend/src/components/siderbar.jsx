@@ -35,6 +35,13 @@ function Siderbar() {
             Profile
           </Link>
 
+          <Link
+            to="/evaluation"
+            className="nav-link text-white rounded hover-bg-secondary"
+          >
+            Evaluation
+          </Link>
+
         </nav>
 
         <button className="btn btn-danger mt-auto w-100" onClick={handleLogout}>

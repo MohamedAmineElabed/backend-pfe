@@ -9,6 +9,8 @@ import VerifyAccount from "../components/verifyAccount.jsx";
 import ListUtilisateurs from "./Administrateur/listUtilisateurs";
 import ListOrganismes from "./Administrateur/listOrganismes";
 import Principes from "./Administrateur/principes.jsx";
+import Evaluation from "./evaluation.jsx";
+import EvaluationForm from "./evaluationForm.jsx";
 function AppRoutes(){
     return(
             <Routes>
@@ -23,8 +25,9 @@ function AppRoutes(){
                 <Route path="/listUtilisateurs" element={<ListUtilisateurs />}/>
                 <Route path="/listOrganismes" element={<ListOrganismes />}/>
                 <Route path="/principes" element={<Principes />}/>
+                <Route path="/evaluation" element={<Evaluation />}/>
+                <Route path="/evaluationForm" element={<EvaluationForm />}/>
 
-                
             </Routes>
     )
 }
