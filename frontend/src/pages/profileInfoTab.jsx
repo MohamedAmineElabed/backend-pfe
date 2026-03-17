@@ -61,12 +61,16 @@ const ProfileInfoTab = ({ user }) => {
   // Sauvegarder les modifications
   const handleSave = async () => {
     try {
-      const payload = {...formData,
+      /*const payload = {...formData,
         // On envoie uniquement l'ID de l'organisme
         //organisme: formData.organisme ? { id: formData.organisme.id } : null
-      };
+      };*/
 
-      await axios.put(`${backendUrl}/users/update`, payload);
+      await axios.put(`${backendUrl}/users/update/${formData.id}`, formData,{
+    headers: {
+      "Content-Type": "application/json"
+    }
+  });
 
       toast.success("Mise à jour réussie !");
       setIsEditing(false);

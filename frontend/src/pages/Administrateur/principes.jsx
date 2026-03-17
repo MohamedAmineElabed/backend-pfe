@@ -366,9 +366,10 @@ const Principes = () => {
             style={{ borderBottom: "1px solid #dee2e6", paddingBottom: "15px", marginBottom: "15px", position: "relative" }}>
             <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
               
-              <span style={{ fontWeight: "bold" }}>{pratique.nom}</span>
+              <span style={{ fontWeight: "bold"}}>{pratique.nom}</span>
+              
               {pratique.criteres && (<>
-                <div style={{ display: "flex", alignItems: "center", gap: "1px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",marginLeft: "8px"}}>
                     <span style={{
                       background: (pratique.criteres?.length || 0) === 0 ? "#fee2e2" : "#dcfce7",
                       color: (pratique.criteres?.length || 0) === 0 ? "#dc2626" : "#0e8c52",
@@ -376,6 +377,10 @@ const Principes = () => {
                     }}>
                     {pratique.criteres?.length} critere{pratique.criteres?.length > 1 ? 's' : ''}
                     </span>
+                    <button className="btn btn-outline-danger btn-sm"
+                      onClick={(e) => {e.stopPropagation();deletePratique(pratique.id);}}>
+                      <i className="bi bi-trash"></i>
+                    </button>
                   </div>
               </>)}
 
@@ -383,7 +388,7 @@ const Principes = () => {
             
             
             {/* Inside your map over critere */}
-{pratique.criteres.map((critere) => (
+{pratique.criteres?.map((critere) => (
   <div
     key={critere.id}
     style={{

@@ -11,9 +11,9 @@ const OrganismeInfoTab = ({ org }) => {
 
   const [formData, setFormData] = useState({
     id: "",
-    nom: "",
+    nomOrganisme: "",
     type: "",
-    email: "",
+    emailOrganisme: "",
     telephone: "",
     adresse: "",
     fax: "",
@@ -32,9 +32,9 @@ const OrganismeInfoTab = ({ org }) => {
 
     setFormData({
     id: org.id || "",
-    nom: org.nomOrganisme || "",
+    nomOrganisme: org.nomOrganisme || "",
     type: org.type || "",
-    email: org.emailOrganisme || "",
+    emailOrganisme: org.emailOrganisme || "",
     telephone: org.telephone || "",
     adresse: org.adresse || "",
     fax: org.fax || "",
@@ -57,9 +57,9 @@ const OrganismeInfoTab = ({ org }) => {
 
     setFormData({
     id: org.id || "",
-    nom: org.nomOrganisme || "",
+    nomOrganisme: org.nomOrganisme || "",
     type: org.type || "",
-    email: org.emailOrganisme || "",
+    emailOrganisme: org.emailOrganisme || "",
     telephone: org.telephone || "",
     adresse: org.adresse || "",
     fax: org.fax || "",
@@ -74,6 +74,7 @@ const OrganismeInfoTab = ({ org }) => {
     //const payload = { ...selectedOrganisme };
     // Send updated organisme to backend
     await axios.put(`${backendUrl}/organismes/update/${formData.id}`, formData);
+    
 
     // Update local state so the list reflects changes
     /*setOrganismes((prev) =>
@@ -117,8 +118,8 @@ const OrganismeInfoTab = ({ org }) => {
       <Form.Label>Nom</Form.Label>
       <Form.Control
         type="text"
-        name="nom"
-        value={formData.nom}
+        name="nomOrganisme"
+        value={formData.nomOrganisme}
         readOnly={!isEditing}
         onChange={handleChange}
       />
@@ -142,9 +143,9 @@ const OrganismeInfoTab = ({ org }) => {
 <Form.Group className="mb-3">
   <Form.Label>Email</Form.Label>
   <Form.Control
-    type="email"
+    type="emailOrganisme"
     name="email"
-    value={formData.email}
+    value={formData.emailOrganisme}
     readOnly={!isEditing}
     onChange={handleChange}
   />
