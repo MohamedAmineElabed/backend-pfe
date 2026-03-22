@@ -11,7 +11,8 @@ const EvaluationForm = () => {
   /*console.log("Current user passed from Evaluation:", currentUser);
   console.log("Evaluation ID:", evaluationId);*/
 
-  const { backendUrl} = useContext(AppContext);
+  const { backendUrl } = useContext(AppContext);
+  const [selectedFiles, setSelectedFiles] = useState({});
   const [currentEvaluationId, setCurrentEvaluationId] = useState(evaluationId);
   const [organismeId, setOrganismeId] = useState(currentUser?.organismeId || null);
 
@@ -32,47 +33,45 @@ const EvaluationForm = () => {
 
   const submitAllAnswers = async () => {
     const organismeId = currentUser?.organisme?.id;
-    const responsableId=currentUser?.id;
+    const responsableId = currentUser?.id;
     if (!organismeId) return alert("Organisme introuvable !");
-    
+
     try {
-      const res = await axios.post(`${backendUrl}/evaluation/new`, { organismeId,responsableId });
-      const newEvaluationId=res.data;
+      const res = await axios.post(`${backendUrl}/evaluation/new`, { organismeId, responsableId });
+      const newEvaluationId = res.data;
       setCurrentEvaluationId(newEvaluationId);
       console.log("Nouvelle évaluation créée :", newEvaluationId);
 
-      //Prepare responses array
-      /*const responses = Object.entries(selectedOption).map(([critereId, valeur]) => ({
-        critereId: Number(critereId),valeur,}));*/
-      const payload = {
-        evaluationId: newEvaluationId,   // optional if URL already has it
-        reponses: Object.entries(selectedOption).map(([critereId, valeur]) => ({
-        critereId: Number(critereId),
-        valeur,
-  })),
-};
-
-      //Save all responses
-            //await axios.post(`${backendUrl}/evaluation/reponses/reponse/save/${newEvaluationId}`, payload);
       for (const [critereId, valeur] of Object.entries(selectedOption)) {
-        await axios.post(`${backendUrl}/evaluation/reponses/reponse/save/${newEvaluationId}`,
-        {critereId: Number(critereId),valeur: valeur,}
-      );
-    }
+        const formData = new FormData();
+        formData.append("critereId", Number(critereId));
+        formData.append("valeur", valeur);
+
+        // add all files if exists
+        if (selectedFiles[critereId]) {
+          selectedFiles[critereId].forEach((file) => {
+            formData.append("files", file);
+          });
+        }
+
+        await axios.post(`${backendUrl}/evaluation/reponses/reponse/save/${newEvaluationId}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+      }
+
       console.log("Toutes les réponses ont été sauvegardées !");
       toast.success("Évaluation et réponses enregistrées avec succès !");
-       
     } catch (err) {
       console.error("Erreur lors de la création de l'évaluation", err);
     }
   };
 
   const critereOptions = [
-  { label: "n'existe pas", value: 1 },
-  { label: "en cours", value: 2 },
-  { label: "realisé", value: 3 },
-  { label: "validé", value: 4 },
-  ];
+  { label: "n'existe pas", value: 0, color: "#ef4444" }, // red
+  { label: "en cours", value: 1, color: "#facc15" },      // yellow
+  { label: "realisé", value: 2, color: "#3b82f6" },      // blue
+  { label: "validé", value: 3, color: "#16a34a" },       // green
+];
 
   // --- Fetch principes from backend ---
   useEffect(() => {
@@ -100,32 +99,17 @@ const EvaluationForm = () => {
   }, [backendUrl]);
 
   // --- Expand first principe by default ---
-  useEffect(() => {
+  /*useEffect(() => {
     if (principes.length > 0 && expandedPrincipe === null) {
       setExpandedPrincipe(principes[0].id);
     }
-  }, [principes]);
+  }, [principes]);*/
 
   // --- Handle critère option select ---
   const handleSelectOption = async (critereId, value) => {
     setSelectedOption((prev) => ({ ...prev, [critereId]: value }));
-    /*try {
-      await axios.post(`${backendUrl}/evaluation/reponse/save/${currentEvaluationId}`, { critereId, valeur: value, });
-      console.log(`Critère ${critereId} saved with value "${value}"`);
-      toast("success");
-    } catch (error) {
-      console.error("Erreur lors de l'enregistrement", error);
-    }
-    if (!currentEvaluationId) return; // prevent saving without an evaluation
-    try {
-      await axios.post(`${backendUrl}/evaluation/reponses/reponse/save/${currentEvaluationId}`, {
-        critereId,valeur: value});
-        console.log(`Critère ${critereId} saved with value ${value}`);
-      } catch (error) {
-        console.error("Erreur lors de l'enregistrement", error);}*/
   };
-  
- 
+
   // --- Progress calculations ---
   const getPratiqueProgress = (pratique) => {
     const total = pratique.criteres?.length || 0;
@@ -153,20 +137,31 @@ const EvaluationForm = () => {
     return Object.keys(selectedOption).length === totalCriteres;
   };
 
-  // --- Render ---
-  if (!principes || principes.length === 0) {
-    return (
-      <div style={{ padding: 24, textAlign: "center", color: "#64748b" }}>
-        Aucun principe disponible
-      </div>
+  const allFilesUploaded = () => {
+    let totalCriteres = 0;
+    principes.forEach((principe) =>
+      principe.pratiques?.forEach((p) => {
+        totalCriteres += p.criteres?.length || 0;
+      })
     );
-  }
+    return Object.keys(selectedFiles).length === totalCriteres;
+  };
+
+  // --- Handle file input change ---
+  const handleFileChange = (critereId, files) => {
+    setSelectedFiles((prev) => ({
+      ...prev,
+      [critereId]: [...(prev[critereId] || []), ...Array.from(files)],
+    }));
+  };
 
   return (
     <div
       style={{
-        minHeight: "100vh",background: "#f8f9fc",
-        display: "flex",fontFamily: "'DM Sans', sans-serif",
+        minHeight: "100vh",
+        background: "#f8f9fc",
+        display: "flex",
+        fontFamily: "'DM Sans', sans-serif",
       }}
     >
       {/* Sidebar */}
@@ -198,15 +193,17 @@ const EvaluationForm = () => {
           <div style={{ marginBottom: 24 }}>
             <button
               onClick={submitAllAnswers}
-              disabled={!allCriteresAnswered()}
+              disabled={!allCriteresAnswered() || !allFilesUploaded()}
               style={{
                 padding: "8px 16px",
                 borderRadius: 6,
                 border: "none",
-                background: allCriteresAnswered() ? "#3b82f6" : "#cbd5e1",
+                background:
+                  allCriteresAnswered() && allFilesUploaded() ? "#3b82f6" : "#cbd5e1",
                 color: "#fff",
                 fontWeight: 600,
-                cursor: allCriteresAnswered() ? "pointer" : "not-allowed",
+                cursor:
+                  allCriteresAnswered() && allFilesUploaded() ? "pointer" : "not-allowed",
                 marginBottom: 16,
               }}
             >
@@ -244,9 +241,7 @@ const EvaluationForm = () => {
                 >
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <h2 style={{ fontWeight: 500, color: "#0f172a" }}>
-                        {principe.nom}
-                      </h2>
+                      <h2 style={{ fontWeight: 500, color: "#0f172a" }}>{principe.nom}</h2>
                       <span
                         style={{
                           fontSize: 11,
@@ -262,9 +257,7 @@ const EvaluationForm = () => {
                         {getPrincipeProgress(principe)}
                       </span>
                     </div>
-                    <p style={{ fontSize: 13, color: "#475569" }}>
-                      {principe.description}
-                    </p>
+                    <p style={{ fontSize: 13, color: "#475569" }}>{principe.description}</p>
                   </div>
                 </div>
 
@@ -307,9 +300,7 @@ const EvaluationForm = () => {
                                   fontWeight: 600,
                                   padding: "2px 6px",
                                   borderRadius: 20,
-                                  color: pratique.criteres?.length
-                                    ? "#065f46"
-                                    : "#b91c1c",
+                                  color: pratique.criteres?.length ? "#065f46" : "#b91c1c",
                                   background: pratique.criteres?.length
                                     ? "rgba(16,185,129,0.1)"
                                     : "rgba(244,63,94,0.1)",
@@ -329,13 +320,12 @@ const EvaluationForm = () => {
                                       <div
                                         key={critere.id}
                                         style={{
-                                          display: "flex",
-                                          justifyContent: "space-between",
-                                          padding: "6px 8px",
-                                          marginBottom: 4,
-                                          background: "#f1f5f9",
-                                          borderRadius: 6,
+                                          marginBottom: 10,
+                                          padding: 10,
+                                          borderRadius: 8,
+                                          background: "#ffffff",
                                           border: "1px solid #e2e8f0",
+                                          boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
                                           cursor: "pointer",
                                         }}
                                         onClick={() =>
@@ -345,44 +335,141 @@ const EvaluationForm = () => {
                                           }))
                                         }
                                       >
-                                        <span style={{ color: "#0f172a" }}>
-                                          {critere.nom}
-                                        </span>
+                                        <span style={{ color: "#0f172a" }}>{critere.nom}</span>
 
                                         {/* Options dropdown */}
                                         {isCritereOpen && (
                                           <div
                                             style={{
-                                              marginTop: 4,
+                                              marginTop: 10,
+                                              paddingTop: 10,
+                                              paddingLeft: 8,
+                                              borderTop: "1px dashed #e2e8f0",
                                               display: "flex",
-                                              flexDirection: "row",
-                                              gap: 4,
+                                              flexDirection: "column",
+                                              gap: 3,
                                             }}
                                           >
-                                            {critereOptions.map((opt) => (
-                                              <div
-                                                key={opt.value}
+                                            {/* Options */}
+                                            <div
+                                              style={{
+                                                display: "flex",
+                                                flexWrap: "wrap",
+                                                gap: 4,
+                                              }}
+                                            >
+                                              {critereOptions.map((opt) => (
+                                                <div
+                                                  key={opt.value}
+                                                  style={{
+                                                    padding: "4px 8px",
+                                                    borderRadius: 6,
+                                                    border:
+                                                      selectedOption[critere.id] === opt.value
+                                                        ? "1px solid ${opt.color}"
+                                                        : "1px solid #cbd5e1",
+                                                    background:
+                                                      selectedOption[critere.id] === opt.value
+                                                        ? "${opt.color}"
+                                                        : "#fff",
+                                                      color:selectedOption[critere.id] === opt.value
+                                                        ? opt.color
+                                                        : "#0f172a",
+                                                      cursor: "pointer",
+                                                  }}
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleSelectOption(critere.id, opt.value);
+                                                  }}
+                                                >
+                                                  {opt.label}
+                                                </div>
+                                              ))}
+                                            </div>
+
+                                            {/* File Upload */}
+                                            <div style={{ marginTop: 6 }}>
+                                              <input
+                                                id={`file-${critere.id}`}
+                                                type="file"
+                                                multiple
+                                                style={{ display: "none" }}
+                                                onClick={(e) => e.stopPropagation()}
+                                                onChange={(e) => {
+                                                  e.stopPropagation();
+                                                  handleFileChange(critere.id, e.target.files);
+                                                }}
+                                              />
+                                              <label
+                                                htmlFor={`file-${critere.id}`}
+                                                onClick={(e) => e.stopPropagation()}
                                                 style={{
-                                                  padding: "4px 8px",
-                                                  borderRadius: 6,
-                                                  border:
-                                                    selectedOption[critere.id] === opt.value
-                                                      ? "1px solid #3b82f6"
-                                                      : "1px solid #cbd5e1",
-                                                  background:
-                                                    selectedOption[critere.id] === opt.value
-                                                      ? "rgba(59,130,246,0.1)"
-                                                      : "#fff",
+                                                  display: "inline-flex",
+                                                  alignItems: "center",
+                                                  gap: 6,
+                                                  padding: "6px 12px",
+                                                  borderRadius: 8,
+                                                  border: "1px dashed #3b82f6",
+                                                  background: "#eff6ff",
+                                                  color: "#1d4ed8",
+                                                  fontSize: 12,
+                                                  fontWeight: 500,
                                                   cursor: "pointer",
+                                                  transition: "0.2s",
                                                 }}
-                                                onClick={(e) => {
-                                                  e.stopPropagation(); // prevent collapsing
-                                                  handleSelectOption(critere.id, opt.value);
-                                                }}
+                                                onMouseOver={(e) =>
+                                                  (e.currentTarget.style.background = "#dbeafe")
+                                                }
+                                                onMouseOut={(e) =>
+                                                  (e.currentTarget.style.background = "#eff6ff")
+                                                }
                                               >
-                                                {opt.label}
-                                              </div>
-                                            ))}
+                                                📁 Upload file
+                                              </label>
+
+                                              {/* File preview */}
+                                              {selectedFiles[critere.id]?.map((file, index) => (
+                                                <div
+                                                  key={index}
+                                                  style={{
+                                                    marginTop: 6,
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    justifyContent: "space-between",
+                                                    background: "#f0fdf4",
+                                                    border: "1px solid #bbf7d0",
+                                                    borderRadius: 8,
+                                                    padding: "6px 10px",
+                                                    fontSize: 12,
+                                                    color: "#166534",
+                                                  }}
+                                                >
+                                                  <span>📎 {file.name}</span>
+                                                  <span
+                                                    style={{
+                                                      cursor: "pointer",
+                                                      fontWeight: "bold",
+                                                      color: "#dc2626",
+                                                    }}
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setSelectedFiles((prev) => {
+                                                        const updated = { ...prev };
+                                                        updated[critere.id] = updated[critere.id].filter(
+                                                          (_, i) => i !== index
+                                                        );
+                                                        if (updated[critere.id].length === 0) {
+                                                          delete updated[critere.id];
+                                                        }
+                                                        return updated;
+                                                      });
+                                                    }}
+                                                  >
+                                                    ✕
+                                                  </span>
+                                                </div>
+                                              ))}
+                                            </div>
                                           </div>
                                         )}
                                       </div>
@@ -399,9 +486,7 @@ const EvaluationForm = () => {
                         );
                       })
                     ) : (
-                      <div style={{ color: "#64748b", fontSize: 12 }}>
-                        Aucune pratique existante
-                      </div>
+                      <div style={{ color: "#64748b", fontSize: 12 }}>Aucune pratique existante</div>
                     )}
                   </div>
                 )}

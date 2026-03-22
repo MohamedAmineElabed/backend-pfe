@@ -60,6 +60,15 @@ const ProfileInfoTab = ({ user }) => {
 
   // Sauvegarder les modifications
   const handleSave = async () => {
+    if (
+    !formData.nom.trim() ||
+    !formData.prenom.trim() ||
+    !formData.email.trim() ||
+    !formData.role.trim()
+  ) {
+    toast.error("Tous les champs sont obligatoires !");
+    return;
+  }
     try {
       /*const payload = {...formData,
         // On envoie uniquement l'ID de l'organisme

@@ -70,6 +70,19 @@ const OrganismeInfoTab = ({ org }) => {
 
   // Sauvegarder les modifications
   const handleSave = async () => {
+  if (
+      !formData.nomOrganisme.trim() ||
+      !formData.telephone.trim() ||
+      !formData.emailOrganisme.trim() ||
+      !formData.type.trim() ||
+      !formData.fax.trim() ||
+      !formData.secteur.trim() ||
+      !formData.adresse.trim() ||
+      !formData.dateCreation
+    ) {
+      toast.error("Tous les champs sont obligatoires !");
+      return;
+    }
   try {
     //const payload = { ...selectedOrganisme };
     // Send updated organisme to backend
@@ -122,6 +135,7 @@ const OrganismeInfoTab = ({ org }) => {
         value={formData.nomOrganisme}
         readOnly={!isEditing}
         onChange={handleChange}
+        required
       />
     </Form.Group>
   </Col>
@@ -135,6 +149,7 @@ const OrganismeInfoTab = ({ org }) => {
         value={formData.type}
         readOnly={!isEditing}
         onChange={handleChange}
+        required
       />
     </Form.Group>
   </Col>
@@ -148,6 +163,7 @@ const OrganismeInfoTab = ({ org }) => {
     value={formData.emailOrganisme}
     readOnly={!isEditing}
     onChange={handleChange}
+    required
   />
 </Form.Group>
 
@@ -159,6 +175,7 @@ const OrganismeInfoTab = ({ org }) => {
     value={formData.telephone}
     readOnly={!isEditing}
     onChange={handleChange}
+    required
   />
 </Form.Group>
 
@@ -170,6 +187,7 @@ const OrganismeInfoTab = ({ org }) => {
     value={formData.fax}
     readOnly={!isEditing}
     onChange={handleChange}
+    required
   />
 </Form.Group>
 
@@ -181,6 +199,7 @@ const OrganismeInfoTab = ({ org }) => {
     value={formData.adresse}
     readOnly={!isEditing}
     onChange={handleChange}
+    required
   />
 </Form.Group>
 
@@ -192,6 +211,7 @@ const OrganismeInfoTab = ({ org }) => {
     value={formData.secteur}
     readOnly={!isEditing}
     onChange={handleChange}
+    required
   />
 </Form.Group>
 
@@ -203,6 +223,7 @@ const OrganismeInfoTab = ({ org }) => {
     value={formData.dateCreation}
     readOnly={!isEditing}
     onChange={handleChange}
+    required
   />
 </Form.Group>
 

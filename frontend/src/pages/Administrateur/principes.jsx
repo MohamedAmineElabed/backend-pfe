@@ -14,7 +14,11 @@ const Principes = () => {
     const [showAddPrincipe, setShowAddPrincipe] = useState(false);
 
     const [isEditing, setIsEditing] = useState(false);
+    const[principeId,setPrincipeId]=useState(null);
+    const[pratiqueId,setPratiqueId]=useState(null);
     const[critereId,setCritereId]=useState(null);
+    const [editingPrincipeData, setEditingPrincipeData] = useState({ nom: "", description: "" });
+    const [editingPratiqueData, setEditingPratiqueData] = useState({ nom: "", description: "" });
     const [editingCritereData, setEditingCritereData] = useState({ nom: "", description: "" });
 
 
@@ -253,7 +257,7 @@ const Principes = () => {
 };
 
 
-  // Sauvegarder les modifications
+  // Sauvegarder les modifications de critéres
   const handleSave = async () => {
   try {
     if (!critereId) return toast.error("Critère non sélectionné");
@@ -275,10 +279,48 @@ const Principes = () => {
     setCritereId(null);
     toast.success("Critère mis à jour !");
   } catch (error) {
-    toast.error("Erreur lors de la mise à jour");
+    toast.error("Erreur lors de la mise à jour de critére");
     console.error(error.response?.data || error);
   }
 };
+
+  // Save principe edits
+const handleSavePrincipe = async () => {
+  if (!principeId) return toast.error("principe non sélectionné");
+  try {
+    await axios.put(`${backendUrl}/principes/update/${principeId}`, {...editingPrincipeData,id: principeId, });
+    setPrincipes(prev =>
+      prev.map(p => p.id === principeId ? { ...p, ...editingPrincipeData } : p)
+    );
+    setIsEditing(false);
+    setPrincipeId(null);
+    toast.success("Principe mis à jour !");
+  } catch (error) {
+    toast.error("Erreur lors de la mise à jour du principe");
+    console.error(error);
+  }
+};
+
+  // Save pratique edits
+const handleSavePratique = async () => {
+  try {
+    await axios.put(`${backendUrl}/pratiques/update/${pratiqueId}`, {...editingPratiqueData,id: pratiqueId, });
+    setPrincipes(prev =>
+      prev.map(principe => ({
+        ...principe,
+        pratiques: principe.pratiques?.map(p =>
+          p.id === pratiqueId ? { ...p, ...editingPratiqueData } : p
+        )
+      }))
+    );
+    setPratiqueId(null);
+    toast.success("Pratique mise à jour !");
+  } catch (error) {
+    toast.error("Erreur lors de la mise à jour de la pratique");
+    console.error(error);
+  }
+};
+
 
 
 
@@ -337,11 +379,79 @@ const Principes = () => {
                  
                   <p className="card-text text-muted">{principe.description}</p>
                   </div>
-                   <button
+                  {/*<button
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsEditing(true);
+                      setPrincipeId(principe.id);
+                      setEditingPrincipeData({ nom: principe.nom, description: principe.description });
+                      }}>
+                      <i className="bi bi-pencil"></i>
+                  </button>
+                  <button
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={(e) => {e.stopPropagation();deletePrincipe(principe.id);}}>
+                    <i className="bi bi-trash"></i>
+                  </button>*/}
+      {!isEditing || principeId !== principe.id  ? (
+      <>
+
+        {/* RIGHT : buttons */}
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button
+            className="btn btn-outline-primary btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsEditing(true);
+              setPrincipeId(principe.id);
+              setEditingPrincipeData({ nom: principe.nom, description: principe.description });
+            }}>
+            <i className="bi bi-pencil"></i>
+          </button>
+
+          <button
                     className="btn btn-outline-danger btn-sm"
                     onClick={(e) => {e.stopPropagation();deletePrincipe(principe.id);}}>
                     <i className="bi bi-trash"></i>
                   </button>
+        </div>
+      </>
+    ) : (
+      <>
+        <input
+          type="text"
+          value={editingPrincipeData.nom}
+          onChange={(e) => setEditingPrincipeData(prev => ({ ...prev, nom: e.target.value }))}
+          className="form-control form-control-sm me-2"
+          style={{ maxWidth: "200px" }}
+        />
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button
+            className="btn btn-outline-primary btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSavePrincipe();
+              setIsEditing(false);
+            }}
+          >
+            enregistrer
+          </button>
+
+          <button
+            className="btn btn-outline-danger btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsEditing(false);
+              setPrincipeId(null);
+            }}
+          >
+            annuler
+          </button>
+        </div>
+      </>
+    )}
+                  
               </div>
 
                   {/* PRATIQUES */}
@@ -377,10 +487,66 @@ const Principes = () => {
                     }}>
                     {pratique.criteres?.length} critere{pratique.criteres?.length > 1 ? 's' : ''}
                     </span>
-                    <button className="btn btn-outline-danger btn-sm"
+                    {/*<button className="btn btn-outline-danger btn-sm"
+                      onClick={(e) => {e.stopPropagation();deletePratique(pratique.id);}}>
+                      <i className="bi bi-trash"></i>
+                    </button>*/}
+      {!isEditing || pratiqueId !== pratique.id  ? (
+      <>
+
+        {/* RIGHT : buttons */}
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button
+            className="btn btn-outline-primary btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsEditing(true);
+              setPratiqueId(pratique.id);
+              setEditingPratiqueData({ nom: pratique.nom, description: pratique.description });
+            }}>
+            <i className="bi bi-pencil"></i>
+          </button>
+
+          <button className="btn btn-outline-danger btn-sm"
                       onClick={(e) => {e.stopPropagation();deletePratique(pratique.id);}}>
                       <i className="bi bi-trash"></i>
                     </button>
+        </div>
+      </>
+    ) : (
+      <>
+        <input
+          type="text"
+          value={editingPratiqueData.nom}
+          onChange={(e) => setEditingPratiqueData(prev => ({ ...prev, nom: e.target.value }))}
+          className="form-control form-control-sm me-2"
+          style={{ maxWidth: "200px" }}
+        />
+        <div style={{ display: "flex", gap: "6px" }}>
+          <button
+            className="btn btn-outline-primary btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSavePratique();
+              setIsEditing(false);
+            }}
+          >
+            enregistrer
+          </button>
+
+          <button
+            className="btn btn-outline-danger btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsEditing(false);
+              setPratiqueId(null);
+            }}
+          >
+            annuler
+          </button>
+        </div>
+      </>
+    )}
                   </div>
               </>)}
 
@@ -402,7 +568,7 @@ const Principes = () => {
       backgroundColor: "#ffffff",
     }}
   >
-    {!isEditing || critereId !== critere.id ? (
+    {!isEditing || critereId !== critere.id  ? (
       <>
         {/* LEFT : critere name */}
         <span style={{ fontSize: "0.9rem", color: "#495057" }}>{critere.nom}</span>

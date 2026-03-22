@@ -36,7 +36,10 @@ const ListDemandes = () => {
     if (!confirmDelete) return;
     try {
       await axios.delete(`${backendUrl}/demandes/${id}`);
-      setDemandes((prev) => prev.filter((d) => d.id !== id));
+      setDemandes((prev) => {
+        const updated=prev.filter((d) => d.id !== id);
+        setIsEmpty(updated.length === 0);
+        return updated;});
       toast.success("Demande supprimée");
     } catch (error) {
     toast.error("Erreur lors de la suppression");
@@ -121,9 +124,7 @@ const ListDemandes = () => {
 
                 <tbody>
                   {demandes.map((demande) => (
-                    <tr key={demande.id}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => setSelectedDemande(demande) || setShowDescription(true)}>
+                    <tr>
                       {/*<td>{demande.id}</td>*/}
                       <td>{demande.nom}</td>
                       <td>{demande.prenom}</td>
@@ -152,29 +153,14 @@ const ListDemandes = () => {
                       </td>
 
                       <td>
-                        <div className="d-flex gap-2">
-                        {demande.etat !== "validé" && (
-                          <button
-                            className="btn btn-success btn-sm me-1"
-                            onClick={(e) => { e.stopPropagation(); handleValider(demande.id); }}
-                          >
-                            <i className="bi bi-check-lg"></i> Valider
-                          </button>
-                        )}
-                        {demande.etat !== "refusé" && (
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={(e) => { e.stopPropagation(); handleRefuser(demande.id); }}
-                          >
-                            <i className="bi bi-x-lg"></i> Refuser
-                          </button>
-                        )}
                         <button
-                          className="btn btn-outline-danger btn-sm"
-                          onClick={(e) => {e.stopPropagation();deleteDemande(demande.id);}}>
-                            <i className="bi bi-trash"></i>
-                            </button>
-                        </div>
+                            className="btn btn-primary btn-sm me-1"
+                            key={demande.id} style={{ cursor: "pointer" }}
+                            onClick={() => setSelectedDemande(demande) || setShowDescription(true)}>
+                          
+                            <i className=""></i> voir details
+                          </button>
+                        
                       </td>
                     </tr>
                   ))}
@@ -217,14 +203,46 @@ const ListDemandes = () => {
         </div>
 
         <div className="d-flex justify-content-end mt-3">
-          <button className="btn btn-secondary" onClick={() => setShowDescription(false)}>
-            Fermer
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+          {selectedDemande.etat=="en attente"?(
+          <div className="d-flex gap-2">
+                        {selectedDemande?.etat !== "validé" && (
+                          <button
+                            className="btn btn-success btn-sm me-1"
+                            onClick={(e) => { e.stopPropagation(); handleValider(selectedDemande.id);
+                              setShowDescription(false)
+                             }}
+                          >
+                            <i className="bi bi-check-lg"></i> Valider
+                          </button>
+                        )}
+                        {selectedDemande.etat !== "refusé" && (
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={(e) => { e.stopPropagation(); handleRefuser(selectedDemande.id);
+                              deleteDemande(selectedDemande.id);setShowDescription(false) }}
+                          >
+                            <i className="bi bi-x-lg"></i> Refuser
+                          </button>
+                        )}
+                        {/*<button
+                          className="btn btn-outline-danger btn-sm"
+                          onClick={(e) => {e.stopPropagation();deleteDemande(demande.id);}}>
+                            <i className="bi bi-trash"></i>
+                            </button>*/}
+                          <button className="btn btn-secondary" onClick={() => setShowDescription(false)}>
+                            Fermer
+                          </button>
+                        </div>
+                        ):(
+                          <button className="btn btn-secondary" onClick={() => setShowDescription(false)}>
+                            Fermer
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                </div>
+          </div>
+        )}
           
         </div>
       </div>

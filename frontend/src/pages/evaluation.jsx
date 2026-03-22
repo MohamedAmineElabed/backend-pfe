@@ -1,4 +1,4 @@
-/*import { motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { Plus, ArrowUpRight, ClipboardList, FileCheck, PenLine, TrendingUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Siderbar from "../components/siderbar";
@@ -18,6 +18,257 @@ function progressColor(pct) {
   if (pct >= 30) return "#f59e0b";
   return "#f87171";
 }
+const styles = {
+  page: {
+    minHeight: "100vh",
+    background: "#f8f9fc",
+    fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif",
+  },
+ 
+  /* Header */
+  header: {
+    background: "#0f172a",
+    padding: "32px 40px",
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+  },
+  headerEyebrow: {
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#6366f1",
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 800,
+    color: "#f1f5f9",
+    letterSpacing: "-0.5px",
+    margin: "0 0 6px",
+  },
+  headerSub: {
+    fontSize: 13,
+    color: "#64748b",
+    margin: 0,
+    fontWeight: 400,
+  },
+  newBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 7,
+    padding: "10px 20px",
+    background: "#6366f1",
+    color: "#fff",
+    border: "none",
+    borderRadius: 10,
+    fontSize: 13,
+    fontWeight: 600,
+    cursor: "pointer",
+    letterSpacing: "0.01em",
+    boxShadow: "0 0 0 1px rgba(99,102,241,0.4), 0 4px 14px rgba(99,102,241,0.3)",
+  },
+ 
+  body: {
+    padding: "36px 40px",
+    maxWidth: 1200,
+  },
+ 
+  /* Metrics */
+  metricsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(4, 1fr)",
+    gap: 16,
+    marginBottom: 36,
+  },
+  metricCard: {
+    background: "#fff",
+    borderRadius: 14,
+    padding: "22px 22px 16px",
+    border: "1px solid #e8eaf0",
+    position: "relative",
+    overflow: "hidden",
+  },
+  metricTitle: {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.08em",
+  },
+  metricIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 9,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  metricValue: {
+    fontSize: 36,
+    fontWeight: 800,
+    letterSpacing: "-1px",
+    lineHeight: 1,
+    display: "block",
+  },
+  metricSub: {
+    fontSize: 11,
+    color: "#94a3b8",
+    marginTop: 5,
+    display: "block",
+  },
+  metricBar: {
+    height: 3,
+    borderRadius: 99,
+    marginTop: 18,
+    overflow: "hidden",
+  },
+  metricBarFill: {
+    height: "100%",
+    borderRadius: 99,
+    transition: "width 0.8s ease",
+  },
+ 
+  /* Table */
+  tableSection: {
+    background: "#fff",
+    borderRadius: 16,
+    border: "1px solid #e8eaf0",
+    overflow: "hidden",
+    boxShadow: "0 1px 3px rgba(15,23,42,0.04)",
+  },
+  tableTitleRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "20px 24px 16px",
+    borderBottom: "1px solid #f1f5f9",
+  },
+  tableTitle: {
+    fontSize: 15,
+    fontWeight: 700,
+    color: "#0f172a",
+    margin: 0,
+  },
+  tableCount: {
+    fontSize: 12,
+    color: "#94a3b8",
+    background: "#f1f5f9",
+    padding: "3px 10px",
+    borderRadius: 20,
+    fontWeight: 500,
+  },
+  tableWrap: {
+    overflowX: "auto",
+  },
+  thead: {
+    display: "grid",
+    gridTemplateColumns: "1.8fr 140px 120px 180px 80px 50px",
+    gap: 0,
+    padding: "10px 24px",
+    background: "#f8fafc",
+    borderBottom: "1px solid #f1f5f9",
+  },
+  th: {
+    fontSize: 11,
+    fontWeight: 700,
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.07em",
+  },
+  row: {
+    display: "grid",
+    gridTemplateColumns: "1.8fr 140px 120px 180px 80px 50px",
+    gap: 0,
+    padding: "14px 24px",
+    borderBottom: "1px solid #f8fafc",
+    alignItems: "center",
+    transition: "background 0.15s",
+    cursor: "default",
+  },
+ 
+  /* Row cells */
+  orgAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 13,
+    fontWeight: 800,
+    flexShrink: 0,
+  },
+  orgName: {
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#1e293b",
+  },
+  dateCell: {
+    fontSize: 12,
+    color: "#94a3b8",
+    fontFamily: "monospace",
+  },
+  badge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+    padding: "4px 10px",
+    borderRadius: 20,
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.01em",
+  },
+  badgeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: "50%",
+    flexShrink: 0,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 6,
+    background: "#f1f5f9",
+    borderRadius: 99,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 99,
+  },
+  progressPct: {
+    fontSize: 11,
+    fontWeight: 700,
+    fontFamily: "monospace",
+    minWidth: 32,
+    textAlign: "right",
+  },
+  preuvesBadge: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#6366f1",
+    background: "rgba(99,102,241,0.08)",
+    border: "1px solid rgba(99,102,241,0.15)",
+    borderRadius: 20,
+    padding: "2px 10px",
+    fontFamily: "monospace",
+  },
+  arrowBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    background: "#f8fafc",
+    border: "1px solid #e8eaf0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#94a3b8",
+    cursor: "pointer",
+    transition: "all 0.15s",
+  },
+};
 
 const stagger = (i) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] } });
 
@@ -40,52 +291,103 @@ function Metric({ title, value, sub, icon, accent, index }) {
 }
 
 const Evaluation = () => {
-  const { backendUrl, currentUser } = useContext(AppContext);
   const [evaluations, setEvaluations] = useState([]);
-  const [currentEvaluationId, setCurrentEvaluationId] = useState(null);
+
+  const totalEvals = evaluations.length;
+  const soumises = evaluations.filter(ev => ev.statut === "soumise").length;
+  //const enCours = evaluations.filter(ev => ev.statut === "en_cours").length;
+  const totalPreuves = evaluations.reduce((sum, ev) => sum + (ev.preuves || 0), 0);
+  const { backendUrl, userData } = useContext(AppContext); // userData comes from localStorage
+  const [currentUser, setCurrentUser] = useState(null);
+  //const [currentOrg, setCurrentOrg] = useState(null);
   const navigate = useNavigate();
 
-  const organismeId = currentUser?.organismeId;
+  /*useEffect(() => {
+    // If userData exists, fetch fresh user info from backend
+    if (userData?.id) {
+      const fetchCurrentUser = async () => {
+        try {
+          const res = await axios.get(`${backendUrl}/users/${userData.id}`);
+          setCurrentUser(res.data);
+          /*const resOrg = await axios.get(`${backendUrl}/organismes/${userData.id}`);
+          setCurrentOrg(resOrg.data);
 
-  const startEvaluation = async () => {
-    if (!organismeId) return alert("Organisme introuvable pour l'utilisateur !");
-    try {
-      const res = await axios.post(`${backendUrl}/evaluation`, { organismeId });
-      setCurrentEvaluationId(res.data); // save new evaluation ID
-      navigate("/evaluationForm"); // redirect to evaluation form page
-    } catch (err) {
-      console.error("Erreur lors de la création de l'évaluation", err);
+          //fetch evaluations for user
+          const resEval=await axios.get(`${backendUrl}/evaluation?userId=${userData.id}`);
+          //setEvaluations(resEval.data);
+          const mappedEvals = resEval.data.map(ev => {
+            let statutKey = ev.statut;
+
+          // Map backend values to frontend STATUS keys
+          if (ev.statut === "submitted") statutKey = "soumise";
+          if (ev.statut === "in_progress") statutKey = "en_cours";
+          if (ev.statut === "draft") statutKey = "brouillon";
+
+          return { ...ev,
+            statut: statutKey};
+      });
+
+          setEvaluations(mappedEvals);
+
+        } catch (err) {
+          console.error("Erreur fetching current organisme:", err);
+        }
+      };
+      
+      fetchCurrentUser();
     }
-  };
+  }, [backendUrl, userData]);*/
 
-  // fetch evaluations for this organisme
-  useEffect(() => {
-    const fetchEvaluations = async () => {
-      if (!organismeId) return;
+  // récupérer les utilisateurs
+
+    useEffect(() => {
+      if (userData?.id) {
+      const fetchCurrentUser = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/evaluation/organisme/${organismeId}`);
-        setEvaluations(res.data);
+        const res = await axios.get(`${backendUrl}/users/${userData.id}`);
+        setCurrentUser(res.data);
+
+        const resEval = await axios.get(`${backendUrl}/evaluation?userId=${userData.id}`);
+        console.log("Raw backend data:", resEval.data);
+        const mappedEvals = resEval.data.map(ev => {
+          let statutKey = (ev.status || "").toLowerCase().trim();
+          if (ev.status === "submitted") statutKey = "soumise";
+          if (ev.status === "in_progress") statutKey = "en_cours";
+          if (ev.status === "draft") statutKey = "brouillon";
+          console.log("Mapped statut:", statutKey, "original:", ev.status);
+
+          return { 
+            ...ev,
+            statut: statutKey,
+            organismeName: res.data.organisme?.nomOrganisme || "—",
+            preuvesCount: Array.isArray(ev.preuves) ? ev.preuves.length : (ev.preuves || 0)
+          };
+        });
+
+        setEvaluations(mappedEvals);
       } catch (err) {
-        console.error("Erreur chargement évaluations", err);
+        console.error("Erreur fetching current organisme:", err);
       }
     };
-    fetchEvaluations();
-  }, [backendUrl, organismeId]);
 
-  // metrics
-  const totalEvals = evaluations.length;
-  const soumises = evaluations.filter((e) => e.status === "soumise").length;
-  const enCours = evaluations.filter((e) => e.status === "en_cours").length;
-  const totalPreuves = evaluations.reduce((s, e) => s + (e.preuves || 0), 0);
+    fetchCurrentUser();
+  }
+}, [backendUrl, userData]);
 
+    const startEvaluation=async()=>{
+      if (!currentUser) return alert("Utilisateur introuvable !");
+      console.log("current user: ",currentUser);
+      // Pass currentUser to EvaluationForm via location state
+      navigate("/evaluationForm", { state: { currentUser } });
+    }
   return (
     <>
-      <Siderbar />
-      <div style={styles.page}>
-        {/* Header 
+      <Siderbar/>
+      <div style={{ ...styles.page, marginLeft: "200px" }}>
+        {/* Header */}
         <motion.header initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} style={styles.header}>
           <div>
-            <div style={styles.headerEyebrow}>Sprint 3 · RSE 2025</div>
+            <div style={styles.headerEyebrow}>{currentUser?.organisme?.nomOrganisme}</div>
             <h1 style={styles.headerTitle}>Évaluations</h1>
             <p style={styles.headerSub}>Suivi des évaluations et des preuves justificatives</p>
           </div>
@@ -97,47 +399,58 @@ const Evaluation = () => {
         </motion.header>
 
         <div style={styles.body}>
-          {/* Metrics 
+          {/* Metrics */}
           <div style={styles.metricsGrid}>
             <Metric index={0} title="Total évaluations" value={totalEvals} icon={<ClipboardList size={16} />} accent="#6366f1" />
             <Metric index={1} title="Soumises" value={soumises} icon={<FileCheck size={16} />} accent="#10b981" sub="évaluations validées" />
-            <Metric index={2} title="En cours" value={enCours} icon={<PenLine size={16} />} accent="#f59e0b" sub="en attente de soumission" />
+            {/*<Metric index={2} title="En cours" value={enCours} icon={<PenLine size={16} />} accent="#f59e0b" sub="en attente de soumission" />*/}
             <Metric index={3} title="Preuves jointes" value={totalPreuves} icon={<TrendingUp size={16} />} accent="#3b82f6" sub="fichiers téléversés" />
           </div>
 
-          {/* Table 
-          <motion.section {...stagger(4)} style={styles.tableSection}>
+          {/* Table */}
+          <motion.section {...stagger(3)} style={styles.tableSection}>
             <div style={styles.tableTitleRow}>
               <h2 style={styles.tableTitle}>Évaluations récentes</h2>
               <span style={styles.tableCount}>{totalEvals} entrées</span>
             </div>
 
             <div style={styles.tableWrap}>
-              {/* table header 
+              {/* table header */}
               <div style={styles.thead}>
-                {["Organisme", "Date de création", "Statut", "Progression", "Preuves", ""].map((col, i) => (
-                  <span key={i} style={{ ...styles.th, textAlign: i >= 4 ? "center" : "left" }}>{col}</span>
+                {["Organisme", "Date de création", "Statut", "Preuves", ""].map((col, i) => (
+                  <span key={i} style={{ ...styles.th, textAlign: i >= 3 ? "center" : "left" }}>{col}</span>
                 ))}
               </div>
 
-              {/* table rows 
+              {/* table rows */}
               {evaluations.map((ev, idx) => {
-                const cfg = STATUS[ev.status];
+                //const cfg = STATUS[ev.status];
+                const cfg = STATUS[ev.statut] || {
+                  label: "Inconnu",
+                  dot: "#cbd5e1",
+                  text: "#475569",
+                  bg: "rgba(203,213,225,0.12)",
+                  border: "rgba(203,213,225,0.3)"
+};
                 const color = progressColor(ev.progress || 0);
                 return (
                   <motion.div key={ev.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + idx * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={styles.row}>
-                    {/* Organisme 
+                    {/* Organisme */}
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                      <div style={{ ...styles.orgAvatar, background: `hsl(${ev.id * 47 + 200},60%,92%)`, color: `hsl(${ev.id * 47 + 200},55%,35%)` }}>
-                        {ev.organisme[0]}
-                      </div>
-                      <span style={styles.orgName}>{ev.organisme}</span>
+                    <div style={{ 
+                      ...styles.orgAvatar, 
+                      background: `hsl(${ev.id * 47 + 200},60%,92%)`, 
+                      color: `hsl(${ev.id * 47 + 200},55%,35%)` 
+                    }}>
+                    {ev.organismeName[0]?.toUpperCase()}
+                    </div>
+                    <span style={styles.orgName}>{ev.organismeName}</span>
                     </div>
 
-                    {/* Date 
+                    {/* Date */}
                     <span style={styles.dateCell}>{ev.dateCreation}</span>
 
-                    {/* Status badge 
+                    {/* Status badge */}
                     <div>
                       <span style={{ ...styles.badge, color: cfg.text, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
                         <span style={{ ...styles.badgeDot, background: cfg.dot }} />
@@ -151,9 +464,9 @@ const Evaluation = () => {
                         <motion.div initial={{ width: 0 }} animate={{ width: `${ev.progress || 0}%` }} transition={{ delay: 0.5 + idx * 0.06, duration: 0.7, ease: [0.16, 1, 0.3, 1] }} style={{ ...styles.progressFill, background: color }} />
                       </div>
                       <span style={{ ...styles.progressPct, color }}>{ev.progress || 0}%</span>
-                    </div>
+                    </div>*/}
 
-                    {/* Preuves 
+                    {/* Preuves */}
                     <div style={{ display: "flex", justifyContent: "center" }}>
                       <span style={styles.preuvesBadge}>{ev.preuves || 0}</span>
                     </div>
@@ -165,7 +478,7 @@ const Evaluation = () => {
                           <ArrowUpRight size={14} strokeWidth={2} />
                         </motion.div>
                       </Link>
-                    </div>
+                    </div>*/}
                   </motion.div>
                 );
               })}
@@ -175,75 +488,8 @@ const Evaluation = () => {
       </div>
     </>
   );
-};
-
-export default Evaluation;*/
-import { useContext, useEffect, useState } from "react";
-import axios from "axios";
-import { AppContext } from "../context/AppContext.jsx";
-import { useNavigate } from "react-router-dom";
-
-const Evaluation = () => {
-  const { backendUrl, userData } = useContext(AppContext); // userData comes from localStorage
-  const [currentUser, setCurrentUser] = useState(null);
-  //const [currentOrg, setCurrentOrg] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    // If userData exists, fetch fresh user info from backend
-    if (userData?.id) {
-      const fetchCurrentUser = async () => {
-        try {
-          const res = await axios.get(`${backendUrl}/users/${userData.id}`);
-          setCurrentUser(res.data);
-          /*const resOrg = await axios.get(`${backendUrl}/organismes/${userData.id}`);
-          setCurrentOrg(resOrg.data);*/
-        } catch (err) {
-          console.error("Erreur fetching current organisme:", err);
-        }
-      };
-      fetchCurrentUser();
-    }
-  }, [backendUrl, userData]);
-
-  /*const startEvaluation = async () => {
-    const organismeId = currentUser?.organisme?.id;
-    const responsableId=currentUser?.id;
-    if (!organismeId) return alert("Organisme introuvable pour l'utilisateur !");
-    try {
-      const res = await axios.post(`${backendUrl}/evaluation/new`, { organismeId,responsableId });
-      console.log("Nouvelle évaluation créée :", res.data);
-      navigate("/evaluationForm", { state: { currentUser, evaluationId: res.data} });
-    } catch (err) {
-      console.error("Erreur lors de la création de l'évaluation", err);
-    }
-  };*/
-    const startEvaluation=async()=>{
-      if (!currentUser) return alert("Utilisateur introuvable !");
-      console.log("current user: ",currentUser);
-      // Pass currentUser to EvaluationForm via location state
-      navigate("/evaluationForm", { state: { currentUser } });
-    }
-
-  return (
-    <button
-      onClick={startEvaluation}
-      //onClick={navigate("/evaluationForm", { state: { currentUser, evaluationId: res.data} })}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "10px 20px",
-        background: "#6366f1",
-        color: "#fff",
-        border: "none",
-        borderRadius: 10,
-        cursor: "pointer",
-      }}
-    >
-      Nouvelle évaluation
-    </button>
-  );
+  
 };
 
 export default Evaluation;
+
