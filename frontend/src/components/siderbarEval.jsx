@@ -1,0 +1,65 @@
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { AppContext } from "../context/AppContext.jsx";
+import "bootstrap/dist/css/bootstrap.min.css";
+
+function SiderbarEval() {
+  const navigate = useNavigate();
+  const { isloggedIn, setIsloggedIn, userData } = React.useContext(AppContext);
+
+  const handleLogout = () => {
+    setIsloggedIn(false);
+    navigate("/login");
+  };
+
+  return (
+    <>
+      <div
+        className="d-flex flex-column vh-100 p-3 text-white position-fixed"
+        style={{ width: 200, backgroundColor: "#0f0f13" }}
+      >
+        <div className="mb-4 fs-4 fw-bold text-center">SSE</div>
+
+        <nav className="nav flex-column gap-2 flex-grow-1">
+          <Link
+            to="/homepageEval"
+            className="nav-link text-white rounded hover-bg-secondary"
+          >
+            Home
+          </Link>
+
+          <Link
+            to="/profilepage"
+            className="nav-link text-white rounded hover-bg-secondary"
+          >
+            Profile
+          </Link>
+
+          <Link
+            to="/evaluationsListe"
+            className="nav-link text-white rounded hover-bg-secondary"
+          >
+            Evaluations liste
+          </Link>
+
+        </nav>
+
+        <button className="btn btn-danger mt-auto w-100" onClick={handleLogout}>
+          Logout
+        </button>
+
+        <style>{`
+          .hover-bg-secondary {
+            transition: all 0.2s ease;
+          }
+          .hover-bg-secondary:hover {
+            background-color: #495057 !important;
+            padding-left: 12px;
+          }
+        `}</style>
+      </div>
+    </>
+  );
+}
+
+export default SiderbarEval;

@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-AuthentifyApplication<authentify>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.authentify.AuthentifyApplication",
+            "projectName": "authentify",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

@@ -302,44 +302,7 @@ const Evaluation = () => {
   //const [currentOrg, setCurrentOrg] = useState(null);
   const navigate = useNavigate();
 
-  /*useEffect(() => {
-    // If userData exists, fetch fresh user info from backend
-    if (userData?.id) {
-      const fetchCurrentUser = async () => {
-        try {
-          const res = await axios.get(`${backendUrl}/users/${userData.id}`);
-          setCurrentUser(res.data);
-          /*const resOrg = await axios.get(`${backendUrl}/organismes/${userData.id}`);
-          setCurrentOrg(resOrg.data);
-
-          //fetch evaluations for user
-          const resEval=await axios.get(`${backendUrl}/evaluation?userId=${userData.id}`);
-          //setEvaluations(resEval.data);
-          const mappedEvals = resEval.data.map(ev => {
-            let statutKey = ev.statut;
-
-          // Map backend values to frontend STATUS keys
-          if (ev.statut === "submitted") statutKey = "soumise";
-          if (ev.statut === "in_progress") statutKey = "en_cours";
-          if (ev.statut === "draft") statutKey = "brouillon";
-
-          return { ...ev,
-            statut: statutKey};
-      });
-
-          setEvaluations(mappedEvals);
-
-        } catch (err) {
-          console.error("Erreur fetching current organisme:", err);
-        }
-      };
-      
-      fetchCurrentUser();
-    }
-  }, [backendUrl, userData]);*/
-
   // récupérer les utilisateurs
-
     useEffect(() => {
       if (userData?.id) {
       const fetchCurrentUser = async () => {
@@ -355,12 +318,14 @@ const Evaluation = () => {
           if (ev.status === "in_progress") statutKey = "en_cours";
           if (ev.status === "draft") statutKey = "brouillon";
           console.log("Mapped statut:", statutKey, "original:", ev.status);
+          console.log("Raw backend data:", resEval.data);
 
           return { 
             ...ev,
             statut: statutKey,
-            organismeName: res.data.organisme?.nomOrganisme || "—",
-            preuvesCount: Array.isArray(ev.preuves) ? ev.preuves.length : (ev.preuves || 0)
+            organismeName: ev.organismeName || "—",
+            responsableName: ev.responsableName || "—",
+            preuves: ev.preuves || 0
           };
         });
 

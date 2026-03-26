@@ -65,11 +65,12 @@ const Login = () => {
           localStorage.setItem("userData", JSON.stringify(response.data));
           setIsloggedIn(true);
           if (loggedInUser.role === "ADMIN") {
-            navigate('/homePageAdmin');
-          } else {
+            navigate('/homePageAdmin');} 
+          else if(loggedInUser.role === "EVALUATEUR"){
+            navigate('/homePageEval');}
+          else {
             navigate('/homePage');
-      }
-
+          }
           toast.success("Connexion réussie !");
         }
       }

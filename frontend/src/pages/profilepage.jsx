@@ -11,6 +11,7 @@ import ProfileInfoTab from './profileInfoTab.jsx';
 import OrganismeInfoTab from './organismeInfoTab.jsx';
 import PasswordTab from './passwordTab.jsx';
 import SiderbarAdmin from '../components/siderbarAdmin.jsx';
+import SiderbarEval from '../components/siderbarEval.jsx';
 
 
 
@@ -19,7 +20,6 @@ function Profilepage({}) {
     const navigate = useNavigate(); // Hook pour la navigation  
     const[user,setUser] = useState(null); // État pour stocker les informations de l'utilisateur
     const {backendUrl, userData} = useContext(AppContext); // Récupération de l'URL du backend depuis le contexte
-    const SidebarComponent = userData.role === "ADMIN" ? SiderbarAdmin : Siderbar;
     const[loading,setLoading] = useState(false); // État pour indiquer si les données sont en cours de chargement
 
     if (!userData) {
@@ -29,6 +29,7 @@ function Profilepage({}) {
     useEffect(() => {
     const fetchInfo = async () => {
       try {
+        if (!userData?.id) return; // safety check
         const response = await axios.get(`${backendUrl}/users/${userData?.id}`);
         setUser(response.data);
       } catch (error) {
@@ -43,13 +44,21 @@ function Profilepage({}) {
     if (userData?.id) fetchInfo();
   }, [backendUrl,userData]);
 
-  if (loading) {
+  if (!userData || loading) {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" />
       </div>
     );
   }
+
+  // Determine sidebar after userData exists
+    const SidebarComponent =
+        userData.role === "ADMIN"
+            ? SiderbarAdmin
+            : userData.role === "EVALUATEUR"
+            ? SiderbarEval
+            : Siderbar;
 
         
     return (

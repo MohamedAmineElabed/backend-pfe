@@ -11,6 +11,9 @@ import ListOrganismes from "./Administrateur/listOrganismes";
 import Principes from "./Administrateur/principes.jsx";
 import Evaluation from "./evaluation.jsx";
 import EvaluationForm from "./evaluationForm.jsx";
+import EvaluationsListe from "./Evaluateur/evaluationsListe.jsx";
+import HomepageEval from "./Evaluateur/homepageEval.jsx";
+import EvaluationDetails from "./Evaluateur/evaluationDetails.jsx";
 function AppRoutes(){
     return(
             <Routes>
@@ -27,6 +30,10 @@ function AppRoutes(){
                 <Route path="/principes" element={<Principes />}/>
                 <Route path="/evaluation" element={<Evaluation />}/>
                 <Route path="/evaluationForm" element={<EvaluationForm />}/>
+                <Route path="/evaluationsListe" element={<EvaluationsListe />}/>
+                <Route path="/homepageEval" element={<HomepageEval />}/>
+                <Route path="/evaluateur/evaluations/:id" element={<EvaluationDetails />} />
+
 
             </Routes>
     )

@@ -77,7 +77,7 @@ const ListUtilisateurs = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${backendUrl}/organismes`);
-      const filteredOrganismes = response.data.filter(org => org.responsable?.role !== "ADMIN");    //org.responsable?.role iptional chaing pour verifier si le responsable existe ou non
+      const filteredOrganismes = response.data.filter(org => org.responsable?.role !== "ADMIN" && org.responsable?.role !== "EVALUATEUR");    //org.responsable?.role iptional chaing pour verifier si le responsable existe ou non
       setOrganismes(filteredOrganismes);
       //setOrganismes(response.data);
       setIsEmpty(filteredOrganismes.length === 0);

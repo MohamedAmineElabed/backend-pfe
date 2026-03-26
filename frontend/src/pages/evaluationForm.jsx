@@ -113,7 +113,7 @@ const EvaluationForm = () => {
   // --- Progress calculations ---
   const getPratiqueProgress = (pratique) => {
     const total = pratique.criteres?.length || 0;
-    const done = pratique.criteres?.filter((c) => selectedOption[c.id]).length;
+    const done = pratique.criteres?.filter((c) => selectedOption[c.id] !== undefined).length;
     return `${done}/${total}`;
   };
 
@@ -122,7 +122,7 @@ const EvaluationForm = () => {
     let done = 0;
     principe.pratiques?.forEach((p) => {
       total += p.criteres?.length || 0;
-      done += p.criteres?.filter((c) => selectedOption[c.id]).length;
+      done += p.criteres?.filter((c) => selectedOption[c.id] !== undefined).length;
     });
     return `${done}/${total}`;
   };

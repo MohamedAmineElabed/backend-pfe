@@ -19,7 +19,7 @@ const ListUtilisateurs = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${backendUrl}/users`);
-      const filteredUsers = response.data.filter(user => user.role !== "ADMIN");
+      const filteredUsers = response.data.filter(user => user.role !== "ADMIN" && user.role !== "EVALUATEUR" );
       setUsers(filteredUsers);
       setIsEmpty(filteredUsers.length === 0);
     } catch (err) {
