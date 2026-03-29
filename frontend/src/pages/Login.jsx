@@ -62,7 +62,8 @@ const Login = () => {
         if (response.status === 200) {
           const loggedInUser = response.data;  //pour déterminer le role de user
           setUserData(response.data);
-          localStorage.setItem("userData", JSON.stringify(response.data));
+          //localStorage.setItem("userData", JSON.stringify(response.data));
+          sessionStorage.setItem("userData", JSON.stringify(response.data));
           setIsloggedIn(true);
           if (loggedInUser.role === "ADMIN") {
             navigate('/homePageAdmin');} 

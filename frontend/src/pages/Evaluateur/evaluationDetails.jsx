@@ -4,6 +4,8 @@ import { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { AppContext } from "../../context/AppContext.jsx";
 import SiderbarEval from "../../components/siderbarEval.jsx";
+import { toast } from "react-toastify";
+import { useMemo } from "react";
 
 
 const statusConfig = {
@@ -12,14 +14,51 @@ const statusConfig = {
   rejeté: { color: "#dc2626", bg: "#fef2f2", border: "#fecaca", label: "Rejeté" },
   default: { color: "#6b7280", bg: "#f9fafb", border: "#e5e7eb", label: "—" },
 };
+const valeurLabels = {
+  0: "n'existe pas",
+  1: "en cours",
+  2: "réalisé",
+  3: "validé",
+};
 
 // Critère leaf item
 // --- Critere Item ---
-const CritereItem = ({ critere, index, evaluation }) => {
-  const [comment, setComment] = React.useState("");
+const CritereItem = ({ critere, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete }) => {
+  // Get current comment & action from global state
+  const currentState = critereStates[critere.id] || {};
+  const comment = currentState.comment || "";
+  const selectedAction = critereStates[critere.id]?.action || null;
+
   const responsesForThisCritere = (evaluation?.reponses || []).filter(
     (r) => r.critereId === critere.id
   );
+  const response = responsesForThisCritere[0];
+  const isLocked = isEvaluationComplete || selectedAction !== null;
+
+const handleValidateClick = () => {
+  if (!comment.trim()) {
+    toast.error("Le commentaire est obligatoire !");
+    return;
+  }
+  if (!response?.id) {
+    toast.error("Réponse introuvable !");
+    return;
+  }
+  onActionSelect(critere.id, "valider");
+  onValiderCritere(response.id, comment);
+};
+const handleRefuserClick = () => {
+  if (!comment.trim()) {
+    toast.error("Le commentaire est obligatoire !");
+    return;
+  }
+  if (!response?.id) {
+    toast.error("Réponse introuvable !");
+    return;
+  }
+  onActionSelect(critere.id, "refuser");
+  onRefuserCritere(response.id, comment); // call the prop
+};
 
   return (
     <div style={styles.critereItem}>
@@ -46,7 +85,7 @@ const CritereItem = ({ critere, index, evaluation }) => {
             <div key={i} style={{ border: "0.5px solid #e2e8f0", borderRadius: 8, overflow: "hidden", marginBottom: 10 }}>
               <div style={{ padding: "12px 14px", borderBottom: "0.5px solid #e2e8f0" }}>
                 <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 4px" }}>Réponse du responsable</p>
-                <p style={{ fontSize: 14, margin: 0 }}>{r.valeur}</p>
+                <p style={{ fontSize: 14, margin: 0 }}>{valeurLabels[r.valeur]}</p>
               </div>
               <div style={{ padding: "12px 14px", background: "#f8fafc" }}>
                 <p style={{ fontSize: 12, color: "#64748b", margin: "0 0 8px" }}>Preuves jointes</p>
@@ -69,17 +108,95 @@ const CritereItem = ({ critere, index, evaluation }) => {
         <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
           Commentaire de l'évaluateur
         </label>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Justifier votre décision..."
-          style={{
-            width: "100%", minHeight: 90, fontSize: 14, padding: "10px 12px",
-            border: "0.5px solid #cbd5e1", borderRadius: 8,
-            background: "#fff", resize: "vertical", boxSizing: "border-box",
-            fontFamily: "inherit", lineHeight: 1.6, color: "inherit"
-          }}
-        />
+        
+        {isLocked ? (
+  // RESULT BLOCK
+  <div
+    style={{
+      marginTop: 12,
+      padding: "14px 16px",
+      borderRadius: 12,
+      background: response.statut === "validé" ? "#ecfdf5" : "#fef2f2",
+      border: `1px solid ${
+        response.statut === "validé" ? "#bbf7d0" : "#fecaca"
+      }`,
+    }}
+  >
+    {/* Top row */}
+    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <span
+        style={{
+          padding: "4px 10px",
+          borderRadius: 999,
+          fontSize: 12,
+          fontWeight: 600,
+          background:
+            response.statut === "validé" ? "#d1fae5" : "#fee2e2",
+          color:
+            response.statut === "validé" ? "#065f46" : "#991b1b",
+        }}
+      >
+        {response.statut === "validé" ? "Validé" : "Refusé"}
+      </span>
+
+      <span style={{ fontSize: 14, fontWeight: 500 }}>
+        <strong>Score: {response.valeur}/3</strong>
+      </span>
+    </div>
+
+    {/* Comment */}
+    <p style={{ marginTop: 10, fontSize: 14 }}>
+      {response.commentaireEvaluateur || "—"}
+    </p>
+  </div>
+) : (
+  // EDIT MODE
+  <>
+    <textarea
+      value={comment}
+      onChange={(e) => onCommentChange(critere.id, e.target.value)}
+      placeholder="Justifier votre décision..."
+      style={{
+        width: "100%",
+        minHeight: 90,
+        fontSize: 14,
+        padding: "10px 12px",
+        border: "0.5px solid #cbd5e1",
+        borderRadius: 8,
+      }}
+    />
+
+    <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+      <button onClick={handleValidateClick} 
+      style={{
+      padding: "8px 16px",
+      borderRadius: 8,
+      border: "1px solid #16a34a",
+      background: "#16a34a",
+      color: "white",
+      fontWeight: 500,
+      cursor: "pointer",
+      transition: "0.2s",
+    }}>
+        Valider
+      </button>
+
+      <button onClick={handleRefuserClick} 
+      style={{
+      padding: "8px 16px",
+      borderRadius: 8,
+      border: "1px solid #dc2626",
+      background: "#dc2626",
+      color: "white",
+      fontWeight: 500,
+      cursor: "pointer",
+      transition: "0.2s",
+    }}>
+        Refuser
+      </button>
+    </div>
+  </>
+)}
       </div>
                   </div>
                 ) : (
@@ -99,7 +216,7 @@ const CritereItem = ({ critere, index, evaluation }) => {
 };
 
 // --- Pratique Row ---
-const PratiqueRow = ({ pratique, index, evaluation }) => {
+const PratiqueRow = ({ pratique, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete}) => {
   const [open, setOpen] = useState(false);
   const criteres = pratique.criteres || [];
 
@@ -125,7 +242,10 @@ const PratiqueRow = ({ pratique, index, evaluation }) => {
         <div style={styles.critereList}>
           {criteres.length ? (
             criteres.map((c, i) => (
-              <CritereItem key={i} critere={c} index={i} evaluation={evaluation} />
+              <CritereItem key={i} critere={c} index={i} evaluation={evaluation} 
+              onValiderCritere={onValiderCritere} onRefuserCritere={onRefuserCritere} 
+              critereStates={critereStates}  onCommentChange={onCommentChange}     // <- pass handlers
+              onActionSelect={onActionSelect} isEvaluationComplete={isEvaluationComplete} />
             ))
           ) : (
             <p style={styles.emptyNested}>Aucun critère pour cette pratique.</p>
@@ -137,7 +257,7 @@ const PratiqueRow = ({ pratique, index, evaluation }) => {
 };
 
 // --- Principe Row ---
-const PrincipeRow = ({ principe, index, evaluation }) => {
+const PrincipeRow = ({ principe, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete}) => {
   const [open, setOpen] = useState(false);
   const pratiques = principe.pratiques || [];
 
@@ -163,7 +283,9 @@ const PrincipeRow = ({ principe, index, evaluation }) => {
         <div style={styles.pratiqueList}>
           {pratiques.length ? (
             pratiques.map((p, i) => (
-              <PratiqueRow key={i} pratique={p} index={i} evaluation={evaluation} />
+              <PratiqueRow key={i} pratique={p} index={i} evaluation={evaluation} 
+              onValiderCritere={onValiderCritere} onRefuserCritere={onRefuserCritere} isEvaluationComplete={isEvaluationComplete}
+              critereStates={critereStates} onCommentChange={onCommentChange} onActionSelect={onActionSelect}    />
             ))
           ) : (
             <p style={styles.emptyNested}>Aucune pratique pour ce principe.</p>
@@ -181,43 +303,107 @@ const EvaluationDetails = () => {
   const { evaluation: initialEval } = state || {};
   const { backendUrl } = useContext(AppContext);
   const { id } = useParams();
-
+  const [critereStates, setCritereStates] = useState({});
   const [evaluation, setEvaluation] = useState(initialEval || null);
+  const [justCompleted, setJustCompleted] = useState(false);
+
+  // Check if all criteria have been treated
+  const allCriteres = useMemo(() => {
+  if (!principes.length) return [];
+  return principes.flatMap(principe =>
+    (principe.pratiques || []).flatMap(pratique =>
+      pratique.criteres || []
+    )
+  );
+}, [principes]);
+
+const isEvaluationComplete = useMemo(() => {
+  if (!allCriteres.length || !evaluation?.reponses) return false;
+
+  return allCriteres.every(c => {
+    const response = evaluation.reponses.find(r => r.critereId === c.id);
+    return response && (response.statut === "validé" || response.statut === "refusé");
+  });
+}, [allCriteres, evaluation]);
+
+  // when user types a comment
+const handleCommentChange = async (critereId, value) => {
+  setCritereStates(prev => ({
+    ...prev,
+    [critereId]: { ...(prev[critereId] || {}), comment: value },
+  }));
+
+  /*try {
+    await axios.put(`${backendUrl}/evaluation/reponses/${response.id}`, {
+      comment: value,evaluationId: evaluation.id,
+    });
+  } catch (err) {
+    toast.error("Impossible de sauvegarder le commentaire");
+  }*/
+};
+
+// when user selects action
+const handleActionSelect = (critereId, action) => {
+  setCritereStates(prev => ({
+    ...prev,
+    [critereId]: {
+      ...(prev[critereId] || {}),
+      action,
+    },
+  }));
+};
+
 
   // Fetch evaluation
   useEffect(() => {
-      const fetchEvaluation = async () => {
-        try {
-            const res = await axios.get(`${backendUrl}/evaluation/${id}/reponses`);
-            const evalData = res.data;
-            console.log(res.data);
+  const fetchEvaluation = async () => {
+    try {
+      const res = await axios.get(`${backendUrl}/evaluation/${id}/reponses`);
+      const evalData = res.data;
+      //fetch OrganismeName
+      const orgRes = await axios.get(`${backendUrl}/organismes/${evalData.organismeId}`);  
+      const organismeName = orgRes.data.nomOrganisme;
+      console.log("Fetched organisme:", organismeName);
+      //fetch responsableName
+      const resRes = await axios.get(`${backendUrl}/organismes/${evalData.organismeId}`);  
+      const responsableName = resRes.data.responsable?.nom;
+      const responsableRole = resRes.data.responsable?.role;
+      console.log("Fetched responsable:", responsableName);
+      console.log("Fetched evaluation:", evalData);
 
-            // Fetch organisme
-          const orgRes = await axios.get(`${backendUrl}/organismes/${evalData.organismeId}`);
-          const responsableRes = await axios.get(`${backendUrl}/users/${evalData.responsableId}`);
+      const mappedResponses = (evalData.reponses || []).map(r => ({
+        ...r,
+        commentaireEvaluateur: r.commentaire || "",
+        preuves: (r.preuves || []).map(p => ({
+          fileName: p.nomFichier,
+          fileUrl: `${backendUrl}/uploads/${p.nomFichier.replace(/\\/g, "/")}`
+        })),
+      }));
 
-
-            // Map responses and proofs to frontend format
-          const mappedResponses = (evalData.reponses || []).map(r => ({
-            ...r,
-            preuves: (r.preuves || []).map(p => ({
-            fileName: p.nomFichier,
-            fileUrl: `${backendUrl}/uploads/${p.nomFichier.replace(/\\/g, "/")}`
-          })),
-        }));
-        console.log("Mapped responses:", mappedResponses);
-
-        setEvaluation({ ...evalData, 
-          reponses: mappedResponses,
-          organismeName: orgRes.data.nomOrganisme,     // add name
-          responsableName: responsableRes.data.nom });
-        } catch (err) {
-            console.error("Erreur fetching evaluation:", err);
+      // Map critereStates from response
+      const states = {};
+      mappedResponses.forEach(r => {
+        if (r.statut) {
+          states[r.critereId] = {
+            comment: r.commentaireEvaluateur || "",
+            action: r.statut === "validé" ? "valider" : r.statut === "refusé" ? "refuser" : null,
+          };
         }
-      };
-        fetchEvaluation();
+      });
+
+      setEvaluation({ ...evalData,
+                       reponses: mappedResponses,
+                       organismeName,
+                       responsableName,
+                       responsableRole
+                      });
+      setCritereStates(states);
+    } catch (err) {
+      console.error(err);
     }
-  , [backendUrl, id]);
+  };
+  fetchEvaluation();
+}, [backendUrl, id]);
 
   // Fetch principes
   useEffect(() => {
@@ -241,12 +427,118 @@ const EvaluationDetails = () => {
     fetchPrincipes();
   }, [backendUrl]);
 
+  // Total score calculation
+  const totalScore = useMemo(() => {
+    if (!evaluation?.reponses) return 0;
+    return evaluation.reponses
+    .filter(r => r.statut !== "refusé")
+    .reduce((sum, r) => sum + (r.valeur || 0), 0);
+  }, [evaluation]);
+  const maxScore = allCriteres.length * 3; // each critere max score is 3
+
+  //to save score
+  useEffect(() => {
+  const saveScoreIfComplete = async () => {
+    if (isEvaluationComplete && evaluation) {
+      try {
+        const response = await axios.put(
+          `${backendUrl}/evaluation/${evaluation.id}/score`,
+          { score: totalScore }
+        );
+
+        if (response.status === 200) {
+          toast.success("Score total enregistré avec succès");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Erreur lors de l'enregistrement du score automatique");
+      }
+    }
+  };
+  saveScoreIfComplete();
+}, [isEvaluationComplete, totalScore, backendUrl, evaluation]);
+
+  //valider demande
+  const handleValiderCritere = async (id, comment) => {
+  try {
+    const response = await axios.put(
+      `${backendUrl}/evaluation/reponses/${id}/valider`,
+      { comment,evaluationId: evaluation.id } // send comment and score to backend
+    );
+    
+
+    if (response.status === 200) {
+      toast.success("Reponse validé avec succès");
+      // Update frontend state immediately
+      setEvaluation(prev => ({
+        ...prev,
+        reponses: prev.reponses.map(r =>
+        r.id === id
+          ? { ...r, statut: "validé", commentaireEvaluateur: comment}
+          : r
+  ),
+}));
+
+      // Update critereStates so locked mode shows the comment
+    setCritereStates(prev => ({
+      ...prev,
+      [evaluation.reponses.find(r => r.id === id).critereId]: {
+      ...prev[evaluation.reponses.find(r => r.id === id).critereId],
+        comment,
+        action: "valider",
+  },
+}));
+    } else {
+      toast.error("Erreur lors de la validation");
+    }
+  } catch (err) {
+    toast.error("Erreur lors de la validation");
+  }
+};
+
+  //valider demande
+  const handleRefuserCritere = async (id, comment) => {
+  try {
+    const response = await axios.put(
+      `${backendUrl}/evaluation/reponses/${id}/refuser`,
+      { comment,evaluationId: evaluation.id, } // send comment to backend
+    );
+
+    if (response.status === 200) {
+      toast.success("Reponse refusé avec succès");
+      // Update frontend state immediately
+      setEvaluation(prev => ({
+        ...prev,
+        reponses: prev.reponses.map(r =>
+        r.id === id 
+          ? { ...r, statut: "refusé", commentaireEvaluateur: comment }
+          : r
+  ),
+}));
+
+    setCritereStates(prev => ({
+      ...prev,
+      [evaluation.reponses.find(r => r.id === id).critereId]: {
+      ...prev[evaluation.reponses.find(r => r.id === id).critereId],
+        comment,
+        action: "refuser",
+  },
+}));
+    } else {
+      toast.error("Erreur lors de refus");
+    }
+  } catch (err) {
+    toast.error("Erreur lors de refus");
+  }
+};
+
   if (!evaluation) return (
     <div style={styles.loadingWrap}>
       <div style={styles.spinner} />
       <p style={styles.loadingText}>Chargement de l'évaluation…</p>
     </div>
   );
+
 
   const statut = evaluation.statut?.toLowerCase() || "default";
   const status = statusConfig[statut] || statusConfig.default;
@@ -257,6 +549,7 @@ const EvaluationDetails = () => {
   );
 
   return (
+    
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <div style={{ width: 300 }}>
         <SiderbarEval />
@@ -269,9 +562,6 @@ const EvaluationDetails = () => {
               <p style={styles.headerLabel}>Évaluation #{id}</p>
               <h1 style={styles.headerTitle}>{evaluation.organismeName}</h1>
             </div>
-            <span style={{ ...styles.statusBadge, color: status.color, background: status.bg, border: `1px solid ${status.border}` }}>
-              {status.label}
-            </span>
           </div>
 
           <div style={styles.metaRow}>
@@ -280,6 +570,7 @@ const EvaluationDetails = () => {
               <div>
                 <p style={styles.metaLabel}>Responsable</p>
                 <p style={styles.metaValue}>{evaluation.responsableName || "—"}</p>
+                <p style={styles.metaValue}>{evaluation.responsableRole || "—"}</p>
               </div>
             </div>
             <div style={styles.metaDivider} />
@@ -317,13 +608,33 @@ const EvaluationDetails = () => {
         </div>
 
         {/* Accordion */}
+        {!isEvaluationComplete?(
         <div style={styles.accordionWrap}>
           {principes.length ? (
-            principes.map((p, i) => <PrincipeRow key={i} principe={p} index={i} evaluation={evaluation} />)
+            principes.map((p, i) => <PrincipeRow key={i} principe={p} index={i} evaluation={evaluation} 
+            onValiderCritere={handleValiderCritere} onRefuserCritere={handleRefuserCritere} isEvaluationComplete={isEvaluationComplete}
+            critereStates={critereStates} onCommentChange={handleCommentChange} onActionSelect={handleActionSelect} />)
           ) : (
             <p style={styles.emptyTop}>Aucun principe défini pour cette évaluation.</p>
           )}
-        </div>
+        </div>):(
+          <div
+        style={{
+          marginBottom: 16,
+          padding: "14px 16px",
+          borderRadius: 12,
+          background: "#ecfdf5",
+          border: "1px solid #bbf7d0",
+          color: "#065f46",
+          fontWeight: 500,
+        }}
+      >
+    Cette évaluation est terminée. Vous ne pouvez plus modifier les réponses.
+    <div style={{ marginTop: 8, fontSize: 16 }}>
+      Score total : <strong>{totalScore} / {maxScore}</strong>
+    </div>
+  </div>
+        )}
       </div>
     </div>
   );

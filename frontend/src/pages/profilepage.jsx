@@ -51,16 +51,12 @@ function Profilepage({}) {
       </div>
     );
   }
-
-  // Determine sidebar after userData exists
-    const SidebarComponent =
-        userData.role === "ADMIN"
+  const SidebarComponent =
+        user?.role === "ADMIN"
             ? SiderbarAdmin
-            : userData.role === "EVALUATEUR"
+            : user?.role === "EVALUATEUR"
             ? SiderbarEval
-            : Siderbar;
-
-        
+            : Siderbar;  
     return (
       <>
       <div className="d-flex">

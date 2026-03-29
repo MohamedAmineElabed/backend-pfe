@@ -6,12 +6,13 @@ import { useState, useEffect, useContext } from "react";
 import { AppContext } from "../../context/AppContext.jsx";
 import axios from "axios";
 import  Input  from "../../components/ui/input.jsx";
+import { toast } from "react-toastify";
 
 const STATUS = {
-  brouillon: { label: "Brouillon", dot: "#94a3b8", text: "#475569", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
+  en_attente: { label: "En attente", dot: "#94a3b8", text: "#475569", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
   en_cours: { label: "En cours", dot: "#f59e0b", text: "#92400e", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
-  soumise: { label: "soumise", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
-  rejetee: { label: "Rejetée", dot: "#f87171", text: "#7f1d1d", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.3)" },
+  //soumise: { label: "Soumise", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
+  terminé: { label: "Terminé", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
 };
 
 function progressColor(pct) {
@@ -29,8 +30,8 @@ const styles = {
   newBtn: { display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" },
   tableSection: { background: "#fff", borderRadius: 16, border: "1px solid #e8eaf0", overflow: "hidden" },
   tableWrap: { overflowX: "auto" },
-  thead: { display: "grid", gridTemplateColumns: "2fr 140px 120px 180px 80px 50px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
-  row: { display: "grid", gridTemplateColumns: "2fr 140px 120px 180px 80px 50px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
+  thead: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
+  row: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
   orgName: { fontSize: 13, fontWeight: 600, color: "#1e293b" },
   dateCell: { fontSize: 12, color: "#94a3b8", fontFamily: "monospace" },
   badge: { display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, letterSpacing: "0.01em" },
@@ -52,39 +53,59 @@ const EvaluationsListe = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
+  const updateEvaluation = (id, newData) => {
+  setEvaluations(prev =>
+    prev.map(ev => ev.id === id ? { ...ev, ...newData } : ev)
+  );
+};
+
+/*const handleProgressClick = (ev) => {
+  const newProgress = Math.min((ev.progression || 0) + 10, 100); // max 100%
+  updateEvaluation(ev.id, { progression: newProgress });
+
+  // Optional: save to backend
+  axios.put(`${backendUrl}/evaluation/${ev.id}`, { progress: newProgress })
+    .then(res => console.log("Saved progress for", ev.id))
+    .catch(err => console.error(err));
+};*/
+
+const handleStatusChange = (ev, newStatus) => {
+  updateEvaluation(ev.id, { statut: newStatus });
+
+  axios.put(`${backendUrl}/evaluation/${ev.id}`, { status: newStatus })
+    .then(res => console.log("Saved status for", ev.id))
+    .catch(err => console.error(err));
+};
+
   // Fetch evaluations
   useEffect(() => {
   if (!backendUrl || !userData?.id) return;
 
   const fetchEvaluations = async () => {
     try {
-      console.log("Fetching evaluations for user:", userData.id);
+      // Fetch evaluations with treated progression
+      const resEval = await axios.get(`${backendUrl}/evaluation/all/treated`);
+      // Map the response directly; no need to recalc progression in frontend
+      const evalsWithProgress = resEval.data.map(ev => {
+        let statutKey;
+        const progression = ev.progression || 0;
 
-      const resEval = await axios.get(
-        `${backendUrl}/evaluation/all`
-      );
+        if (progression === 0) {
+          statutKey = "en_attente";
+        } else if (progression === 100) {
+          statutKey = "terminé";
+        } else {
+          statutKey = "en_cours";
+        }
 
-      console.log("Raw backend data:", resEval.data);
+      return {
+      ...ev,
+      statut: statutKey,
+      score: ev.score || 0,
+  };
+});
 
-      const mappedEvals = resEval.data.map(ev => {
-        let statutKey = (ev.status || "").toLowerCase().trim();
-
-        if (statutKey === "submitted") statutKey = "soumise";
-        else if (statutKey === "in_progress") statutKey = "en_cours";
-        else if (statutKey === "draft") statutKey = "brouillon";
-        else if (statutKey === "rejected") statutKey = "rejetee";
-
-        return {
-          ...ev,
-          statut: statutKey,
-          progression: ev.progress || 0
-        };
-      });
-
-      setEvaluations(mappedEvals);
-
-      console.log("Mapped Evaluations:", mappedEvals);
-
+      setEvaluations(evalsWithProgress);
     } catch (err) {
       console.error("Erreur fetching evaluations:", err);
     }
@@ -102,12 +123,26 @@ const EvaluationsListe = () => {
   });
 
   const filters = [
-    { value: "tous", label: "Tous" },
-    { value: "en_cours", label: "En cours" },
-    { value: "soumise", label: "soumise" },
-    { value: "rejetee", label: "Rejetées" },
-    { value: "brouillon", label: "Brouillon" },
-  ];
+  { value: "tous", label: "Tous" },
+  { value: "en_attente", label: "En attente" },
+  { value: "en_cours", label: "En cours" },
+  { value: "termine", label: "Terminé" },
+];
+
+  //pour supprimer les evaluations
+  const deleteEval = async (evaluationId) => {
+    /*const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette demande ?");
+    if (!confirmDelete) return;*/
+    try {
+      await axios.delete(`${backendUrl}/evaluation/${evaluationId}`);
+      setEvaluations((prev) => {
+        const updated=prev.filter((e) => e.id !== evaluationId);
+        return updated;});
+      toast.success("Evaluation supprimée");
+    } catch (error) {
+    toast.error("Erreur lors de la suppression");
+  }
+};
 
   return (
     <>
@@ -136,7 +171,7 @@ const EvaluationsListe = () => {
         <motion.section {...stagger(3)} style={styles.tableSection}>
           <div style={styles.tableWrap}>
             <div style={styles.thead}>
-              {["Organisme", "Responsable", "Statut", "Progression"].map((col, i) => <span key={i}>{col}</span>)}
+              {["Organisme", "Responsable", "Statut", "Progression", "Score"].map((col, i) => <span key={i}>{col}</span>)}
             </div>
 
             {filtered.map((ev, idx) => {
@@ -152,11 +187,23 @@ const EvaluationsListe = () => {
                   <span style={{ ...styles.badge, color: cfg.text, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
                     <span style={{ ...styles.badgeDot, background: cfg.dot }} /> {cfg.label}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <div style={styles.progressTrack}>
-                      <motion.div initial={{ width: 0 }} animate={{ width: `${ev.progression || 0}%` }} transition={{ duration: 0.7 }} style={{ ...styles.progressFill, background: color }} />
+                    <div style={styles.progressTrack} onClick={(e) => { e.stopPropagation(); handleProgressClick(ev); }}>
+                      <motion.div 
+                      initial={{ width: 0 }} 
+                      animate={{ width: `${ev.progression || 0}%` }} 
+                      transition={{ duration: 0.7 }} 
+                      style={{ ...styles.progressFill, background: color }} 
+                      />
                     </div>
                     <span style={{ ...styles.progressPct, color }}>{ev.progression || 0}%</span>
                   </div>
+                  <span style={{ fontSize: 16, fontWeight: 700, color }}>{ev.score || 0}/{ev.maxScore || 0}</span>
+                  
+                  <button
+                          className="btn btn-outline-danger btn-sm"
+                          onClick={(e) => {e.stopPropagation();deleteEval(ev.id);}}>
+                            <i className="bi bi-trash"></i>
+                            </button>
                   {/*<span style={{ textAlign: "center" }}>{ev.preuves}</span>
                   <Link to={`/evaluateur/evaluations/${ev.id}`}><div style={styles.arrowBtn}><ArrowUpRight size={14} strokeWidth={2} /></div></Link>*/}
                 </motion.div>

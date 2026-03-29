@@ -10,7 +10,7 @@ export const AppContextProvider = (props) => {
     const backendUrl = Appconstants.BACKEND_URL; // Exemple d'URL de backend
     const [isloggedIn, setIsloggedIn] = React.useState(false); // Exemple d'état de connexion
     const [userData, setUserData] = useState(
-        JSON.parse(localStorage.getItem("userData")) || null
+        JSON.parse(sessionStorage.getItem("userData")) || null
         );
 
     const contextValue = {
