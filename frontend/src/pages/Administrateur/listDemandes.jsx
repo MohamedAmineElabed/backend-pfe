@@ -125,7 +125,7 @@ const ListDemandes = () => {
 
                 <tbody>
                   {demandes.map((demande) => (
-                    <tr>
+                    <tr key={demande.id}>
                       {/*<td>{demande.id}</td>*/}
                       <td>{demande.nom}</td>
                       <td>{demande.prenom}</td>

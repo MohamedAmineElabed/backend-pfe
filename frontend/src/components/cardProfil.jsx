@@ -17,7 +17,8 @@ function CardProfil({user}){
             prenom: user?.prenom || "",
             email: user?.email || "",
             organisme: user?.organisme || "",
-            role: user?.role || ""
+            role: user?.role || "",
+            etat:user?.etat || ""
     
       });
       const abreviation = formData?.prenom && formData?.nom
@@ -33,7 +34,8 @@ function CardProfil({user}){
             email: user?.email || "",
             organisme: user?.organisme || "",
             typeOrganisme: user?.typeOrganisme || "",
-            role: user?.role || ""
+            role: user?.role || "",
+            etat:user?.etat || ""
     
           })
         }
@@ -48,7 +50,7 @@ function CardProfil({user}){
             <div style={{ fontSize:"0.78rem", color:"#78746c", fontFamily:"monospace", marginBottom:8 }}></div>
             <div style={{ display:"flex", gap:7 }}>
               <span style={{ background:"#dbeafe", color:"#2563c7", borderRadius:20, padding:"3px 10px", fontSize:"0.68rem", fontWeight:700 }}>{formData?.role}</span>
-              <span style={{ background:"#dcfce7", color:"#0e8c52", borderRadius:20, padding:"3px 10px", fontSize:"0.68rem", fontWeight:700 }}>✓ Actif</span>
+              <span style={{ background:"#dcfce7", color:"#0e8c52", borderRadius:20, padding:"3px 10px", fontSize:"0.68rem", fontWeight:700 }}>✓ {formData?.etat}</span>
             </div>
           </div>
           <div style={{ background:"#f0f4ff", border:"1px solid #dbe4ff", borderRadius:10, padding:"14px 20px", textAlign:"center", flexShrink:0 }}>

@@ -124,11 +124,15 @@ const ListUtilisateurs = () => {
 
     try {
       await axios.delete(`${backendUrl}/organismes/${id}`);
-      setOrganismes((prev) => prev.filter((u) => u.id !== id));
+      setOrganismes((prev) => {
+        const newList = prev.filter((u) => u.id !== id);
+        setIsEmpty(newList.length === 0);
+        return newList;
+      });
       toast.success("Organisme supprimé");
     } catch (error) {
       toast.error("Erreur lors de la suppression");
-    }
+    } 
   };
 
   useEffect(() => {

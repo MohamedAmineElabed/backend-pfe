@@ -22,6 +22,13 @@ function Siderbar() {
 
         <nav className="nav flex-column gap-2 flex-grow-1">
           <Link
+            to="/dashboardsResp"
+            className="nav-link text-white rounded hover-bg-secondary"
+          >
+            dashboards
+          </Link>
+
+          <Link
             to="/homepage"
             className="nav-link text-white rounded hover-bg-secondary"
           >

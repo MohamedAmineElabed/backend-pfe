@@ -19,7 +19,7 @@ const ListUtilisateurs = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${backendUrl}/users`);
-      const filteredUsers = response.data.filter(user => user.role !== "ADMIN" && user.role !== "EVALUATEUR" );
+      const filteredUsers = response.data.filter(user => user.role !== "ADMIN" && user.role !== "EVALUATEUR");
       setUsers(filteredUsers);
       setIsEmpty(filteredUsers.length === 0);
     } catch (err) {
@@ -37,9 +37,47 @@ const ListUtilisateurs = () => {
     try {
       await axios.delete(`${backendUrl}/users/${id}`);
       setUsers((prev) => prev.filter((u) => u.id !== id));
+      setIsEmpty(newUsers.length === 0);
       toast.success("Utilisateur supprimé");
     } catch (error) {
       toast.error("Erreur lors de la suppression");
+    }
+  };
+
+  //désactiver utilisateur
+  const desactiverUser = async (id) => {
+    const confirmDesactiver = window.confirm("Êtes-vous sûr de vouloir désactiver cet utilisateur ?");
+    if (!confirmDesactiver) return;
+
+    try {
+      await axios.put(`${backendUrl}/users/${id}/desactiver`);
+      setUsers(prev => {
+      const updated = prev.map(u =>
+        u.id === id ? { ...u, etat: "inactif" } : u
+      );
+      return updated;
+    });
+      toast.success("Utilisateur désactivé");
+    } catch (error) {
+      toast.error("Erreur lors de la désactivation");
+    }
+  };
+  //activer utilisateur
+  const activerUser = async (id) => {
+    const confirmActiver = window.confirm("Êtes-vous sûr de vouloir activer cet utilisateur ?");
+    if (!confirmActiver) return;
+
+    try {
+      await axios.put(`${backendUrl}/users/${id}/activer`);
+      setUsers(prev => {
+      const updated = prev.map(u =>
+        u.id === id ? { ...u, etat: "actif" } : u
+      );
+      return updated;
+    });
+      toast.success("Utilisateur activé");
+    } catch (error) {
+      toast.error("Erreur lors de l'activation");
     }
   };
 
@@ -74,6 +112,7 @@ const ListUtilisateurs = () => {
                       <th>Email</th>
                       <th>Organisme</th>
                       <th>Poste</th>
+                      <th>Etat</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -93,7 +132,30 @@ const ListUtilisateurs = () => {
                         <td>{user.email || "-"}</td>
                         <td>{user.organisme?.nomOrganisme || "-"}</td>
                         <td>{user.role || "-"}</td>
+                        <td>{user.etat || "-"}</td>
                         <td>
+                          {user.etat ==="actif"? (
+                            <button
+                              className="btn btn-outline-danger btn-sm me-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                desactiverUser(user.id);
+                              }}
+                            >
+                              <i className="bi bi-x-circle"></i>
+                            </button>
+                            
+                          ) : (
+                            <button
+                              className="btn btn-outline-success btn-sm me-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                activerUser(user.id);
+                              }}
+                            >
+                              <i className="bi bi-check-circle"></i>
+                            </button>
+                          )}
                           <button
                             className="btn btn-outline-danger btn-sm"
                             onClick={(e) => {
@@ -103,7 +165,9 @@ const ListUtilisateurs = () => {
                           >
                             <i className="bi bi-trash"></i>
                           </button>
+                          
                         </td>
+                        
                       </tr>
                     ))}
                   </tbody>
@@ -127,6 +191,7 @@ const ListUtilisateurs = () => {
                           <li><strong>Prénom :</strong> {selectedUser.prenom || "-"}</li>
                           <li><strong>Email :</strong> {selectedUser.email || "-"}</li>
                           <li><strong>Poste :</strong> {selectedUser.role || "-"}</li>
+                          <li><strong>Etat :</strong> {selectedUser.etat || "-"}</li>
                         </ul>
                       </div>
 

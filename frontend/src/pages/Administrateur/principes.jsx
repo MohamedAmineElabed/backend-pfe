@@ -369,7 +369,7 @@ const handleSavePratique = async () => {
                   <h5 className="card-title mb-0 me-3">{principe.nom}</h5>
                     <span style={{
                       background: (principe.pratiques?.length || 0) === 0 ? "#fee2e2" : "#dcfce7",
-                      color: (principe.pratiques?.length || 0) === 0 ? "#dc2626" : "#0e8c52",
+                      color: (principe.pratiques?.length || 0) === 0 ? "0 #dc2626" : "#0e8c52",
                       borderRadius: 20,padding: "3px 10px",fontSize: "0.68rem",fontWeight: 700
                     }}>
                     {principe.pratiques?.length} pratique{principe.pratiques?.length > 1 ? 's' : ''}

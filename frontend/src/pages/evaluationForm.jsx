@@ -32,39 +32,61 @@ const EvaluationForm = () => {
 };*/
 
   const submitAllAnswers = async () => {
-    const organismeId = currentUser?.organisme?.id;
-    const responsableId = currentUser?.id;
-    if (!organismeId) return alert("Organisme introuvable !");
+  if (!currentUser?.organisme?.id) return alert("Organisme introuvable !");
 
-    try {
-      const res = await axios.post(`${backendUrl}/evaluation/new`, { organismeId, responsableId });
-      const newEvaluationId = res.data;
-      setCurrentEvaluationId(newEvaluationId);
-      console.log("Nouvelle évaluation créée :", newEvaluationId);
+  try {
+    // --- Step 1: Create evaluation if not exists ---
+    let evaluationIdToUse = currentEvaluationId;
 
-      for (const [critereId, valeur] of Object.entries(selectedOption)) {
-        const formData = new FormData();
-        formData.append("critereId", Number(critereId));
-        formData.append("valeur", valeur);
+    if (!evaluationIdToUse) {
+      const res = await axios.post(`${backendUrl}/evaluation/new`, {
+        organismeId: currentUser.organisme.id,
+        responsableId: currentUser.id,
+      });
 
-        // add all files if exists
-        if (selectedFiles[critereId]) {
-          selectedFiles[critereId].forEach((file) => {
-            formData.append("files", file);
-          });
-        }
+      evaluationIdToUse = res.data?.id || res.data; // check how backend returns ID
+      setCurrentEvaluationId(evaluationIdToUse);
 
-        await axios.post(`${backendUrl}/evaluation/reponses/reponse/save/${newEvaluationId}`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+      console.log("Nouvelle évaluation créée :", evaluationIdToUse);
+    }
+
+    // --- Step 2: Save all responses ---
+    for (const [critereId, valeur] of Object.entries(selectedOption)) {
+      const formData = new FormData();
+      formData.append("critereId", Number(critereId));
+      formData.append("valeur", valeur);
+
+      if (selectedFiles[critereId]) {
+        selectedFiles[critereId].forEach((file) => {
+          formData.append("files", file);
         });
       }
 
-      console.log("Toutes les réponses ont été sauvegardées !");
-      toast.success("Évaluation et réponses enregistrées avec succès !");
-    } catch (err) {
-      console.error("Erreur lors de la création de l'évaluation", err);
+      await axios.post(
+        `${backendUrl}/evaluation/reponses/reponse/save/${evaluationIdToUse}`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
     }
-  };
+    //without botons valider et refuser in evaluationDetails
+    /*// --- Step 3: Calculate total score ---
+    const totalScore = Object.values(selectedOption).reduce(
+      (sum, val) => sum + Number(val || 0),
+      0
+    );
+
+    // --- Step 4: Save total score ---
+    await axios.put(`${backendUrl}/evaluation/${evaluationIdToUse}/score`, {
+      score: totalScore,
+    });*/
+
+    toast.success("Toutes les réponses ont été enregistrés avec succès !");
+    console.log("Evaluation + score saved successfully!");
+  } catch (err) {
+    console.error("Erreur lors de la sauvegarde de l'évaluation", err);
+    toast.error("Erreur lors de la sauvegarde de l'évaluation");
+  }
+};
 
   const critereOptions = [
   { label: "n'existe pas", value: 0, color: "#ef4444" }, // red
@@ -216,6 +238,8 @@ const EvaluationForm = () => {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {principes.map((principe) => {
             const isPrincipeOpen = expandedPrincipe === principe.id;
+            const progress = getPrincipeProgress(principe);
+            const isZero = progress.startsWith("0/");
             return (
               <div
                 key={principe.id}
@@ -248,10 +272,10 @@ const EvaluationForm = () => {
                           fontWeight: 600,
                           padding: "2px 8px",
                           borderRadius: 20,
-                          color: principe.pratiques?.length ? "#065f46" : "#b91c1c",
-                          background: principe.pratiques?.length
-                            ? "rgba(16,185,129,0.1)"
-                            : "rgba(244,63,94,0.1)",
+                          color: isZero ? "#b91c1c" : "#065f46",
+                          background: isZero
+                              ? "rgba(244,63,94,0.1)"
+                              : "rgba(16,185,129,0.1)",
                         }}
                       >
                         {getPrincipeProgress(principe)}

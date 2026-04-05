@@ -42,6 +42,22 @@ function SiderbarEval() {
             Evaluations liste
           </Link>
 
+          <Link
+            to="/labelisation"
+            className="nav-link text-white rounded hover-bg-secondary">
+            Labelisation
+          </Link>
+          <Link
+            to="/classement"
+            className="nav-link text-white rounded hover-bg-secondary">
+            Classement
+          </Link>
+          <Link
+            to="/dashboardsEval"
+            className="nav-link text-white rounded hover-bg-secondary">
+            Dashboards
+          </Link>
+
         </nav>
 
         <button className="btn btn-danger mt-auto w-100" onClick={handleLogout}>

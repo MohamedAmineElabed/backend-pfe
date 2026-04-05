@@ -11,7 +11,7 @@ import ProfileInfoTab from './profileInfoTab.jsx';
 import OrganismeInfoTab from './organismeInfoTab.jsx';
 import PasswordTab from './passwordTab.jsx';
 import SiderbarAdmin from '../components/siderbarAdmin.jsx';
-import SiderbarEval from '../components/siderbarEval.jsx';
+import SiderbarEval from '../components/SiderbarEval.jsx';
 
 
 

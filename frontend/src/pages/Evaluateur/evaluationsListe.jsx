@@ -30,8 +30,8 @@ const styles = {
   newBtn: { display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" },
   tableSection: { background: "#fff", borderRadius: 16, border: "1px solid #e8eaf0", overflow: "hidden" },
   tableWrap: { overflowX: "auto" },
-  thead: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
-  row: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
+  thead: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
+  row: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
   orgName: { fontSize: 13, fontWeight: 600, color: "#1e293b" },
   dateCell: { fontSize: 12, color: "#94a3b8", fontFamily: "monospace" },
   badge: { display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, letterSpacing: "0.01em" },
@@ -126,7 +126,7 @@ const handleStatusChange = (ev, newStatus) => {
   { value: "tous", label: "Tous" },
   { value: "en_attente", label: "En attente" },
   { value: "en_cours", label: "En cours" },
-  { value: "termine", label: "Terminé" },
+  { value: "terminé", label: "Terminé" },
 ];
 
   //pour supprimer les evaluations
@@ -171,7 +171,7 @@ const handleStatusChange = (ev, newStatus) => {
         <motion.section {...stagger(3)} style={styles.tableSection}>
           <div style={styles.tableWrap}>
             <div style={styles.thead}>
-              {["Organisme", "Responsable", "Statut", "Progression", "Score"].map((col, i) => <span key={i}>{col}</span>)}
+              {["Organisme", "Responsable", "Statut", "Progression", "Score", "Labelisation"].map((col, i) => <span key={i}>{col}</span>)}
             </div>
 
             {filtered.map((ev, idx) => {
@@ -198,6 +198,7 @@ const handleStatusChange = (ev, newStatus) => {
                     <span style={{ ...styles.progressPct, color }}>{ev.progression || 0}%</span>
                   </div>
                   <span style={{ fontSize: 16, fontWeight: 700, color }}>{ev.score || 0}/{ev.maxScore || 0}</span>
+                  <span style={styles.orgName}>{ev.label || "Non labellisé"}</span>
                   
                   <button
                           className="btn btn-outline-danger btn-sm"

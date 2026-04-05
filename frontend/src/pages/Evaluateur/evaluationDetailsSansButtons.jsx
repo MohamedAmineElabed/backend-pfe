@@ -6,8 +6,6 @@ import { AppContext } from "../../context/AppContext.jsx";
 import SiderbarEval from "../../components/SiderbarEval.jsx";
 import { toast } from "react-toastify";
 import { useMemo } from "react";
-import { useRef } from "react";
-
 
 
 const statusConfig = {
@@ -25,7 +23,7 @@ const valeurLabels = {
 
 // Critère leaf item
 // --- Critere Item ---
-const CritereItem = ({ critere, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete }) => {
+const CritereItem = ({ critere, index, evaluation, critereStates, onCommentChange, onSaveComment }) => {
   // Get current comment & action from global state
   const currentState = critereStates[critere.id] || {};
   const comment = currentState.comment || "";
@@ -35,33 +33,6 @@ const CritereItem = ({ critere, index, evaluation, onValiderCritere, onRefuserCr
     (r) => r.critereId === critere.id
   );
   const response = responsesForThisCritere[0];
-  const isLocked = isEvaluationComplete || selectedAction !== null;
-
-const handleValidateClick = () => {
-  //if we want comment to be necessary
-  /*if (!comment.trim()) {
-    toast.error("Le commentaire est obligatoire !");
-    return;
-  }*/
-  if (!response?.id) {
-    toast.error("Réponse introuvable !");
-    return;
-  }
-  onActionSelect(critere.id, "valider");
-  onValiderCritere(response.id, comment);
-};
-const handleRefuserClick = () => {
-  /*if (!comment.trim()) {
-    toast.error("Le commentaire est obligatoire !");
-    return;
-  }*/
-  if (!response?.id) {
-    toast.error("Réponse introuvable !");
-    return;
-  }
-  onActionSelect(critere.id, "refuser");
-  onRefuserCritere(response.id, comment); // call the prop
-};
 
   return (
     <div style={styles.critereItem}>
@@ -108,97 +79,62 @@ const handleRefuserClick = () => {
                     ))}
       {/* Evaluator comment */}
       <div style={{ padding: "16px 18px" }}>
-        <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
-          Commentaire de l'évaluateur
-        </label>
-        
-        {isLocked ? (
-  // RESULT BLOCK
+        {response ? (
   <div
     style={{
       marginTop: 12,
       padding: "14px 16px",
       borderRadius: 12,
-      background: response.statut === "validé" ? "#ecfdf5" : "#fef2f2",
-      border: `1px solid ${
-        response.statut === "validé" ? "#bbf7d0" : "#fecaca"
-      }`,
+      background: "#f8fafc", // neutral background
+      border: "1px solid #e2e8f0",
     }}
   >
-    {/* Top row */}
+    {/* Score only */}
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <span
-        style={{
-          padding: "4px 10px",
-          borderRadius: 999,
-          fontSize: 12,
-          fontWeight: 600,
-          background:
-            response.statut === "validé" ? "#d1fae5" : "#fee2e2",
-          color:
-            response.statut === "validé" ? "#065f46" : "#991b1b",
-        }}
-      >
-        {response.statut === "validé" ? "Validé" : "Refusé"}
-      </span>
-
-      <span style={{ fontSize: 14, fontWeight: 500 }}>
-        <strong>Score: {response.valeur}/3</strong>
+      <span style={{ fontSize: 14, fontWeight: 600, color: "#1e293b" }}>
+        Valeur: {response.valeur ?? 0}/3
       </span>
     </div>
 
     {/* Comment */}
-    <p style={{ marginTop: 10, fontSize: 14 }}>
-      {response.commentaireEvaluateur || "Aucun commentaire fourni"}
+    <p style={{ marginTop: 10, fontSize: 14, color: "#475569" }}>
+      {response.commentaireEvaluateur || "Aucun commentaire"}
     </p>
+    {/* Editable Comment */}
+      <textarea
+        value={comment}
+        onChange={(e) =>
+          onCommentChange(critere.id, e.target.value)
+        }
+        placeholder="Ajouter ou modifier le commentaire..."
+        style={{
+          width: "100%",
+          minHeight: 90,
+          padding: "10px 12px",
+          borderRadius: 8,
+          border: "1px solid #cbd5e1",
+          outline: "none",
+        }}
+      />
+      <button
+              onClick={() => onSaveComment(critere.id)}
+              style={{
+                marginTop: 8,
+                padding: "6px 12px",
+                background: "#3b82f6",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                cursor: "pointer",
+              }}
+            >
+            Enregistrer
+            </button>
   </div>
 ) : (
-  // EDIT MODE
-  <>
-    <textarea
-      value={comment}
-      onChange={(e) => onCommentChange(critere.id, e.target.value)}
-      placeholder="Justifier votre décision..."
-      style={{
-        width: "100%",
-        minHeight: 90,
-        fontSize: 14,
-        padding: "10px 12px",
-        border: "0.5px solid #cbd5e1",
-        borderRadius: 8,
-      }}
-    />
-
-    <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-      <button onClick={handleValidateClick} 
-      style={{
-      padding: "8px 16px",
-      borderRadius: 8,
-      border: "1px solid #16a34a",
-      background: "#16a34a",
-      color: "white",
-      fontWeight: 500,
-      cursor: "pointer",
-      transition: "0.2s",
-    }}>
-        Valider
-      </button>
-
-      <button onClick={handleRefuserClick} 
-      style={{
-      padding: "8px 16px",
-      borderRadius: 8,
-      border: "1px solid #dc2626",
-      background: "#dc2626",
-      color: "white",
-      fontWeight: 500,
-      cursor: "pointer",
-      transition: "0.2s",
-    }}>
-        Refuser
-      </button>
-    </div>
-  </>
+  <p style={{ fontStyle: "italic", color: "#94a3b8" }}>
+    Aucune réponse pour ce critère.
+  </p>
 )}
       </div>
                   </div>
@@ -219,7 +155,7 @@ const handleRefuserClick = () => {
 };
 
 // --- Pratique Row ---
-const PratiqueRow = ({ pratique, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete}) => {
+const PratiqueRow = ({ pratique, index, evaluation, critereStates, onCommentChange, onActionSelect, isEvaluationComplete, onSaveComment}) => {
   const [open, setOpen] = useState(false);
   const criteres = pratique.criteres || [];
 
@@ -246,9 +182,8 @@ const PratiqueRow = ({ pratique, index, evaluation, onValiderCritere, onRefuserC
           {criteres.length ? (
             criteres.map((c, i) => (
               <CritereItem key={i} critere={c} index={i} evaluation={evaluation} 
-              onValiderCritere={onValiderCritere} onRefuserCritere={onRefuserCritere} 
-              critereStates={critereStates}  onCommentChange={onCommentChange} 
-              onActionSelect={onActionSelect} isEvaluationComplete={isEvaluationComplete} />
+              critereStates={critereStates}  onCommentChange={onCommentChange}     // <- pass handlers
+              onActionSelect={onActionSelect} isEvaluationComplete={isEvaluationComplete} onSaveComment={onSaveComment} />
             ))
           ) : (
             <p style={styles.emptyNested}>Aucun critère pour cette pratique.</p>
@@ -260,10 +195,9 @@ const PratiqueRow = ({ pratique, index, evaluation, onValiderCritere, onRefuserC
 };
 
 // --- Principe Row ---
-const PrincipeRow = ({ principe, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete,scoreData }) => {
+const PrincipeRow = ({ principe, index, evaluation, critereStates, onCommentChange, onActionSelect, isEvaluationComplete, onSaveComment, scorePerPrincipe}) => {
   const [open, setOpen] = useState(false);
   const pratiques = principe.pratiques || [];
-  const scoreInfo = scoreData?.find(s => s.principeId === principe.id);
 
   return (
     <div style={styles.principeWrapper}>
@@ -273,7 +207,15 @@ const PrincipeRow = ({ principe, index, evaluation, onValiderCritere, onRefuserC
       >
         <div style={styles.principeLeft}>
           <div style={styles.principeNumber}>{index + 1}</div>
-          <span style={styles.principeText}>{principe.nom || `Principe ${index + 1}`}</span>
+          <span style={styles.principeText}>
+            {scorePerPrincipe
+  .filter(p => p.principeId === principe.id) //to get score for this principe alone
+  .map(p => (
+    <div key={p.principeId} style={{ marginBottom: 6 }}>
+      <strong>{p.principeName}:</strong> {p.percentage}%({p.score}/{p.maxScore})
+    </div>
+  ))}
+          </span>
         </div>
         <div style={styles.pratiqueRight}>
           {pratiques.length > 0 && (
@@ -288,8 +230,8 @@ const PrincipeRow = ({ principe, index, evaluation, onValiderCritere, onRefuserC
           {pratiques.length ? (
             pratiques.map((p, i) => (
               <PratiqueRow key={i} pratique={p} index={i} evaluation={evaluation} 
-              onValiderCritere={onValiderCritere} onRefuserCritere={onRefuserCritere} isEvaluationComplete={isEvaluationComplete}
-              critereStates={critereStates} onCommentChange={onCommentChange} onActionSelect={onActionSelect} />
+              critereStates={critereStates} onCommentChange={onCommentChange} 
+              onActionSelect={onActionSelect} onSaveComment={onSaveComment} scorePerPrincipe={scorePerPrincipe} />
             ))
           ) : (
             <p style={styles.emptyNested}>Aucune pratique pour ce principe.</p>
@@ -309,6 +251,7 @@ const EvaluationDetails = () => {
   const { id } = useParams();
   const [critereStates, setCritereStates] = useState({});
   const [evaluation, setEvaluation] = useState(initialEval || null);
+  const [justCompleted, setJustCompleted] = useState(false);
 
   // Check if all criteria have been treated
   const allCriteres = useMemo(() => {
@@ -335,9 +278,14 @@ const handleCommentChange = async (critereId, value) => {
     ...prev,
     [critereId]: { ...(prev[critereId] || {}), comment: value },
   }));
-  // Find the corresponding response
-  const response = evaluation.reponses.find(r => r.critereId === critereId);
-  if (!response) return;
+
+  /*try {
+    await axios.put(`${backendUrl}/evaluation/reponses/${response.id}`, {
+      comment: value,evaluationId: evaluation.id,
+    });
+  } catch (err) {
+    toast.error("Impossible de sauvegarder le commentaire");
+  }*/
 };
 
 // when user selects action
@@ -350,6 +298,58 @@ const handleActionSelect = (critereId, action) => {
     },
   }));
 };
+
+/*
+  // Fetch evaluation
+  useEffect(() => {
+  const fetchEvaluation = async () => {
+    try {
+      const res = await axios.get(`${backendUrl}/evaluation/${id}/reponses`);
+      const evalData = res.data;
+      //fetch OrganismeName
+      const orgRes = await axios.get(`${backendUrl}/organismes/${evalData.organismeId}`);  
+      const organismeName = orgRes.data.nomOrganisme;
+      console.log("Fetched organisme:", organismeName);
+      //fetch responsableName
+      const resRes = await axios.get(`${backendUrl}/organismes/${evalData.organismeId}`);  
+      const responsableName = resRes.data.responsable?.nom;
+      const responsableRole = resRes.data.responsable?.role;
+      console.log("Fetched responsable:", responsableName);
+      console.log("Fetched evaluation:", evalData);
+
+      const mappedResponses = (evalData.reponses || []).map(r => ({
+        ...r,
+        commentaireEvaluateur: r.commentaire || "",
+        preuves: (r.preuves || []).map(p => ({
+          fileName: p.nomFichier,
+          fileUrl: `${backendUrl}/uploads/${p.cheminFichier.replace(/\\/g, "/")}`
+        })),
+      }));
+
+      // Map critereStates from response
+      const states = {};
+      mappedResponses.forEach(r => {
+        if (r.statut) {
+          states[r.critereId] = {
+            comment: r.commentaireEvaluateur || "",
+            //action: r.statut === "validé" ? "valider" : r.statut === "refusé" ? "refuser" : null,
+          };
+        }
+      });
+
+      setEvaluation({ ...evalData,
+                       reponses: mappedResponses,
+                       organismeName,
+                       responsableName,
+                       responsableRole
+                      });
+      setCritereStates(states);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  fetchEvaluation();
+}, [backendUrl, id]);*/
 
 
   // Fetch evaluation
@@ -381,7 +381,7 @@ const handleActionSelect = (critereId, action) => {
         if (r.statut) {
           states[r.critereId] = {
             comment: r.commentaireEvaluateur || "",
-            action: r.statut === "validé" ? "valider" : r.statut === "refusé" ? "refuser" : null,
+            //action: r.statut === "validé" ? "valider" : r.statut === "refusé" ? "refuser" : null,
           };
         }
       });
@@ -399,6 +399,8 @@ const handleActionSelect = (critereId, action) => {
   };
   fetchEvaluation();
 }, [backendUrl, id]);
+
+
 
   // Fetch principes
   useEffect(() => {
@@ -422,32 +424,6 @@ const handleActionSelect = (critereId, action) => {
     fetchPrincipes();
   }, [backendUrl]);
 
-  // Auto-update evaluation status based on responses
-  useEffect(() => {
-  if (!evaluation?.reponses) return;
-
-  const allResponses = evaluation.reponses;
-  const isComplete = allResponses.every(
-    r => r.statut === "validé" || r.statut === "refusé"
-  );
-
-  let newStatus = "en attente";
-  if (isComplete) newStatus = "terminé";
-  else if (allResponses.length > 0) newStatus = "en cours";
-
-  if (evaluation.statut !== newStatus) {
-    axios.put(`${backendUrl}/evaluation/${evaluation.id}/updateStatut`, {
-      statut: newStatus,
-    })
-    .then(() => {
-      setEvaluation(prev => ({ ...prev, statut: newStatus }));
-      console.log("Statut mis à jour automatiquement:", newStatus);
-    })
-    .catch(err => console.error("Erreur mise à jour statut", err));
-  }
-
-}, [evaluation?.reponses]); //KEY DEPENDENCY
-
   // Total score calculation
   const totalScore = useMemo(() => {
     if (!evaluation?.reponses) return 0;
@@ -458,62 +434,49 @@ const handleActionSelect = (critereId, action) => {
   const maxScore = allCriteres.length * 3; // each critere max score is 3
 
   //calculer score per principe
-    const scorePerPrincipe = useMemo(() => {
-      if (!principes.length || !evaluation?.reponses) return [];
-  
-      return principes.map(principe => {
-        const pratiques = principe.pratiques || [];
-  
-        // sum all critere scores under this principe
-        let principeScore = 0;
-        let maxPrincipeScore = 0;
-  
-      pratiques.forEach(pratique => {
-        (pratique.criteres || []).forEach(critere => {
-          const response = evaluation.reponses
-          .filter(r => r.statut !== "refusé")
-          .find(r => r.critereId === critere.id);
-          if (response) {
-            principeScore += response.valeur || 0;
-          }
-          maxPrincipeScore += 3; // each critere max 3
-        });
+  const scorePerPrincipe = useMemo(() => {
+    if (!principes.length || !evaluation?.reponses) return [];
+
+    return principes.map(principe => {
+      const pratiques = principe.pratiques || [];
+
+      // sum all critere scores under this principe
+      let principeScore = 0;
+      let maxPrincipeScore = 0;
+
+    pratiques.forEach(pratique => {
+      (pratique.criteres || []).forEach(critere => {
+        const response = evaluation.reponses.find(r => r.critereId === critere.id);
+        if (response) {
+          principeScore += response.valeur || 0;
+        }
+        maxPrincipeScore += 3; // each critere max 3
       });
-  
-      return {
-        principeId: principe.id,
-        principeName: principe.nom,
-        score: principeScore,
-        maxScore: maxPrincipeScore,
-        percentage: maxPrincipeScore ? Math.round((principeScore / maxPrincipeScore) * 100) : 0,
-      };
     });
-  }, [principes, evaluation]);
+
+    return {
+      principeId: principe.id,
+      principeName: principe.nom,
+      score: principeScore,
+      maxScore: maxPrincipeScore,
+      percentage: maxPrincipeScore ? Math.round((principeScore / maxPrincipeScore) * 100) : 0,
+    };
+  });
+}, [principes, evaluation]);
+
 
   //to save score
   useEffect(() => {
   const saveScoreIfComplete = async () => {
-    if (isEvaluationComplete && totalScore !== evaluation.score && evaluation) {
+    if (isEvaluationComplete && evaluation) {
       try {
         const response = await axios.put(
           `${backendUrl}/evaluation/${evaluation.id}/score`,
           { score: totalScore }
         );
-        /*const res=await Promise.all(
-          scorePerPrincipe.map(sp =>
-            axios.post(`${backendUrl}/scoreParPrincipe/enregistrer`, {
-              evaluationId: evaluation.id,
-              responsableId: evaluation.responsableId,
-              principeId: sp.principeId,
-              score: sp.score
-            })
-          )
-        );
-        console.log("Score par principe enregistré:", res);*/
 
-        if (response.status === 200){
+        if (response.status === 200) {
           toast.success("Score total enregistré avec succès");
-          //setJustCompleted(true); // prevent future saves
         }
       } catch (err) {
         console.error(err);
@@ -524,137 +487,49 @@ const handleActionSelect = (critereId, action) => {
   saveScoreIfComplete();
 }, [isEvaluationComplete, totalScore, backendUrl, evaluation]);
 
-// Check if score per principe has changed compared to evaluation data
-const hasScoreChanged = !evaluation?.scoreParPrincipe || evaluation.scoreParPrincipe.some(
-  saved => {
-    const current = scorePerPrincipe.find(sp => sp.principeId === saved.principeId);
-    return !current || current.score !== saved.score;
-  }
-);
 
-/*const scoreSavedRef = useRef(false);*/
+  const handleSaveComment = async (critereId) => {
+  try {
+    const responseItem = evaluation.reponses.find(
+      (r) => r.critereId === critereId
+    );
 
-useEffect(() => {
-  const saveScoreParPrincipe = async () => {
-    if (!isEvaluationComplete || !evaluation) return;
-    if (!hasScoreChanged) return;
-    try {
-        await Promise.all(
-          scorePerPrincipe.map(sp =>
-            axios.post(`${backendUrl}/scoreParPrincipe/enregistrer`, {
-              evaluationId: evaluation.id,
-              responsableId: evaluation.responsableId,
-              organismeId: evaluation?.organisme?.id,
-              principeId: sp.principeId,
-              score: sp.score,
-              scoreMax: sp.maxScore,
-            })
-          )
-        );
-        //scoreSavedRef.current = true; // prevent future saves
-        //toast.success("Scores par principe enregistrés avec succès !");
-      } catch (err) {
-        console.error("Erreur lors de l'enregistrement des scores par principe", err);
-        toast.error("Erreur lors de l'enregistrement des scores par principe");
+    if (!responseItem) {
+      toast.error("Aucune réponse trouvée pour ce critère");
+      return;
+    }
+
+    const comment = critereStates[critereId]?.comment || "";
+    if(!comment){
+      toast.error("Le commentaire ne peut pas être vide");
+      return;
+    }
+
+
+    const res = await axios.put(
+      `${backendUrl}/evaluation/reponses/${responseItem.id}/enregistrer`,
+      {
+        comment: comment,
+        evaluationId: evaluation.id,
       }
-    };
-  saveScoreParPrincipe();
-}, [isEvaluationComplete, scorePerPrincipe, evaluation, backendUrl]);
-
-
-  
-  /*const updateEvaluationStatus = async (updatedEvaluation) => {
-  if (!updatedEvaluation) return;
-
-  const allResponses = updatedEvaluation.reponses || [];
-  const isComplete = allResponses.every(r => r.statut === "validé" || r.statut === "refusé");
-
-  let newStatus = "en attente";
-  if (isComplete) newStatus = "terminée";
-  else if (allResponses.length > 0) newStatus = "en cours";
-
-  if (updatedEvaluation.statut !== newStatus) {
-    try {
-      await axios.put(`${backendUrl}/evaluation/${updatedEvaluation.id}/updateStatut`, { statut: newStatus });
-      setEvaluation(prev => ({ ...prev, statut: newStatus }));
-      console.log("Statut mis à jour :", newStatus);
-    } catch (err) {
-      console.error("Erreur mise à jour statut", err);
-    }
-  }
-};*/
-
-  //valider reponse
-  const handleValiderCritere = async (id, comment) => {
-  try {
-    const response = await axios.put(
-      `${backendUrl}/evaluation/reponses/${id}/valider`,
-      { comment,evaluationId: evaluation.id } // send comment and score to backend
-    );
-    
-
-    if (response.status === 200) {
-      toast.success("Reponse validé avec succès");
-      // Update frontend state immediately
-      const updatedEvaluation = {
-        ...evaluation,
-        reponses: evaluation.reponses.map(r =>
-          r.id === id ? { ...r, statut: "validé", commentaireEvaluateur: comment } : r
-        ),
-      };
-      setEvaluation(updatedEvaluation);
-
-      // Update critereStates so locked mode shows the comment
-    setCritereStates(prev => ({
-      ...prev,
-      [evaluation.reponses.find(r => r.id === id).critereId]: {
-      ...prev[evaluation.reponses.find(r => r.id === id).critereId],
-        comment,
-        action: "valider",
-  },
-}));
-    //updateEvaluationStatus(updatedEvaluation);
-    } else {
-      toast.error("Erreur lors de la validation");
-    }
-  } catch (err) {
-    toast.error("Erreur lors de la validation");
-  }
-};
-
-  //refuser reponse
-  const handleRefuserCritere = async (id, comment) => {
-  try {
-    const response = await axios.put(
-      `${backendUrl}/evaluation/reponses/${id}/refuser`,
-      { comment,evaluationId: evaluation.id, } // send comment to backend
     );
 
-    if (response.status === 200) {
-      toast.success("Reponse refusé avec succès");
-      // Update frontend state immediately
-      const updatedEvaluation = {
-        ...evaluation,
-        reponses: evaluation.reponses.map(r =>
-          r.id === id ? { ...r, statut: "refusé", commentaireEvaluateur: comment } : r
-        ),
-      };
-      setEvaluation(updatedEvaluation);
+    if (res.status === 200) {
+      toast.success("Commentaire enregistré ");
 
-    setCritereStates(prev => ({
-      ...prev,
-      [evaluation.reponses.find(r => r.id === id).critereId]: {
-      ...prev[evaluation.reponses.find(r => r.id === id).critereId],
-        comment,
-        action: "refuser",
-  },
-}));
-    //updateEvaluationStatus(updatedEvaluation);
-    } else {
-      toast.error("Erreur lors de refus");
+      // update UI instantly
+      setEvaluation((prev) => ({
+        ...prev,
+        reponses: prev.reponses.map((r) =>
+          r.id === responseItem.id
+            ? { ...r, commentaireEvaluateur: comment }
+            : r
+        ),
+      }));
     }
   } catch (err) {
-    toast.error("Erreur lors de refus");
+    console.error(err);
+    toast.error("Erreur lors de la sauvegarde");
   }
 };
 
@@ -668,7 +543,6 @@ useEffect(() => {
 
   const statut = evaluation.statut?.toLowerCase() || "default";
   //const status = statusConfig[statut] || statusConfig.default;
-
 
   const totalPratiques = principes.reduce((acc, p) => acc + (p.pratiques?.length || 0), 0);
   const totalCriteres = principes.reduce((acc, p) =>
@@ -734,13 +608,15 @@ useEffect(() => {
           <span style={styles.legendItem}><span style={styles.legendDot('#10b981')} />Critère</span>
         </div>
 
+        
+
         {/* Accordion */}
         {!isEvaluationComplete?(
         <div style={styles.accordionWrap}>
           {principes.length ? (
             principes.map((p, i) => <PrincipeRow key={i} principe={p} index={i} evaluation={evaluation} 
-            onValiderCritere={handleValiderCritere} onRefuserCritere={handleRefuserCritere} isEvaluationComplete={isEvaluationComplete}
-            critereStates={critereStates} onCommentChange={handleCommentChange} onActionSelect={handleActionSelect} scoreData={scorePerPrincipe} />)
+            onSaveComment={handleSaveComment} isEvaluationComplete={isEvaluationComplete}
+            critereStates={critereStates} onCommentChange={handleCommentChange} scorePerPrincipe={scorePerPrincipe}/>)
           ) : (
             <p style={styles.emptyTop}>Aucun principe défini pour cette évaluation.</p>
           )}
@@ -750,44 +626,15 @@ useEffect(() => {
           marginBottom: 16,
           padding: "14px 16px",
           borderRadius: 12,
-          background: "#f9fafb", 
-          border: "1px solid #e5e7eb",
-          color: "#111827",
+          background: "#ecfdf5",
+          border: "1px solid #bbf7d0",
+          color: "#065f46",
           fontWeight: 500,
         }}
       >
     Cette évaluation est terminée. Vous ne pouvez plus modifier les réponses.
     <div style={{ marginTop: 8, fontSize: 16 }}>
       Score total : <strong>{totalScore} / {maxScore}</strong>
-      </div>
-      <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-      {scorePerPrincipe.map((p) => (
-    <span
-      key={p.principeId}
-      style={{
-        width: "17%",
-        padding: "4px 10px",
-        borderRadius: 999,
-        fontSize: 12,
-        fontWeight: 600,
-        display: "flex",
-        justifyContent: "space-between",
-        background:
-          p.percentage < 40
-            ? "#fee2e2"
-            : p.percentage < 70
-            ? "#fef3c7"
-            : "#dcfce7",
-        color:
-          p.percentage < 40
-            ? "#991b1b"
-            : p.percentage < 70
-            ? "#92400e"
-            : "#065f46",
-      }}
-      >{p.principeName}: {p.score}/{p.maxScore} ({p.percentage}%)</span>
-  ))}
-
     </div>
   </div>
         )}
@@ -795,6 +642,230 @@ useEffect(() => {
     </div>
   );
 };
+
+
+import { motion } from "framer-motion";
+import { Plus, ArrowUpRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import SiderbarEval from "../../components/SiderbarEval.jsx";
+import { useState, useEffect, useContext } from "react";
+import { AppContext } from "../../context/AppContext.jsx";
+import axios from "axios";
+import  Input  from "../../components/ui/input.jsx";
+import { toast } from "react-toastify";
+
+const STATUS = {
+  en_attente: { label: "En attente", dot: "#94a3b8", text: "#475569", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
+  en_cours: { label: "En cours", dot: "#f59e0b", text: "#92400e", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
+  //soumise: { label: "Soumise", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
+  terminé: { label: "Terminé", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
+};
+
+function progressColor(pct) {
+  if (pct === 100) return "#10b981";
+  if (pct >= 60) return "#3b82f6";
+  if (pct >= 30) return "#f59e0b";
+  return "#f87171";
+}
+
+const styles = {
+  page: { minHeight: "100vh", background: "#f8f9fc", fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif", padding: "36px 40px", maxWidth: 1200 },
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
+  headerTitle: { fontSize: 28, fontWeight: 800, color: "#1e293b" },
+  headerSub: { fontSize: 13, color: "#64748b" },
+  newBtn: { display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" },
+  tableSection: { background: "#fff", borderRadius: 16, border: "1px solid #e8eaf0", overflow: "hidden" },
+  tableWrap: { overflowX: "auto" },
+  thead: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
+  row: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
+  orgName: { fontSize: 13, fontWeight: 600, color: "#1e293b" },
+  dateCell: { fontSize: 12, color: "#94a3b8", fontFamily: "monospace" },
+  badge: { display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, letterSpacing: "0.01em" },
+  badgeDot: { width: 6, height: 6, borderRadius: "50%", flexShrink: 0 },
+  progressTrack: { flex: 1, height: 6, background: "#f1f5f9", borderRadius: 99, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 99 },
+  progressPct: { fontSize: 11, fontWeight: 700, fontFamily: "monospace", minWidth: 32, textAlign: "right" },
+  arrowBtn: { width: 28, height: 28, borderRadius: 8, background: "#f8fafc", border: "1px solid #e8eaf0", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", cursor: "pointer" },
+};
+
+const stagger = (i) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] } });
+
+const EvaluationsListe = () => {
+  const [evaluations, setEvaluations] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("tous");
+  const { backendUrl, userData } = useContext(AppContext);
+  const [organismes, setOrganismes] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const navigate = useNavigate();
+
+  const updateEvaluation = (id, newData) => {
+  setEvaluations(prev =>
+    prev.map(ev => ev.id === id ? { ...ev, ...newData } : ev)
+  );
+};
+
+/*const handleProgressClick = (ev) => {
+  const newProgress = Math.min((ev.progression || 0) + 10, 100); // max 100%
+  updateEvaluation(ev.id, { progression: newProgress });
+
+  // Optional: save to backend
+  axios.put(`${backendUrl}/evaluation/${ev.id}`, { progress: newProgress })
+    .then(res => console.log("Saved progress for", ev.id))
+    .catch(err => console.error(err));
+};*/
+
+const handleStatusChange = (ev, newStatus) => {
+  updateEvaluation(ev.id, { statut: newStatus });
+
+  axios.put(`${backendUrl}/evaluation/${ev.id}`, { status: newStatus })
+    .then(res => console.log("Saved status for", ev.id))
+    .catch(err => console.error(err));
+};
+
+  // Fetch evaluations
+  useEffect(() => {
+  if (!backendUrl || !userData?.id) return;
+
+  const fetchEvaluations = async () => {
+    try {
+      // Fetch evaluations with treated progression
+      const resEval = await axios.get(`${backendUrl}/evaluation/all/treated`);
+      // Map the response directly; no need to recalc progression in frontend
+      const evalsWithProgress = resEval.data.map(ev => {
+        let statutKey;
+        const progression = ev.progression || 0;
+
+        if (progression === 0) {
+          statutKey = "en_attente";
+        } else if (progression === 100) {
+          statutKey = "terminé";
+        } else {
+          statutKey = "en_cours";
+        }
+
+      return {
+      ...ev,
+      statut: statutKey,
+      score: ev.score || 0,
+  };
+});
+
+      setEvaluations(evalsWithProgress);
+    } catch (err) {
+      console.error("Erreur fetching evaluations:", err);
+    }
+  };
+
+  fetchEvaluations();
+}, [backendUrl, userData]);
+
+
+  // Filtered list
+  const filtered = evaluations.filter(e => {
+    const matchSearch = e.organismeName.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "tous" || e.statut === filter;
+    return matchSearch && matchFilter;
+  });
+
+  const filters = [
+  { value: "tous", label: "Tous" },
+  { value: "en_attente", label: "En attente" },
+  { value: "en_cours", label: "En cours" },
+  { value: "terminé", label: "Terminé" },
+];
+
+  //pour supprimer les evaluations
+  const deleteEval = async (evaluationId) => {
+    /*const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette demande ?");
+    if (!confirmDelete) return;*/
+    try {
+      await axios.delete(`${backendUrl}/evaluation/${evaluationId}`);
+      setEvaluations((prev) => {
+        const updated=prev.filter((e) => e.id !== evaluationId);
+        return updated;});
+      toast.success("Evaluation supprimée");
+    } catch (error) {
+    toast.error("Erreur lors de la suppression");
+  }
+};
+
+  return (
+    <>
+      <SiderbarEval />
+      <div style={{ ...styles.page, marginLeft: "200px" }}>
+        {/* Header */}
+        <div style={styles.header}>
+          <div>
+            <h1 style={styles.headerTitle}>Évaluations</h1>
+            <p style={styles.headerSub}>Gérer et valider les évaluations soumises</p>
+          </div>
+          
+        </div>
+
+        {/* Filters */}
+        <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+          <Input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
+          {filters.map(f => (
+            <button key={f.value} onClick={() => setFilter(f.value)} style={{ padding: "6px 12px", borderRadius: 6, border: filter === f.value ? "1px solid #6366f1" : "1px solid #e5e7eb", background: filter === f.value ? "#6366f1" : "#f8fafc", color: filter === f.value ? "#fff" : "#475569", cursor: "pointer" }}>
+              {f.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Table */}
+        <motion.section {...stagger(3)} style={styles.tableSection}>
+          <div style={styles.tableWrap}>
+            <div style={styles.thead}>
+              {["Organisme", "Responsable", "Statut", "Progression", "Score", "Labelisation"].map((col, i) => <span key={i}>{col}</span>)}
+            </div>
+
+            {filtered.map((ev, idx) => {
+              const cfg = STATUS[ev.statut] || { label: "Inconnu", dot: "#cbd5e1", text: "#475569", bg: "rgba(203,213,225,0.12)", border: "rgba(203,213,225,0.3)" };
+              const color = progressColor(ev.progression || 0);
+              return (
+                <motion.div key={ev.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} 
+                  transition={{ delay: 0.2 + idx * 0.05 }} style={{ ...styles.row, cursor: "pointer" }}
+                  onClick={() => navigate(`/evaluateur/evaluations/${ev.id}`, { state: { evaluation: ev } })}>
+                  <span style={styles.orgName}>{ev.organismeName}</span>
+                  {/*<span style={styles.dateCell}>{new Date(ev.dateSoumission).toLocaleDateString("fr-FR")}</span>*/}
+                  <span style={styles.orgName}>{ev.responsableName}</span>
+                  <span style={{ ...styles.badge, color: cfg.text, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
+                    <span style={{ ...styles.badgeDot, background: cfg.dot }} /> {cfg.label}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={styles.progressTrack} onClick={(e) => { e.stopPropagation(); handleProgressClick(ev); }}>
+                      <motion.div 
+                      initial={{ width: 0 }} 
+                      animate={{ width: `${ev.progression || 0}%` }} 
+                      transition={{ duration: 0.7 }} 
+                      style={{ ...styles.progressFill, background: color }} 
+                      />
+                    </div>
+                    <span style={{ ...styles.progressPct, color }}>{ev.progression || 0}%</span>
+                  </div>
+                  <span style={{ fontSize: 16, fontWeight: 700, color }}>{ev.score || 0}/{ev.maxScore || 0}</span>
+                  <span style={styles.orgName}>{ev.label || "Non labellisé"}</span>
+                  
+                  <button
+                          className="btn btn-outline-danger btn-sm"
+                          onClick={(e) => {e.stopPropagation();deleteEval(ev.id);}}>
+                            <i className="bi bi-trash"></i>
+                            </button>
+                  {/*<span style={{ textAlign: "center" }}>{ev.preuves}</span>
+                  <Link to={`/evaluateur/evaluations/${ev.id}`}><div style={styles.arrowBtn}><ArrowUpRight size={14} strokeWidth={2} /></div></Link>*/}
+                </motion.div>
+              );
+            })}
+
+            {filtered.length === 0 && <div style={{ padding: 20, textAlign: "center" }}>Aucune évaluation trouvée.</div>}
+          </div>
+        </motion.section>
+      </div>
+    </>
+  );
+};
+
+//export default EvaluationsListe;
 
 const styles = {
   page: {
@@ -925,3 +996,5 @@ const styles = {
 };
 
 export default EvaluationDetails;
+
+

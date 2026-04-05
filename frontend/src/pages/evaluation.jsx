@@ -5,11 +5,12 @@ import Siderbar from "../components/siderbar";
 import { useState, useEffect, useContext } from "react";
 import { AppContext } from "../context/AppContext.jsx";
 import axios from "axios";
+import { useMemo } from "react";
 
 const STATUS = {
-  brouillon: { label: "Brouillon", dot: "#94a3b8", text: "#475569", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
+  en_attente: { label: "En attente", dot: "#94a3b8", text: "#475569", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
   en_cours: { label: "En cours", dot: "#f59e0b", text: "#92400e", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
-  soumise: { label: "Soumise", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
+  termine: { label: "Terminé", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
 };
 
 function progressColor(pct) {
@@ -186,7 +187,7 @@ const styles = {
     borderBottom: "1px solid #f8fafc",
     alignItems: "center",
     transition: "background 0.15s",
-    cursor: "default",
+    cursor: "pointer",
   },
  
   /* Row cells */
@@ -292,9 +293,15 @@ function Metric({ title, value, sub, icon, accent, index }) {
 
 const Evaluation = () => {
   const [evaluations, setEvaluations] = useState([]);
-
+  const calculerScoreMoyen=useMemo(()=>{
+    if(evaluations.length===0) return ;
+    const scoreTotal=evaluations.reduce((somme,ev)=>somme + (ev.score || 0),0);
+    const scoreMoyen=scoreTotal/evaluations.length;
+    return scoreMoyen.toFixed(2);
+  },[evaluations]);
+        
   const totalEvals = evaluations.length;
-  const soumises = evaluations.filter(ev => ev.statut === "soumise").length;
+  const soumises = evaluations.filter(ev => ev.statut === "terminé").length;
   //const enCours = evaluations.filter(ev => ev.statut === "en_cours").length;
   const totalPreuves = evaluations.reduce((sum, ev) => sum + (ev.preuves || 0), 0);
   const { backendUrl, userData } = useContext(AppContext); // userData comes from localStorage
@@ -313,11 +320,11 @@ const Evaluation = () => {
         const resEval = await axios.get(`${backendUrl}/evaluation?userId=${userData.id}`);
         console.log("Raw backend data:", resEval.data);
         const mappedEvals = resEval.data.map(ev => {
-          let statutKey = (ev.status || "").toLowerCase().trim();
-          if (ev.status === "submitted") statutKey = "soumise";
-          if (ev.status === "in_progress") statutKey = "en_cours";
-          if (ev.status === "draft") statutKey = "brouillon";
-          console.log("Mapped statut:", statutKey, "original:", ev.status);
+          let statutKey = (ev.statut || "").toLowerCase().trim();
+          if (ev.statut === "en attente") statutKey = "en_attente";
+          if (ev.statut === "en cours") statutKey = "en_cours";
+          if (ev.statut === "terminé") statutKey = "termine";
+          console.log("Mapped statut:", statutKey, "original:", ev.statut);
           console.log("Raw backend data:", resEval.data);
 
           return { 
@@ -330,6 +337,7 @@ const Evaluation = () => {
         });
 
         setEvaluations(mappedEvals);
+        console.log("mapped evals: ",mappedEvals);
       } catch (err) {
         console.error("Erreur fetching current organisme:", err);
       }
@@ -345,6 +353,7 @@ const Evaluation = () => {
       // Pass currentUser to EvaluationForm via location state
       navigate("/evaluationForm", { state: { currentUser } });
     }
+
   return (
     <>
       <Siderbar/>
@@ -367,9 +376,10 @@ const Evaluation = () => {
           {/* Metrics */}
           <div style={styles.metricsGrid}>
             <Metric index={0} title="Total évaluations" value={totalEvals} icon={<ClipboardList size={16} />} accent="#6366f1" />
-            <Metric index={1} title="Soumises" value={soumises} icon={<FileCheck size={16} />} accent="#10b981" sub="évaluations validées" />
+            <Metric index={0} title="Score Global" value={calculerScoreMoyen} icon={<TrendingUp size={16} />} accent="#6366f1" />
+            <Metric index={1} title="Terminé" value={soumises} icon={<FileCheck size={16} />} accent="#10b981" sub="évaluations validées" />
             {/*<Metric index={2} title="En cours" value={enCours} icon={<PenLine size={16} />} accent="#f59e0b" sub="en attente de soumission" />*/}
-            <Metric index={3} title="Preuves jointes" value={totalPreuves} icon={<TrendingUp size={16} />} accent="#3b82f6" sub="fichiers téléversés" />
+            <Metric index={3} title="Preuves jointes" value={totalPreuves} icon={<ClipboardList size={16} />} accent="#3b82f6" sub="fichiers téléversés" />
           </div>
 
           {/* Table */}
@@ -399,7 +409,10 @@ const Evaluation = () => {
 };
                 const color = progressColor(ev.progress || 0);
                 return (
-                  <motion.div key={ev.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + idx * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={styles.row}>
+                  <motion.div key={ev.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} 
+                  transition={{ delay: 0.3 + idx * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={styles.row}
+                  //onClick={() => navigate("/dashboardsResp", { state: { evaluation: ev } })}
+                  >
                     {/* Organisme */}
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ 

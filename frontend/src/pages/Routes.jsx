@@ -14,6 +14,10 @@ import EvaluationForm from "./evaluationForm.jsx";
 import EvaluationsListe from "./Evaluateur/evaluationsListe.jsx";
 import HomepageEval from "./Evaluateur/homepageEval.jsx";
 import EvaluationDetails from "./Evaluateur/evaluationDetails.jsx";
+import Labelisation from "./Evaluateur/labelisation.jsx";
+import Classement from "./Evaluateur/classement.jsx";
+import DashboardsEval from "./Evaluateur/dashboardsEval.jsx";
+import DashboardsResp from "./dashboardsResp.jsx";
 function AppRoutes(){
     return(
             <Routes>
@@ -33,6 +37,11 @@ function AppRoutes(){
                 <Route path="/evaluationsListe" element={<EvaluationsListe />}/>
                 <Route path="/homepageEval" element={<HomepageEval />}/>
                 <Route path="/evaluateur/evaluations/:id" element={<EvaluationDetails />} />
+                <Route path="/labelisation" element={<Labelisation />} /> 
+                <Route path="/classement" element={<Classement />} />
+                <Route path="/dashboardsEval" element={<DashboardsEval />} />
+                <Route path="/dashboardsResp" element={<DashboardsResp />} />
+
 
 
             </Routes>

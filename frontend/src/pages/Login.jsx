@@ -50,6 +50,15 @@ const Login = () => {
         const response = await axios.post(`${backendUrl}/demandes/registerDemande`, {
           nom, prenom, email, nomOrganisme:organisme, typeOrganisme, role, telephone, description,adresse,secteur,fax,dateCreation,emailOrganisme
         });
+        if (telephone.length !== 8) {
+          toast.error("Le numéro de téléphone doit contenir exactement 8 chiffres");
+        return;
+      }
+
+        if (fax.length !== 8) {
+          toast.error("Le numéro de fax doit contenir exactement 8 chiffres");
+        return;
+      }
 
         if (response.status === 201) {
           setUserData(response.data);
@@ -140,6 +149,37 @@ const Login = () => {
   };
 
   return (
+    <>
+    <style>
+{`
+  .floating-input {
+    position: relative;
+  }
+
+  .floating-input input {
+    width: 100%;
+    padding: 12px 12px 12px 12px;
+    font-size: 1rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    outline: none;
+  }
+
+  .floating-input input::placeholder {
+    color: #6c757d;
+    transition: all 0.2s ease;
+    opacity: 1;
+  }
+
+  .floating-input input:focus::placeholder,
+  .floating-input input:not(:placeholder-shown)::placeholder {
+    transform: translateY(-1.5em);
+    font-size: 0.75rem;
+    opacity: 1;
+    color: #495057;
+  }
+`}
+</style>
     <div className="d-flex justify-content-center align-items-center"
          style={{ height: "100vh", background: "linear-gradient(135deg,#f4f1ed,#e6dfd6)" }}>
       <div className="card border-0 shadow-lg"
@@ -153,40 +193,40 @@ const Login = () => {
                 <>
                   <div className="col-md-6">
                     <h6 className="text-muted mb-3">Informations personnelles</h6>
-                    <input className="form-control mb-3" placeholder="Nom" value={nom} onChange={e => setNom(e.target.value)} required />
-                    <input className="form-control mb-3" placeholder="Prénom" value={prenom} onChange={e => setPrenom(e.target.value)} required />
-                    <input className="form-control mb-3" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required />
-                    <input className="form-control mb-3" placeholder="Role" value={role} onChange={e => setRole(e.target.value)} required />
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Nom" value={nom} onChange={e => setNom(e.target.value)} required /></div>
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Prénom" value={prenom} onChange={e => setPrenom(e.target.value)} required /></div>
+                    <div className="floating-input mb-3"><input className="form-control mb-3" type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} required /></div>
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Role" value={role} onChange={e => setRole(e.target.value)} required /></div>
                   </div>
 
                   <div className="col-md-6">
                     <h6 className="text-muted mb-3">Informations d'organisme</h6>
-                    <input className="form-control mb-3" placeholder="Nom d'organisme" value={organisme} onChange={e => setOrganisme(e.target.value)} required />
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Nom d'organisme" value={organisme} onChange={e => setOrganisme(e.target.value)} required /></div>
                     <select className="form-control mb-3" value={typeOrganisme} onChange={e => setTypeOrganisme(e.target.value)} required>
                       <option value="">Type d'organisme</option>
                       <option value="publique">Publique</option>
                       <option value="prive">Privé</option>
                       <option value="societe civile">Société civile</option>
                     </select>
-                    <input className="form-control mb-3" placeholder="Téléphone" value={telephone}
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Téléphone d'organisme" value={telephone}
                     onChange={e => {const value = e.target.value;
                       // Allow only digits and max 8 characters
-                      if (/^\d{0,8}$/.test(value)) {setTelephone(value);}
-                    }} required />
-                    <input className="form-control mb-3" placeholder="Adresse" 
-                    value={adresse} onChange={e => setAdresse(e.target.value)} required />
+                      if (/^\d{0,8}$/.test(value)) {setTelephone(value);}}} required /></div>
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Adresse" 
+                    value={adresse} onChange={e => setAdresse(e.target.value)} required /></div>
 
-                    <input className="form-control mb-3" placeholder="N° fax" 
-                    value={fax} onChange={e => setFax(e.target.value)} required />
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="N° fax" 
+                    value={fax} onChange={e => {const value = e.target.value;
+                      if (/^\d{0,8}$/.test(value)) {setFax(value);} }} required /></div>
 
-                    <input className="form-control mb-3" placeholder="Email de l'organisme" type="email"
-                    value={emailOrganisme} onChange={e => setEmailOrganisme(e.target.value)} required />
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Email de l'organisme" type="email"
+                    value={emailOrganisme} onChange={e => setEmailOrganisme(e.target.value)} required /></div>
 
-                    <input className="form-control mb-3" placeholder="Secteur d'activité" 
-                    value={secteur} onChange={e => setSecteur(e.target.value)} required />
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Secteur d'activité" 
+                    value={secteur} onChange={e => setSecteur(e.target.value)} required /></div>
 
-                    <input className="form-control mb-3" placeholder="Date création" type="date"
-                    value={dateCreation} onChange={e => setDateCreation(e.target.value)} required />
+                    <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Date création" type="date"
+                    value={dateCreation} onChange={e => setDateCreation(e.target.value)} required /></div>
 
 
                     
@@ -287,6 +327,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
