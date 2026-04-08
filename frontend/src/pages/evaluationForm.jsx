@@ -4,6 +4,21 @@ import Siderbar from "../components/siderbar.jsx";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
+import { useMemo } from "react";
+
+
+function ProgressBar({ value, color, height = 6 }) {
+  return (
+    <div style={{ height, borderRadius: 999, background: "#f1f5f9", overflow: "hidden" }}>
+      <div style={{
+        height: "100%", width: `${value}%`, borderRadius: 999,
+        background: color,
+        transition: "width 0.8s cubic-bezier(.4,0,.2,1)",
+      }} />
+    </div>
+  );
+}
+
 
 const EvaluationForm = () => {
   const location = useLocation();
@@ -21,6 +36,25 @@ const EvaluationForm = () => {
   const [expandedPratique, setExpandedPratique] = useState({}); // object for multiple open pratiques
   const [expandedCritere, setExpandedCritere] = useState({}); // object for multiple open criteres
   const [selectedOption, setSelectedOption] = useState({});
+
+  const getGlobalProgress = useMemo(() => {
+  let totalCriteres = 0;
+  let treatedCriteres = 0;
+
+  principes.forEach((principe) => {
+    principe.pratiques?.forEach((pratique) => {
+      pratique.criteres?.forEach((c) => {
+        totalCriteres += 1;
+        if (selectedOption[c.id] !== undefined && selectedFiles[c.id]?.length > 0) {
+          treatedCriteres += 1;
+        }
+      });
+    });
+  });
+
+  if (totalCriteres === 0) return 0;
+  return Math.round((treatedCriteres / totalCriteres) * 100);
+}, [principes, selectedOption, selectedFiles]);
 
   /*const startEvaluation = async () => {
   try {
@@ -42,6 +76,7 @@ const EvaluationForm = () => {
       const res = await axios.post(`${backendUrl}/evaluation/new`, {
         organismeId: currentUser.organisme.id,
         responsableId: currentUser.id,
+        //score:0,
       });
 
       evaluationIdToUse = res.data?.id || res.data; // check how backend returns ID
@@ -210,34 +245,39 @@ const EvaluationForm = () => {
               Gestion des principes, pratiques et critères
             </p>
           </header>
-
-          {/* Submit All Button */}
-          <div style={{ marginBottom: 24 }}>
-            <button
-              onClick={submitAllAnswers}
-              disabled={!allCriteresAnswered() || !allFilesUploaded()}
-              style={{
-                padding: "8px 16px",
-                borderRadius: 6,
-                border: "none",
-                background:
-                  allCriteresAnswered() && allFilesUploaded() ? "#3b82f6" : "#cbd5e1",
-                color: "#fff",
-                fontWeight: 600,
-                cursor:
-                  allCriteresAnswered() && allFilesUploaded() ? "pointer" : "not-allowed",
-                marginBottom: 16,
-              }}
-            >
-              Submit All Answers
-            </button>
-          </div>
         </div>
+        {/* Progress banner */}
+                <div style={{
+                  background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
+                  borderRadius: 16, padding: "20px 24px",
+                  display: "flex", alignItems: "center", gap: 24,
+                  marginBottom: 24, color: "#fff"
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 8, fontWeight: 500 }}>
+                      Progression globale des évaluations
+                    </div>
+                    <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.2)", overflow: "hidden" }}>
+                      <div style={{
+                        height: "100%", width: `${getGlobalProgress}%`, borderRadius: 999,
+                        background: "#fff", transition: "width 0.8s ease"
+                      }} />
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", flexShrink: 0 }}>
+                    <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1 }}>{getGlobalProgress}%</div>
+                    <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>
+                      {/*{monOrganisme.evaluationsCompletes} / {userData.evaluationsTotal} évaluations*/}
+                    </div>
+                  </div>
+                </div>
+        
 
         {/* Principes */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {principes.map((principe) => {
             const isPrincipeOpen = expandedPrincipe === principe.id;
+            
             const progress = getPrincipeProgress(principe);
             const isZero = progress.startsWith("0/");
             return (
@@ -517,9 +557,33 @@ const EvaluationForm = () => {
               </div>
             );
           })}
+          {/* Submit All Button */}
+          <div style={{ marginBottom: 24 }}>
+            <button
+              onClick={submitAllAnswers}
+              disabled={!allCriteresAnswered() || !allFilesUploaded()}
+              style={{
+                padding: "8px 16px",
+                borderRadius: 6,
+                border: "none",
+                background:
+                  allCriteresAnswered() && allFilesUploaded() ? "#3b82f6" : "#cbd5e1",
+                color: "#fff",
+                fontWeight: 600,
+                cursor:
+                  allCriteresAnswered() && allFilesUploaded() ? "pointer" : "not-allowed",
+                marginBottom: 16,
+              }}
+            >
+              Submit All Answers
+            </button>
+          </div>
         </div>
+        
       </div>
+      
     </div>
+    
   );
 };
 

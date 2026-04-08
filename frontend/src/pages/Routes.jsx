@@ -18,6 +18,7 @@ import Labelisation from "./Evaluateur/labelisation.jsx";
 import Classement from "./Evaluateur/classement.jsx";
 import DashboardsEval from "./Evaluateur/dashboardsEval.jsx";
 import DashboardsResp from "./dashboardsResp.jsx";
+import EvalFeedback from "./evalFeedback.jsx";
 function AppRoutes(){
     return(
             <Routes>
@@ -41,6 +42,9 @@ function AppRoutes(){
                 <Route path="/classement" element={<Classement />} />
                 <Route path="/dashboardsEval" element={<DashboardsEval />} />
                 <Route path="/dashboardsResp" element={<DashboardsResp />} />
+                <Route path="/evalFeedback" element={<EvalFeedback />} />
+
+
 
 
 

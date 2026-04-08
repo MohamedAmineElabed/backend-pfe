@@ -140,6 +140,8 @@ export default function DashboardResp() {
       const scores = scoresParOrg.length > 0 ? scoresParOrg.map(item => {
         const scoreMax = item.scoreMax;
         const principeObj = ListPrincipes.find(p => p.id === item.principeId);
+        console.log("ListPrincipes IDs:", ListPrincipes.map(p => p.id));
+        console.log("Score principe IDs:", scoresParOrg.map(s => s.principeId));
         return {
           principe: principeObj ? principeObj.nom : `Principe ${item.principeId}` || "undefined",
           score: Math.round((item.score/scoreMax)*100) ?? 0,
@@ -189,32 +191,7 @@ const scoresMoyen = useMemo(() => {
 
       {/* Main content */}
       <div style={{ flex: 1, padding: 24 }}>
-        {/* Progress banner */}
-        <div style={{
-          background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)",
-          borderRadius: 16, padding: "20px 24px",
-          display: "flex", alignItems: "center", gap: 24,
-          marginBottom: 24, color: "#fff"
-        }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 8, fontWeight: 500 }}>
-              Progression globale des évaluations
-            </div>
-            <div style={{ height: 8, borderRadius: 999, background: "rgba(255,255,255,0.2)", overflow: "hidden" }}>
-              <div style={{
-                height: "100%", width: `${progress}%`, borderRadius: 999,
-                background: "#fff", transition: "width 0.8s ease"
-              }} />
-            </div>
-          </div>
-          <div style={{ textAlign: "right", flexShrink: 0 }}>
-            <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1 }}>{progress}%</div>
-            <div style={{ fontSize: 12, opacity: 0.8, marginTop: 2 }}>
-              {monOrganisme.evaluationsCompletes} / {monOrganisme.evaluationsTotal} évaluations
-            </div>
-          </div>
-        </div>
-
+        
         {/* Charts row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 24 }}>
           {/* Radar Chart */}

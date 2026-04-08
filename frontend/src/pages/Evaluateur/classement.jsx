@@ -84,7 +84,7 @@ const Classement = () => {
     try {
         const res = await axios.get(`${backendUrl}/evaluation/all/treated`);
         setEvaluations(res.data);
-        console.log(res.data);
+        console.log("evaluations: ",res.data);
     } catch (err) {
       console.error(err);
       toast.error("Erreur lors du chargement des données");
@@ -276,7 +276,7 @@ const Classement = () => {
                 
 
                 {/* Badge */}
-            {getLabelBadge(pct|| 0)}
+            {org.label || getLabelBadge(pct)}
               </div>
             );
           })}

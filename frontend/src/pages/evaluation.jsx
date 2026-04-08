@@ -1,16 +1,25 @@
 import { motion } from "framer-motion";
-import { Plus, ArrowUpRight, ClipboardList, FileCheck, PenLine, TrendingUp } from "lucide-react";
+import { Plus, ArrowUpRight, ClipboardList, FileCheck, PenLine, TrendingUp, Clock, Tag} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Siderbar from "../components/siderbar";
 import { useState, useEffect, useContext } from "react";
 import { AppContext } from "../context/AppContext.jsx";
 import axios from "axios";
 import { useMemo } from "react";
+import { toast } from "react-toastify";
 
 const STATUS = {
   en_attente: { label: "En attente", dot: "#94a3b8", text: "#475569", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
   en_cours: { label: "En cours", dot: "#f59e0b", text: "#92400e", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
-  termine: { label: "Terminé", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
+  terminé: { label: "Terminé", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
+};
+
+const LABEL_COLORS = {
+  "non conforme": { accent: "#f87171", bg: "rgba(248,113,113,0.1)" }, // red
+  bronze:       { accent: "#a16207", bg: "rgba(161,98,7,0.1)" },      // bronze/brown
+  argent:       { accent: "#6b7280", bg: "rgba(107,114,128,0.1)" },   // grey/silver
+  or:           { accent: "#fbbf24", bg: "rgba(251,191,36,0.1)" },    // gold
+  "excellence governance": { accent: "#10b981", bg: "rgba(16,185,129,0.1)" } // green
 };
 
 function progressColor(pct) {
@@ -108,7 +117,7 @@ const styles = {
     justifyContent: "center",
   },
   metricValue: {
-    fontSize: 36,
+    fontSize: 20,
     fontWeight: 800,
     letterSpacing: "-1px",
     lineHeight: 1,
@@ -293,6 +302,9 @@ function Metric({ title, value, sub, icon, accent, index }) {
 
 const Evaluation = () => {
   const [evaluations, setEvaluations] = useState([]);
+  const [latestEval, setLatestEval] = useState(null);
+  const [latestLabel, setLatestLabel] = useState("_"); // displayed label
+
   const calculerScoreMoyen=useMemo(()=>{
     if(evaluations.length===0) return ;
     const scoreTotal=evaluations.reduce((somme,ev)=>somme + (ev.score || 0),0);
@@ -301,14 +313,22 @@ const Evaluation = () => {
   },[evaluations]);
         
   const totalEvals = evaluations.length;
-  const soumises = evaluations.filter(ev => ev.statut === "terminé").length;
-  //const enCours = evaluations.filter(ev => ev.statut === "en_cours").length;
+  const terminés = evaluations.filter(ev => ev.statut === "terminé").length;
+  const enCours = evaluations.filter(ev => ev.statut === "en_cours").length;
+  const enAttente = evaluations.filter(ev => ev.statut === "en_attente").length;
   const totalPreuves = evaluations.reduce((sum, ev) => sum + (ev.preuves || 0), 0);
   const { backendUrl, userData } = useContext(AppContext); // userData comes from localStorage
   const [currentUser, setCurrentUser] = useState(null);
   //const [currentOrg, setCurrentOrg] = useState(null);
   const navigate = useNavigate();
 
+  /*const latestEval=useMemo(()=>{
+    if(evaluations.length===0) return null;
+    return [...evaluations].sort(
+      (a, b) => new Date(b.dateSoumission) - new Date(a.dateSoumission))[0];
+  },[evaluations]);
+  console.log("latest eval: ",latestEval);*/
+  
   // récupérer les utilisateurs
     useEffect(() => {
       if (userData?.id) {
@@ -323,7 +343,7 @@ const Evaluation = () => {
           let statutKey = (ev.statut || "").toLowerCase().trim();
           if (ev.statut === "en attente") statutKey = "en_attente";
           if (ev.statut === "en cours") statutKey = "en_cours";
-          if (ev.statut === "terminé") statutKey = "termine";
+          if (ev.statut === "terminé") statutKey = "terminé";
           console.log("Mapped statut:", statutKey, "original:", ev.statut);
           console.log("Raw backend data:", resEval.data);
 
@@ -332,7 +352,9 @@ const Evaluation = () => {
             statut: statutKey,
             organismeName: ev.organismeName || "—",
             responsableName: ev.responsableName || "—",
-            preuves: ev.preuves || 0
+            preuves: ev.preuves || 0,
+            label: ev.label,
+            dateSoumission: ev.dateSoumission,
           };
         });
 
@@ -347,12 +369,44 @@ const Evaluation = () => {
   }
 }, [backendUrl, userData]);
 
+
+
+ useEffect(() => {
+  if (!userData?.id) return;
+
+  const fetchLatestEval = async () => {
+    try {
+      const res = await axios.get(`${backendUrl}/evaluation/latest`, {
+        params: { userId: userData.id },
+      });
+      const latest = res.data;
+      
+
+      if (latest) {
+        setLatestEval(latest);
+        setLatestLabel(latest.label);
+      }
+    } catch (err) {
+      console.error("Error fetching latest evaluation:", err);
+    }
+  };
+
+  fetchLatestEval();
+}, [backendUrl, userData, evaluations]);
+
     const startEvaluation=async()=>{
       if (!currentUser) return alert("Utilisateur introuvable !");
       console.log("current user: ",currentUser);
       // Pass currentUser to EvaluationForm via location state
       navigate("/evaluationForm", { state: { currentUser } });
     }
+
+    const latestLabelStyle = useMemo(() => {
+      if (!latestLabel) return { accent: "#3b82f6", bg: "#e0f2fe" };
+      const key = latestLabel.toLowerCase();
+    return LABEL_COLORS[key] || { accent: "#3b82f6", bg: "#e0f2fe" };
+  }, [latestLabel]);
+
 
   return (
     <>
@@ -376,10 +430,13 @@ const Evaluation = () => {
           {/* Metrics */}
           <div style={styles.metricsGrid}>
             <Metric index={0} title="Total évaluations" value={totalEvals} icon={<ClipboardList size={16} />} accent="#6366f1" />
-            <Metric index={0} title="Score Global" value={calculerScoreMoyen} icon={<TrendingUp size={16} />} accent="#6366f1" />
-            <Metric index={1} title="Terminé" value={soumises} icon={<FileCheck size={16} />} accent="#10b981" sub="évaluations validées" />
-            {/*<Metric index={2} title="En cours" value={enCours} icon={<PenLine size={16} />} accent="#f59e0b" sub="en attente de soumission" />*/}
-            <Metric index={3} title="Preuves jointes" value={totalPreuves} icon={<ClipboardList size={16} />} accent="#3b82f6" sub="fichiers téléversés" />
+            <Metric index={1} title="Score Global" value={calculerScoreMoyen || 0} icon={<TrendingUp size={16} />} accent="#6366f1" />
+            <Metric index={2} title="En attente" value={enAttente} icon={<Clock size={16} />} accent="#3b82f6" sub="en attente de soumission" />
+            <Metric index={3} title="En cours" value={enCours} icon={<PenLine size={16} />} accent="#f59e0b" sub="en cours d'evaluation" />
+            <Metric index={4} title="Terminé" value={terminés} icon={<FileCheck size={16} />} accent="#10b981" sub="évaluations validées" />
+            <Metric index={5} title="Preuves jointes" value={totalPreuves} icon={<ClipboardList size={16} />} accent="#3b82f6" sub="fichiers téléversés" />
+            <Metric index={6} title="Label Actuel" value={latestLabel} icon={<Tag size={16} />} accent={latestLabelStyle.accent} sub={latestEval ? "" : "Aucune évaluation encore"} />
+
           </div>
 
           {/* Table */}
@@ -411,7 +468,13 @@ const Evaluation = () => {
                 return (
                   <motion.div key={ev.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} 
                   transition={{ delay: 0.3 + idx * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={styles.row}
-                  //onClick={() => navigate("/dashboardsResp", { state: { evaluation: ev } })}
+                  onClick={() => {
+                    if(ev?.statut==="terminé"){
+                    navigate("/evalFeedback", { state: { evaluation: ev } })}
+                    else{
+                      toast.error("l'evaluation n'est pas encore compléte!");
+                    }}
+                  }
                   >
                     {/* Organisme */}
                     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

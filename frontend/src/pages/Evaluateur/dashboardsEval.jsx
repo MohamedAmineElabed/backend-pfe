@@ -1,7 +1,7 @@
 ﻿// pages/Dashboards.jsx
 import { useEffect, useState,useContext,useMemo } from "react";
 import axios from "axios";
-import SiderbarEval from "../../components/SiderbarEval.jsx";
+import SiderbarEval from "../../components/siderbarEval.jsx";
 import StatCard from "../../components/evaluateur/statCard.jsx";
 import { AppContext } from "../../context/AppContext.jsx";
 import { toast } from "react-toastify";
@@ -26,6 +26,7 @@ export default function DashboardsEval() {
   const [chartData, setChartData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [principesMap, setPrincipesMap] = useState({});
+  const [organismeData, setOrganismeData] = useState([]);
 
   const valeurLabels = {
   0: "n'existe pas",
@@ -91,6 +92,7 @@ export default function DashboardsEval() {
     try {
         const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`);
         const evaluations=evaluationsRes.data;
+        console.log("evaluations: ",evaluations);
          // Fetch all responses in parallel
         const allResponsesArrays = await Promise.all(
           evaluations.map(evalItem => 
@@ -230,6 +232,40 @@ export default function DashboardsEval() {
   }, [backendUrl, principesMap]);
 
 
+
+  useEffect(()=>{
+    const fetchScoresParOrganismeType=async()=>{
+      try{
+        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const evaluations=evaluationsRes.data;
+
+        const orgScores=evaluations.reduce((acc,ev)=>{
+          const orgType=ev.organismeType || "undefined";
+          const score=ev.score && ev.scoreMax ? (ev.score/ev.scoreMax)*100 : 0;
+
+          if (!acc[orgType]) {
+          acc[orgType] = { total: 0, count: 0 };
+        }
+
+        acc[orgType].total += score;
+        acc[orgType].count += 1;
+        return acc;
+        },{});
+        const moyenneParOrganisme = Object.entries(orgScores).map(([orgType, data]) => ({
+          organismeType: orgType,
+          averageScore: data.total / data.count,
+        }));
+        console.log("Score moyen par organisme:", moyenneParOrganisme);
+        setOrganismeData(moyenneParOrganisme);
+      }catch(error){
+        console.error(err);
+        toast.error("Erreur lors du calcul des scores par organisme");
+      }
+    };
+    fetchScoresParOrganismeType();
+  },[backendUrl]);
+
+
   const pieData=useMemo(()=>{
     const resValidé=responses.filter(r=>r.statut?.toLowerCase()==="validé").length;
     const resRefusé=responses.filter(r=>r.statut?.toLowerCase()==="refusé").length;
@@ -365,6 +401,40 @@ export default function DashboardsEval() {
               </ResponsiveContainer>
             </div>
           </div>
+
+
+
+          <div style={{ 
+            background: "#fff", 
+            padding: "20px", 
+            borderRadius: "12px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            display: "inline-block"
+          }}>
+            <h3 style={{ marginBottom: "20px", color: "#374151" }}>Scores Moyens par principe</h3>
+            <div style={{ width: "100%", minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={organismeData}
+                  //margin={{ top: 10, right: 20, left: 10, bottom: 100 }}
+                  >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="organismeType" 
+                        interval={0}   // forces all labels to show
+                        angle={-30}    // optional: rotate labels if crowded
+                        textAnchor="end"
+                        />
+                  <YAxis domain={[0, (dataMax) => dataMax * 1.1]} />
+                  <Tooltip />
+                  <Bar dataKey="averageScore" radius={[4, 4, 0, 0]}>
+                    {organismeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+                          ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
 
           <div style={{ 
             background: "#fff", 

@@ -3,7 +3,7 @@ import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
 import axios from "axios";
 import { AppContext } from "../../context/AppContext.jsx";
-import SiderbarEval from "../../components/SiderbarEval.jsx";
+import SiderbarEval from "../../components/siderbarEval.jsx";
 import { toast } from "react-toastify";
 import { useMemo } from "react";
 import { useRef } from "react";
@@ -25,7 +25,8 @@ const valeurLabels = {
 
 // Critère leaf item
 // --- Critere Item ---
-const CritereItem = ({ critere, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete }) => {
+const CritereItem = ({ critere, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, 
+  onCommentChange, onActionSelect, isEvaluationComplete }) => {
   // Get current comment & action from global state
   const currentState = critereStates[critere.id] || {};
   const comment = currentState.comment || "";
@@ -219,7 +220,8 @@ const handleRefuserClick = () => {
 };
 
 // --- Pratique Row ---
-const PratiqueRow = ({ pratique, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete}) => {
+const PratiqueRow = ({ pratique, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, 
+  onCommentChange, onActionSelect, isEvaluationComplete}) => {
   const [open, setOpen] = useState(false);
   const criteres = pratique.criteres || [];
 
@@ -260,10 +262,23 @@ const PratiqueRow = ({ pratique, index, evaluation, onValiderCritere, onRefuserC
 };
 
 // --- Principe Row ---
-const PrincipeRow = ({ principe, index, evaluation, onValiderCritere, onRefuserCritere, critereStates, onCommentChange, onActionSelect, isEvaluationComplete,scoreData }) => {
+const PrincipeRow = ({ principe, index, evaluation, onValiderCritere, onRefuserCritere, 
+  critereStates, onCommentChange, onActionSelect, isEvaluationComplete,scoreData }) => {
   const [open, setOpen] = useState(false);
   const pratiques = principe.pratiques || [];
   const scoreInfo = scoreData?.find(s => s.principeId === principe.id);
+
+  const isPrincipeComplete = useMemo(() => {
+  if (!evaluation?.reponses) return false;
+
+  return (principe.pratiques || []).every(pratique =>
+    (pratique.criteres || []).length > 0 &&
+    (pratique.criteres || []).every(c => {
+      const reponse = evaluation.reponses.find(r => r.critereId === c.id);
+      return reponse && (reponse.statut === "validé" || reponse.statut === "refusé");
+    })
+  );
+}, [principe, evaluation]);
 
   return (
     <div style={styles.principeWrapper}>
@@ -277,7 +292,9 @@ const PrincipeRow = ({ principe, index, evaluation, onValiderCritere, onRefuserC
         </div>
         <div style={styles.pratiqueRight}>
           {pratiques.length > 0 && (
-            <span style={styles.subBadge}>{pratiques.length} pratique{pratiques.length !== 1 ? "s" : ""}</span>
+            !isPrincipeComplete ?
+              (<span style={styles.subBadge}>{pratiques.length || 0 } pratique{pratiques.length !== 1 ? "s" : ""}</span>)
+              : (<span style={styles.subBadge}>completed</span>)
           )}
           <span style={{ ...styles.chevron, transform: open ? "rotate(90deg)" : "rotate(0deg)" }}>›</span>
         </div>
@@ -320,14 +337,15 @@ const EvaluationDetails = () => {
   );
 }, [principes]);
 
-const isEvaluationComplete = useMemo(() => {
+/*const isEvaluationComplete = useMemo(() => {
   if (!allCriteres.length || !evaluation?.reponses) return false;
 
   return allCriteres.every(c => {
     const response = evaluation.reponses.find(r => r.critereId === c.id);
     return response && (response.statut === "validé" || response.statut === "refusé");
   });
-}, [allCriteres, evaluation]);
+}, [allCriteres, evaluation]);*/
+const isEvaluationComplete=evaluation?.statut==="terminé";
 
   // when user types a comment
 const handleCommentChange = async (critereId, value) => {
@@ -422,9 +440,28 @@ const handleActionSelect = (critereId, action) => {
     fetchPrincipes();
   }, [backendUrl]);
 
+  //fetch only treated principes
+  const treatedPrincipes = useMemo(() => {
+  if (!evaluation?.reponses || !principes.length) return [];
+  return principes.filter(principe => {
+    const hasTreatedCritere = (principe.pratiques || []).some(pratique =>
+      (pratique.criteres || []).some(critere =>
+        evaluation.reponses.some(
+          r => r.critereId === critere.id && (r.statut === "validé" || r.statut === "refusé")
+        )
+      )
+    );
+    return hasTreatedCritere;
+  });
+}, [principes, evaluation]);
+
+
+
   // Auto-update evaluation status based on responses
   useEffect(() => {
   if (!evaluation?.reponses) return;
+  if (evaluation.statut === "terminé") return;
+
 
   const allResponses = evaluation.reponses;
   const isComplete = allResponses.every(
@@ -455,7 +492,11 @@ const handleActionSelect = (critereId, action) => {
     .filter(r => r.statut !== "refusé")
     .reduce((sum, r) => sum + (r.valeur || 0), 0);
   }, [evaluation]);
-  const maxScore = allCriteres.length * 3; // each critere max score is 3
+  //MaxScore Calculation
+  const maxScore = useMemo(() => {
+  if (!evaluation?.reponses) return 0;
+  return evaluation.reponses.length * 3;
+}, [evaluation]);
 
   //calculer score per principe
     const scorePerPrincipe = useMemo(() => {
@@ -493,7 +534,8 @@ const handleActionSelect = (critereId, action) => {
   //to save score
   useEffect(() => {
   const saveScoreIfComplete = async () => {
-    if (isEvaluationComplete && totalScore !== evaluation.score && evaluation) {
+    if (!evaluation) return;
+    if (isEvaluationComplete && evaluation.score ===0) {
       try {
         const response = await axios.put(
           `${backendUrl}/evaluation/${evaluation.id}/score`,
@@ -735,62 +777,83 @@ useEffect(() => {
         </div>
 
         {/* Accordion */}
-        {!isEvaluationComplete?(
-        <div style={styles.accordionWrap}>
-          {principes.length ? (
-            principes.map((p, i) => <PrincipeRow key={i} principe={p} index={i} evaluation={evaluation} 
-            onValiderCritere={handleValiderCritere} onRefuserCritere={handleRefuserCritere} isEvaluationComplete={isEvaluationComplete}
-            critereStates={critereStates} onCommentChange={handleCommentChange} onActionSelect={handleActionSelect} scoreData={scorePerPrincipe} />)
-          ) : (
-            <p style={styles.emptyTop}>Aucun principe défini pour cette évaluation.</p>
-          )}
-        </div>):(
-          <div
-        style={{
-          marginBottom: 16,
-          padding: "14px 16px",
-          borderRadius: 12,
-          background: "#f9fafb", 
-          border: "1px solid #e5e7eb",
-          color: "#111827",
-          fontWeight: 500,
-        }}
-      >
-    Cette évaluation est terminée. Vous ne pouvez plus modifier les réponses.
-    <div style={{ marginTop: 8, fontSize: 16 }}>
-      Score total : <strong>{totalScore} / {maxScore}</strong>
+<div style={styles.accordionWrap}>
+  {!isEvaluationComplete ? (
+    principes.length ? (
+      principes.map((p, i) => (
+        <PrincipeRow
+          key={i}
+          principe={p}
+          index={i}
+          evaluation={evaluation}
+          onValiderCritere={handleValiderCritere}
+          onRefuserCritere={handleRefuserCritere}
+          isEvaluationComplete={isEvaluationComplete}
+          critereStates={critereStates}
+          onCommentChange={handleCommentChange}
+          onActionSelect={handleActionSelect}
+          scoreData={scorePerPrincipe}
+        />
+      ))
+    ) : (
+      <p style={styles.emptyTop}>Aucun principe défini pour cette évaluation.</p>
+    )
+  ) : (
+    <div
+      style={{
+        marginBottom: 16,
+        padding: "14px 16px",
+        borderRadius: 12,
+        background: "#f9fafb",
+        border: "1px solid #e5e7eb",
+        color: "#111827",
+        fontWeight: 500,
+      }}
+    >
+      Cette évaluation est terminée. Vous ne pouvez plus modifier les réponses.
+      <div style={{ marginTop: 8, fontSize: 16 }}>
+        Score total : <strong>{totalScore} / {maxScore}</strong>
       </div>
       <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-      {scorePerPrincipe.map((p) => (
-    <span
-      key={p.principeId}
-      style={{
-        width: "17%",
-        padding: "4px 10px",
-        borderRadius: 999,
-        fontSize: 12,
-        fontWeight: 600,
-        display: "flex",
-        justifyContent: "space-between",
-        background:
-          p.percentage < 40
-            ? "#fee2e2"
-            : p.percentage < 70
-            ? "#fef3c7"
-            : "#dcfce7",
-        color:
-          p.percentage < 40
-            ? "#991b1b"
-            : p.percentage < 70
-            ? "#92400e"
-            : "#065f46",
-      }}
-      >{p.principeName}: {p.score}/{p.maxScore} ({p.percentage}%)</span>
-  ))}
-
-    </div>
-  </div>
+        {treatedPrincipes.length ? (
+          treatedPrincipes.map((p) => {
+            const sp = scorePerPrincipe.find(s => s.principeId === p.id) || { score: 0, maxScore: 0, percentage: 0 };
+            return (
+              <span
+                key={p.id}
+                style={{
+                  width: "fit-content",
+                  padding: "4px 10px",
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  background:
+                    sp.percentage < 40
+                      ? "#fee2e2"
+                      : sp.percentage < 70
+                      ? "#fef3c7"
+                      : "#dcfce7",
+                  color:
+                    sp.percentage < 40
+                      ? "#991b1b"
+                      : sp.percentage < 70
+                      ? "#92400e"
+                      : "#065f46",
+                }}
+              >
+                {p.nom}: {sp.score}/{sp.maxScore} ({sp.percentage}%)
+              </span>
+            );
+          })
+        ) : (
+          <p style={{ fontStyle: "italic", color: "#64748b" }}>Aucun principe traité.</p>
         )}
+      </div>
+    </div>
+  )}
+</div>
       </div>
     </div>
   );
