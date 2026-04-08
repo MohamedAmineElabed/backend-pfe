@@ -1,4 +1,6 @@
 package com.example.authentify.controller;
+
+//import com.example.authentify.repository.EvaluationRepository;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,22 +35,28 @@ import org.springframework.web.bind.annotation.PathVariable;
 import java.util.Map;
 //import org.springframework.web.bind.annotation.PostMapping;
 //import org.springframework.web.bind.annotation.PutMapping;
-//import org.springframework.web.bind.annotation.RequestBody;
+//import org.springframework.web.bind.annotation.RequestParam;
 //import org.springframework.web.bind.annotation.ResponseStatus;
 //import static java.util.Map.entry;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+//import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/v1.0/evaluation")
 @RequiredArgsConstructor
 public class EvaluationController {
     //private final EvaluationRepository evaluationRepository;
+    //private final EvaluationRepository evaluationRepository;
     //private final ReponseRepository reponseRepository;
     private final EvaluationServiceImp evaluationService;
     private final PrincipeService principeService;
     private final ProfileService organismeService;
+
+    /*EvaluationController(EvaluationRepository evaluationRepository) {
+        this.evaluationRepository = evaluationRepository;
+    }*/
 
    @PostMapping("/new")
     public ResponseEntity<Long> createEvaluation(@RequestBody EvaluationRequest request) {
@@ -117,6 +125,7 @@ public class EvaluationController {
             String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
             //String organisme = "Organisme #" + ev.getId();
             Integer score=ev.getScore();
+            String label=ev.getLabel();
 
             // Fetch organisme
             OrganismeEntity org = organismeService.getOrganismeById(ev.getOrganisme().getId());
@@ -133,6 +142,7 @@ public class EvaluationController {
             map.put("progress", progress);
             map.put("preuves", preuvesCount);
             map.put("score", score);
+            map.put("label", label);
             return map;
         }).toList();
 
@@ -291,8 +301,8 @@ public class EvaluationController {
                 .mapToInt(r -> r.getValeur() != null ? r.getValeur() : 0)
                 .sum();
         }
-
-        int maxScore = ev.getReponses() != null ? ev.getReponses().size() * 3 : 0;
+        int maxScore=ev.getScoreMax();
+        //int maxScore = ev.getReponses() != null ? ev.getReponses().size() * 3 : 0;
         String label = evaluationService.getLabel(totalScore, maxScore);
         String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
 
@@ -310,6 +320,7 @@ public class EvaluationController {
         map.put("maxScore", maxScore);
         map.put("label", label);
         map.put("dateCreation", dateCreation);
+        map.put("scoreMax", maxScore);
 
         return map;
 
@@ -317,6 +328,16 @@ public class EvaluationController {
 
     return ResponseEntity.ok(response);
 }
+
+
+    @GetMapping("/latest")
+    public ResponseEntity<EvaluationEntity> getLatestEval(@RequestParam Long userId){
+        EvaluationEntity latest=evaluationService.getLatestEvaluation(userId);
+        if (latest == null) {
+            return ResponseEntity.ok().body(null);
+        }
+        return ResponseEntity.ok(latest);
+    }
 
     
 

@@ -13,6 +13,7 @@ import com.example.authentify.entity.ScoreParPrincipeEntity;
 //import com.example.authentify.entity.OrganismeEntity;
 
 import com.example.authentify.repository.EvaluationRepository;
+//import com.example.authentify.repository.PrincipeRepository;
 //import com.example.authentify.io.ReponseRequest;
 //import com.example.authentify.repository.DemandeRepository;
 import com.example.authentify.service.ScoreParPrincipeService;
@@ -54,6 +55,7 @@ public class ScoreParPrincipeController {
     public ResponseEntity<ScoreParPrincipeEntity> enregistrerScore(@RequestBody ScoreInput input) {
         EvaluationEntity evaluation=evaluationRepository.findById(input.getEvaluationId())
             .orElseThrow(() -> new RuntimeException("Evaluation not found"));
+        
         // Save score
         ScoreParPrincipeEntity savedScore = scoreParPrincipeService.enregistrerScore(
                 evaluation,

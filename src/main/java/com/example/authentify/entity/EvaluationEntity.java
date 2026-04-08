@@ -49,9 +49,15 @@ public class EvaluationEntity {
     private Long id;
     private String statut;
 
-    @Builder.Default
-    @Column(nullable = false)
-    private Integer score = 0;
+    //@Builder.Default
+    @Column(nullable = true) // allow null in the database
+    private Integer score;
+
+    //@Builder.Default
+    @Column(name="score_max",nullable = false) 
+    private Integer scoreMax;
+
+    private String label;
 
 
     @CreationTimestamp

@@ -63,6 +63,8 @@ public class EvaluationServiceImp {
         evaluation.setOrganisme(organisme);
         evaluation.setResponsableId(request.getResponsableId());
         evaluation.setStatut("en attente");
+        evaluation.setScore(0);
+        evaluation.setScoreMax(0);
 
         evaluation = evaluationRepository.save(evaluation);
         return evaluation; // return the entity so frontend can get its ID
@@ -117,6 +119,7 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
     reponse.setEvaluation(evaluation);
     reponse.setCritereId(critereId);
     reponse.setValeur(valeur);
+    
 
     // 3. Save response first (so we have an ID for the file)
     reponse = reponseRepository.save(reponse);
@@ -248,6 +251,12 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
             .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
 
     evaluation.setScore(score); // set total score here
+
+    // Calculate max score (sum of all criteria max values)
+    int maxScore = evaluation.getReponses() != null ? evaluation.getReponses().size() * 3 : 0;
+    evaluation.setScoreMax(maxScore);
+    String label = getLabel(score, maxScore);
+    evaluation.setLabel(label);
     return evaluationRepository.save(evaluation);
 }
 
@@ -259,5 +268,9 @@ public String getLabel(int score,int maxscore){
     else if(pct>=60 && pct<=79) return "Argent";
     else if(pct>=80 && pct<=89) return "Or";
     else return "Excellence governance";
+}
+
+public EvaluationEntity getLatestEvaluation(Long userId){
+    return evaluationRepository.findLatestEval(userId).orElse(null);
 }
 }
