@@ -51,6 +51,8 @@ public class OrganismeEntity {
     @Column(name="date_creation")
     private LocalDate dateCreation;
 
+    private String logoUrl;
+
     //@JsonIgnore
     @OneToOne(mappedBy = "organisme", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JsonManagedReference

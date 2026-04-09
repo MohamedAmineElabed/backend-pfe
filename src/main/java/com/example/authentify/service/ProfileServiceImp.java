@@ -3,6 +3,7 @@ import org.springframework.http.HttpStatus;
 //import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 //import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.server.ResponseStatusException;
 //import java.util.Optional;
@@ -26,6 +27,9 @@ import jakarta.transaction.Transactional;
 
 import com.example.authentify.repository.OrganismeRepository;
 import java.lang.Long;
+import java.nio.file.Path;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.ThreadLocalRandom;
 
 import lombok.RequiredArgsConstructor;
@@ -187,6 +191,7 @@ public UserEntity registerUserFromDemande(String email, RegisterFromDemandeReque
     organisme.setFax(demande.getFax());
     organisme.setDateCreation(demande.getDateCreation());
     organisme.setResponsable(user);
+    organisme.setLogoUrl(demande.getLogoUrl());
 
     // Sauvegarder l'organisme en DB
     organisme = organismeRepository.save(organisme);
@@ -439,6 +444,26 @@ private boolean isStrongPassword(String password) {
     organisme.setDateCreation(request.getDateCreation());
     //organisme.setLogoUrl(request.getLogoUrl());
 
+    MultipartFile logoFile = request.getLogo(); // Make sure OrganismeRequest has MultipartFile logo
+    if (logoFile != null && !logoFile.isEmpty()) {
+        try {
+            // Generate unique filename
+            String fileName = System.currentTimeMillis() + "_" + logoFile.getOriginalFilename();
+            Path uploadPath = Paths.get("uploads/");
+            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
+
+            // Save the file
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(logoFile.getInputStream(), filePath);
+
+            // Save path as String in the entity
+            //organisme.setLogoUrl("/uploads/" + fileName);
+            organisme.setLogoUrl("http://localhost:8080/api/v1.0/uploads/" + fileName);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to upload logo", e);
+        }
+    }
+
     return organismeRepository.save(organisme);
 }
 
@@ -473,6 +498,7 @@ public OrganismeResponse createOrganisme(OrganismeRequest request) {
         .secteur(request.getSecteur())
         .telephone(request.getTelephone())
         .dateCreation(request.getDateCreation())
+        .logoUrl(request.getLogoUrl())
         .build();
 }
 

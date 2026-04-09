@@ -5,6 +5,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
+
+import org.springframework.web.multipart.MultipartFile;
+
 //import jakarta.validation.constraints.Size;
 //import jakarta.validation.constraints.Size;
 //import java.util.Date;
@@ -45,5 +48,7 @@ public class OrganismeRequest {
     
     @Column(name = "logo_url")
     private String logoUrl;
+
+    private MultipartFile logo;
 
 }

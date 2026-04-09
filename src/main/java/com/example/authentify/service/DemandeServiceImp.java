@@ -114,6 +114,7 @@ public class DemandeServiceImp implements DemandeService {
                 .fax(request.getFax())
                 .secteur(request.getSecteur())
                 .dateCreation(request.getDateCreation())
+                .logoUrl(request.getLogoUrl())
                 .build();
         return demandeEntity;
     }
