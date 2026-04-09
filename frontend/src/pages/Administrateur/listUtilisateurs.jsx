@@ -176,53 +176,82 @@ const ListUtilisateurs = () => {
             )}
 
             {/* Modal description */}
-            {showDescription && selectedUser && (
-              <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-                <div className="modal-dialog modal-lg modal-dialog-centered">
-                  <div className="modal-content p-4">
-                    <h5 className="mb-4 text-center">Description</h5>
+{showDescription && selectedUser && (
+  <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050, padding: 24 }}>
+    <div style={{ background: "#fff", borderRadius: 16, border: "0.5px solid #e5e5e5", width: "100%", maxWidth: 640, overflow: "hidden", boxShadow: "0 20px 60px rgba(0,0,0,0.15)" }}>
 
-                    <div className="row">
-                      {/* Responsable */}
-                      <div className="col-md-6">
-                        <h6>Responsable</h6>
-                        <ul className="list-unstyled">
-                          <li><strong>Nom :</strong> {selectedUser.nom || "-"}</li>
-                          <li><strong>Prénom :</strong> {selectedUser.prenom || "-"}</li>
-                          <li><strong>Email :</strong> {selectedUser.email || "-"}</li>
-                          <li><strong>Poste :</strong> {selectedUser.role || "-"}</li>
-                          <li><strong>Etat :</strong> {selectedUser.etat || "-"}</li>
-                        </ul>
-                      </div>
+      {/* Header */}
+      <div style={{ padding: "16px 24px", borderBottom: "0.5px solid #eee", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#1D9E75", display: "inline-block" }} />
+          <span style={{ fontSize: 12, fontWeight: 500, color: "#888", letterSpacing: "0.06em", textTransform: "uppercase" }}>Fiche utilisateur</span>
+        </div>
+        <button onClick={() => setShowDescription(false)} style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: "#aaa", lineHeight: 1 }}>✕</button>
+      </div>
 
-                      {/* Organisme */}
-                      <div className="col-md-6">
-                        <h6>Organisme</h6>
-                        <ul className="list-unstyled">
-                          <li><strong>Nom :</strong> {selectedUser.organisme?.nomOrganisme || "-"}</li>
-                          <li><strong>Adresse :</strong> {selectedUser.organisme?.adresse || "-"}</li>
-                          <li><strong>Fax :</strong> {selectedUser.organisme?.fax || "-"}</li>
-                          <li><strong>Téléphone :</strong> {selectedUser.organisme?.telephone || "-"}</li>
-                          <li><strong>Email :</strong> {selectedUser.organisme?.emailOrganisme || "-"}</li>
-                          <li><strong>Secteur :</strong> {selectedUser.organisme?.secteur || "-"}</li>
-                          <li><strong>Type :</strong> {selectedUser.organisme?.type || "-"}</li>
-                        </ul>
-                      </div>
-                    </div>
+      {/* Body */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
 
-                    <div className="d-flex justify-content-end mt-3">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => setShowDescription(false)}
-                      >
-                        Fermer
-                      </button>
-                    </div>
-                  </div>
-                </div>
+        {/* Responsable */}
+        <div style={{ padding: "20px 24px", borderRight: "0.5px solid #eee" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#E6F1FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 500, color: "#185FA5" }}>
+              {(selectedUser.prenom?.[0] || "") + (selectedUser.nom?.[0] || "")}
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 500 }}>{selectedUser.prenom} {selectedUser.nom}</p>
+              <p style={{ margin: 0, fontSize: 12, color: "#888" }}>{selectedUser.role || "-"}</p>
+            </div>
+          </div>
+          {[["Email", selectedUser.email], ["Poste", selectedUser.role], ["État", selectedUser.etat]].map(([label, value]) => (
+            <div key={label} style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+              {label === "État"
+                ? <span style={{ display: "flex", alignItems: "center", gap: 5 }}><span style={{ width: 6, height: 6, borderRadius: "50%", background: "#1D9E75", display: "inline-block" }} /><span style={{ fontSize: 13, color: "#0F6E56" }}>{value || "-"}</span></span>
+                : <div style={{ fontSize: 13, color: label === "Email" ? "#185FA5" : "#222" }}>{value || "-"}</div>
+              }
+            </div>
+          ))}
+        </div>
+
+        {/* Organisme */}
+        <div style={{ padding: "20px 24px" }}>
+          {selectedUser.organisme?.logoUrl
+            ? <img src={selectedUser.organisme.logoUrl} alt="logo" style={{ width: "100%", height: 100, 
+              objectFit: "contain", borderRadius: 8, border: "0.5px solid #eee", marginBottom: 16 }} />
+            : <div style={{ height: 100, borderRadius: 8, background: "#f7f7f7", 
+              border: "0.5px solid #eee", display: "flex", alignItems: "center", 
+              justifyContent: "center", fontSize: 12, color: "#bbb", marginBottom: 16 }}>Logo</div>
+          }
+          {[["Nom", selectedUser.organisme?.nomOrganisme], ["Adresse", selectedUser.organisme?.adresse], ["Email", selectedUser.organisme?.emailOrganisme]].map(([label, value]) => (
+            <div key={label} style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+              <div style={{ fontSize: 13, color: "#222" }}>{value || "-"}</div>
+            </div>
+          ))}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            {[["Tél.", selectedUser.organisme?.telephone], ["Fax", selectedUser.organisme?.fax], 
+            ["Secteur", selectedUser.organisme?.secteur], ["Type", selectedUser.organisme?.type]].map(([label, value]) => (
+              <div key={label}>
+                <div style={{ fontSize: 11, color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+                <div style={{ fontSize: 13, color: "#222" }}>{value || "-"}</div>
               </div>
-            )}
+            ))}
+          </div>
+        </div>
+      </div>
 
+      {/* Footer */}
+      <div style={{ padding: "12px 24px", borderTop: "0.5px solid #eee", display: "flex", justifyContent: "flex-end" }}>
+        <button onClick={() => setShowDescription(false)} 
+        style={{ fontSize: 13, padding: "7px 18px", borderRadius: 8, border: "0.5px solid #ddd", 
+        background: "none", cursor: "pointer", color: "#555" }}>
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+)}
           </div>
         </div>
       </div>

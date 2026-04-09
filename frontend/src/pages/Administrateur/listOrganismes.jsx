@@ -166,6 +166,7 @@ const ListUtilisateurs = () => {
         <table className="table table-striped table-hover align-middle">
           <thead className="table-primary">
             <tr>
+              <th>Logo</th>
               <th>Nom</th>
               <th>Adresse</th>
               <th>Email</th>
@@ -182,6 +183,11 @@ const ListUtilisateurs = () => {
           <tbody>
             {organismes.map((org) => (
               <tr key={org.id}>
+                <td><img 
+                      src={org.logoUrl}
+                      alt="logo"
+                      style={{width: "100%", height: "100%", objectFit: "cover"}}
+                /></td>
                 <td>{org.nomOrganisme || "-"}</td>
                 <td>{org.adresse || "-"}</td>
                 <td>{org.emailOrganisme || "-"}</td>

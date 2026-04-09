@@ -19,6 +19,9 @@ import Classement from "./Evaluateur/classement.jsx";
 import DashboardsEval from "./Evaluateur/dashboardsEval.jsx";
 import DashboardsResp from "./dashboardsResp.jsx";
 import EvalFeedback from "./evalFeedback.jsx";
+
+import DocumentViewer from "../components/documentsViewer.jsx";
+
 function AppRoutes(){
     return(
             <Routes>
@@ -43,6 +46,7 @@ function AppRoutes(){
                 <Route path="/dashboardsEval" element={<DashboardsEval />} />
                 <Route path="/dashboardsResp" element={<DashboardsResp />} />
                 <Route path="/evalFeedback" element={<EvalFeedback />} />
+                <Route path="/view/:filename" element={<DocumentViewer />} />
 
 
 

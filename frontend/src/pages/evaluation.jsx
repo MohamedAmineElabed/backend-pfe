@@ -407,9 +407,20 @@ const Evaluation = () => {
     return LABEL_COLORS[key] || { accent: "#3b82f6", bg: "#e0f2fe" };
   }, [latestLabel]);
 
-
+  if (currentUser && currentUser.etat !== "actif") {
   return (
     <>
+      <Siderbar />
+      <div style={{ marginLeft: "200px", padding: "40px" }}>
+        <h2 style={{ color: "#ef4444" }}>Accès refusé</h2>
+        <p>Votre compte est inactif. Vous ne pouvez pas accéder aux évaluations.</p>
+      </div>
+    </>
+  );
+}
+  return (
+    <>
+    
       <Siderbar/>
       <div style={{ ...styles.page, marginLeft: "200px" }}>
         {/* Header */}

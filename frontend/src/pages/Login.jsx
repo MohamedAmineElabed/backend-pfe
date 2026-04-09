@@ -23,6 +23,7 @@ const Login = () => {
   const[emailOrganisme,setEmailOrganisme]=useState('');
   const[secteur,setSecteur]=useState('');
   const[dateCreation,setDateCreation]=useState('');
+  const [logoFile, setLogoFile] = useState(null);
 
 
 
@@ -47,9 +48,34 @@ const Login = () => {
 
     try {
       if (iscreateAccount) {
-        const response = await axios.post(`${backendUrl}/demandes/registerDemande`, {
-          nom, prenom, email, nomOrganisme:organisme, typeOrganisme, role, telephone, description,adresse,secteur,fax,dateCreation,emailOrganisme
+        /*const response = await axios.post(`${backendUrl}/demandes/registerDemande`, {
+          nom, prenom, email, nomOrganisme:organisme, typeOrganisme, role, telephone, 
+          description,adresse,secteur,fax,dateCreation,emailOrganisme
+        });*/
+        const formData =new FormData()
+
+        formData.append("nom", nom);
+        formData.append("prenom", prenom);
+        formData.append("email", email);
+        formData.append("nomOrganisme", organisme);
+        formData.append("typeOrganisme", typeOrganisme);
+        formData.append("role", role);
+        formData.append("telephone", telephone);
+        formData.append("description", description);
+        formData.append("adresse", adresse);
+        formData.append("secteur", secteur);
+        formData.append("fax", fax);
+        formData.append("dateCreation", dateCreation);
+        formData.append("emailOrganisme", emailOrganisme);
+        if (logoFile) {
+          formData.append("logo", logoFile);
+        }
+        const response = await axios.post(`${backendUrl}/demandes/registerDemande`, formData,{
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
         });
+
         if (telephone.length !== 8) {
           toast.error("Le numéro de téléphone doit contenir exactement 8 chiffres");
         return;
@@ -63,6 +89,7 @@ const Login = () => {
         if (response.status === 201) {
           setUserData(response.data);
           setIsloggedIn(true);
+          //sessionStorage.setItem("userData", JSON.stringify(response.data));
           toast.success("Inscription réussie !");
         }
       } else {
@@ -228,9 +255,12 @@ const Login = () => {
                     <div className="floating-input mb-3"><input className="form-control mb-3" placeholder="Date création" type="date"
                     value={dateCreation} onChange={e => setDateCreation(e.target.value)} required /></div>
 
+                    
+
 
                     
                   </div>
+                  <input type="file" accept="image/*" className="form-control mb-3"  required onChange={(e) => setLogoFile(e.target.files[0])}/>
                   {/*<textarea
                       className="form-control mb-3"
                       placeholder="Description de la demande"

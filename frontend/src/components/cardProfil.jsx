@@ -41,10 +41,39 @@ function CardProfil({user}){
         }
     
       },[user]);
+
+      console.log("Organisme =", formData.organisme);
+      console.log("Logo URL =", formData.organisme?.logoUrl);
     return(
     <>
     <div style={{ background:"#faf9f6", border:"1px solid #dbd8d0", borderRadius:14, padding:22, marginBottom:20, display:"flex", alignItems:"center", gap:20,  }}>
-          <div style={{ width:72, height:72, borderRadius:12, background:"#2563c7", display:"flex", alignItems:"center", justifyContent:"center", color:"#fff", fontSize:"1.4rem", fontWeight:700, flexShrink:0 }}>{abreviation}</div>
+          {/*<div style={{ width:72, height:72, borderRadius:12, background:"#2563c7", display:"flex", alignItems:"center", 
+            justifyContent:"center", color:"#fff", fontSize:"1.4rem", fontWeight:700, flexShrink:0 }}>{abreviation}</div>*/}
+          <div style={{ 
+            width:72, 
+            height:72, 
+            borderRadius:12, 
+            background:"#f3f4f6", 
+            display:"flex", 
+            alignItems:"center", 
+            justifyContent:"center", 
+            overflow: "hidden",
+            flexShrink:0 
+          }}>
+
+  {formData?.organisme?.logoUrl ? (
+    <img 
+      src={formData.organisme.logoUrl}
+      alt="logo"
+      style={{width: "100%", height: "100%", objectFit: "cover"}}
+    />
+  ) : (
+    <span style={{color:"#2563c7",fontSize:"1.4rem",fontWeight:700}}>
+      {abreviation}
+    </span>
+  )}
+
+</div>
           <div style={{ flex:1 }}>
             <div style={{ fontWeight:800, fontSize:"1.05rem", marginBottom:3 }}></div>
             <div style={{ fontSize:"0.78rem", color:"#78746c", fontFamily:"monospace", marginBottom:8 }}></div>

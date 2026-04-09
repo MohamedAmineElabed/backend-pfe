@@ -180,6 +180,18 @@ const scoresMoyen = useMemo(() => {
   return Scores;
   
 }, [scorePrincipes]);
+
+if (user && user.etat !== "actif") {
+  return (
+    <>
+      <Siderbar />
+      <div style={{ marginLeft: "200px", padding: "40px" }}>
+        <h2 style={{ color: "#ef4444" }}>Accès refusé</h2>
+        <p>Votre compte est inactif. Vous ne pouvez pas accéder aux évaluations.</p>
+      </div>
+    </>
+  );
+}
   
 
   return (

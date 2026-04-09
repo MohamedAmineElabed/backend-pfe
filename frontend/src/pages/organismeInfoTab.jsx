@@ -86,7 +86,7 @@ const OrganismeInfoTab = ({ org }) => {
   try {
     //const payload = { ...selectedOrganisme };
     // Send updated organisme to backend
-    await axios.put(`${backendUrl}/organismes/update/${formData.id}`, formData);
+    
     
 
     // Update local state so the list reflects changes
@@ -95,6 +95,29 @@ const OrganismeInfoTab = ({ org }) => {
         org.id === selectedOrganisme.id ? selectedOrganisme : org
       )
     );*/
+
+    //await axios.put(`${backendUrl}/organismes/update/${formData.id}`, formData);
+    const formPayload = new FormData();
+    formPayload.append("nomOrganisme", formData.nomOrganisme);
+    formPayload.append("type", formData.type);
+    formPayload.append("emailOrganisme", formData.emailOrganisme);
+    formPayload.append("telephone", formData.telephone);
+    formPayload.append("adresse", formData.adresse);
+    formPayload.append("fax", formData.fax);
+    formPayload.append("secteur", formData.secteur);
+    formPayload.append("dateCreation", formData.dateCreation);
+
+    if (formData.logo) {
+      formPayload.append("logo", formData.logo);
+    }
+
+    await axios.put(
+      `${backendUrl}/organismes/update/${formData.id}`,
+      formPayload,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
 
     toast.success("Organisme modifié avec succès");
     setIsEditing(false);
@@ -154,6 +177,17 @@ const OrganismeInfoTab = ({ org }) => {
     </Form.Group>
   </Col>
 </Row>
+
+<Form.Group className="mb-3">
+  <Form.Label>Logo</Form.Label>
+  <Form.Control
+    type="file"
+    name="logo"
+    accept="image/*"
+    disabled={!isEditing}
+    onChange={(e) => setFormData({ ...formData, logo: e.target.files[0] })}
+  />
+</Form.Group>
 
 <Form.Group className="mb-3">
   <Form.Label>Email</Form.Label>

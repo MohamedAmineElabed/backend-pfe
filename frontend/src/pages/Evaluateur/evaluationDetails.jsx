@@ -7,6 +7,11 @@ import SiderbarEval from "../../components/siderbarEval.jsx";
 import { toast } from "react-toastify";
 import { useMemo } from "react";
 import { useRef } from "react";
+import { openFile } from "../../util/fileUtils.js";
+
+
+
+
 
 
 
@@ -32,11 +37,17 @@ const CritereItem = ({ critere, index, evaluation, onValiderCritere, onRefuserCr
   const comment = currentState.comment || "";
   const selectedAction = critereStates[critere.id]?.action || null;
 
+  const { backendUrl } = useContext(AppContext);
+
   const responsesForThisCritere = (evaluation?.reponses || []).filter(
     (r) => r.critereId === critere.id
   );
   const response = responsesForThisCritere[0];
   const isLocked = isEvaluationComplete || selectedAction !== null;
+
+  const [selectedFile, setSelectedFile] = useState(null);
+  
+
 
 const handleValidateClick = () => {
   //if we want comment to be necessary
@@ -97,7 +108,9 @@ const handleRefuserClick = () => {
                   <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                     {r.preuves.map((p, j) => (
                       <button key={j} href={p.fileUrl} target="_blank" rel="noopener noreferrer"
-                        onClick={() => window.open(p.fileUrl, "_blank")}
+                        //onClick={() => window.open(p.fileUrl, "_blank")}
+                        //onClick={() => setSelectedFile(p.fileUrl)}
+                        onClick={() => openFile(backendUrl, p.fileName)}
                         style={{
                           display: "inline-flex", alignItems: "center", gap: 6,
                           fontSize: 13, color: "#3b82f6", textDecoration: "none",
@@ -107,6 +120,28 @@ const handleRefuserClick = () => {
                         📄 {p.fileName}
                       </button>
                     ))}
+
+
+                    {/*selectedFile && (
+  <div style={{ marginTop: 20 }}>
+    {selectedFile.endsWith(".pdf") ? (
+      <iframe
+        src={selectedFile}
+        width="100%"
+        height="600px"
+        style={{ border: "1px solid #cbd5e1", borderRadius: 8 }}
+      ></iframe>
+    ) : selectedFile.match(/\.(jpeg|jpg|png|gif)$/i) ? (
+      <img
+        src={selectedFile}
+        alt="Selected File"
+        style={{ maxWidth: "100%", borderRadius: 8, border: "1px solid #cbd5e1" }}
+      />
+    ) : (
+      <p>Cannot preview this file type. <a href={selectedFile} target="_blank">Download</a></p>
+    )}
+  </div>
+)*/}
       {/* Evaluator comment */}
       <div style={{ padding: "16px 18px" }}>
         <label style={{ display: "block", fontSize: 12, fontWeight: 500, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
@@ -323,6 +358,7 @@ const EvaluationDetails = () => {
   const { state } = useLocation();
   const { evaluation: initialEval } = state || {};
   const { backendUrl } = useContext(AppContext);
+  console.log(backendUrl);
   const { id } = useParams();
   const [critereStates, setCritereStates] = useState({});
   const [evaluation, setEvaluation] = useState(initialEval || null);
@@ -389,7 +425,7 @@ const handleActionSelect = (critereId, action) => {
         commentaireEvaluateur: r.commentaire || "",
         preuves: (r.preuves || []).map(p => ({
           fileName: p.nomFichier,
-          fileUrl: `${backendUrl}/uploads/${p.cheminFichier.replace(/\\/g, "/")}`
+          fileUrl: `${backendUrl}/${p.cheminFichier.replace(/\\/g, "/")}`
         })),
       }));
 

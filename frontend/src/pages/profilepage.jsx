@@ -11,7 +11,7 @@ import ProfileInfoTab from './profileInfoTab.jsx';
 import OrganismeInfoTab from './organismeInfoTab.jsx';
 import PasswordTab from './passwordTab.jsx';
 import SiderbarAdmin from '../components/siderbarAdmin.jsx';
-import SiderbarEval from '../components/SiderbarEval.jsx';
+import SiderbarEval from '../components/siderbarEval.jsx';
 
 
 
@@ -57,12 +57,28 @@ function Profilepage({}) {
             : user?.role === "EVALUATEUR"
             ? SiderbarEval
             : Siderbar;  
+
+  if (user && user.etat !== "actif") {
+  return (
+    <>
+      <Siderbar />
+      <div style={{ marginLeft: "200px", padding: "40px" }}>
+        <h2 style={{ color: "#ef4444" }}>Accès refusé</h2>
+        <p>Votre compte est inactif. Vous ne pouvez pas accéder aux évaluations.</p>
+      </div>
+    </>
+  );
+}
     return (
       <>
-      <div className="d-flex">
-      
+      <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
+      <div style={{ width: 300 }}>
         <SidebarComponent/>
-      <div className="flex-grow-1 p-4" style={{ marginLeft: "180px" }}>
+      </div>
+      
+        
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem", marginRight: "50px",
+      padding: "1.5rem 0", fontFamily: "var(--font-sans, sans-serif)", width: "100%" }}>
         {/*HEADER */}
       <div  style={{ marginBottom:22 }}>
           <div style={{ fontSize:"1.2rem", fontWeight:800 }}>Mon Profil</div>
