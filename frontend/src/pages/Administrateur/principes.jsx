@@ -296,7 +296,8 @@ const handleSavePrincipe = async () => {
     setPrincipeId(null);
     toast.success("Principe mis à jour !");
   } catch (error) {
-    toast.error("Erreur lors de la mise à jour du principe");
+    const message=error.response?.data?.message || error.response?.data ;
+    toast.error(message || "Erreur lors de la mise à jour du principe");
     console.error(error);
   }
 };
@@ -316,7 +317,8 @@ const handleSavePratique = async () => {
     setPratiqueId(null);
     toast.success("Pratique mise à jour !");
   } catch (error) {
-    toast.error("Erreur lors de la mise à jour de la pratique");
+    const message=error.response?.data?.message || error.response?.data ;
+    toast.error(message || "Erreur lors de la mise à jour du principe");
     console.error(error);
   }
 };
@@ -360,9 +362,9 @@ const handleSavePratique = async () => {
             
           <div className="container mt-4">
             {principes.map((principe) => (
-              <div className="card shadow mb-3" key={principe.id} style={{ width: "700px" }}>
+              <div className="card shadow mb-3" key={principe.id} style={{ width: "85%" }}>
               <div className="card-body d-flex justify-content-between align-items-start" 
-                style={{ cursor: "pointer" }}
+                style={{ cursor: "pointer", width: "100%" }}
                 onClick={()=>setOpenPrincipe(openPrincipe===principe.id? null : principe.id)}>
                   <div>
                   <div style={{ display: "flex", alignItems: "center", gap: "1px" }}>
@@ -396,7 +398,6 @@ const handleSavePratique = async () => {
                   </button>*/}
       {!isEditing || principeId !== principe.id  ? (
       <>
-
         {/* RIGHT : buttons */}
         <div style={{ display: "flex", gap: "6px" }}>
           <button
@@ -419,36 +420,75 @@ const handleSavePratique = async () => {
       </>
     ) : (
       <>
-        <input
-          type="text"
-          value={editingPrincipeData.nom}
-          onChange={(e) => setEditingPrincipeData(prev => ({ ...prev, nom: e.target.value }))}
-          className="form-control form-control-sm me-2"
-          style={{ maxWidth: "200px" }}
-        />
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSavePrincipe();
-              setIsEditing(false);
-            }}
-          >
-            enregistrer
-          </button>
+      <div
+    style={{
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    width: "100%",
+    background: "#f8fafc",
+    padding: "15px",
+    borderRadius: "10px",
+    border: "1px solid #e2e8f0"
+  }}
+  >
+    <input
+      type="text"
+      value={editingPrincipeData.nom}
+      onChange={(e) =>
+        setEditingPrincipeData(prev => ({
+          ...prev,
+          nom: e.target.value
+        }))
+      }
+      className="form-control form-control-sm"
+      placeholder="Nom"
+    />
 
-          <button
-            className="btn btn-outline-danger btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(false);
-              setPrincipeId(null);
-            }}
-          >
-            annuler
-          </button>
-        </div>
+    <textarea
+      value={editingPrincipeData.description}
+      onChange={(e) =>
+        setEditingPrincipeData(prev => ({
+          ...prev,
+          description: e.target.value
+        }))
+      }
+      className="form-control form-control-sm"
+      placeholder="Description"
+      rows={2}
+      style={{ resize: "none",width: "100%" }}
+    />
+
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        gap: "6px"
+      }}
+    >
+      <button
+        className="btn btn-success btn-sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          handleSavePrincipe();
+          setIsEditing(false);
+        }}
+      >
+        Enregistrer
+      </button>
+
+      <button
+        className="btn btn-outline-secondary btn-sm"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsEditing(false);
+          setPrincipeId(null);
+        }}
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
       </>
     )}
                   
@@ -605,7 +645,7 @@ const handleSavePratique = async () => {
           value={editingCritereData.nom}
           onChange={(e) => setEditingCritereData(prev => ({ ...prev, nom: e.target.value }))}
           className="form-control form-control-sm me-2"
-          style={{ maxWidth: "200px" }}
+          style={{ Width: "80%px" }}
         />
         <div style={{ display: "flex", gap: "6px" }}>
           <button

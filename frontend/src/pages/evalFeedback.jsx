@@ -6,6 +6,7 @@ import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useMemo } from "react";
 import { Radius } from "lucide-react";
+import RecommendationEngine from "../components/recommendationEngine.jsx";
 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -542,6 +543,34 @@ const totalCriteres = allCriteres.length || 0;
                   )}
                 </div>
               ))}
+              {/* AI Recommendations */}
+              {evId && (
+                <div style={{
+                  marginTop: 24,
+                  background: "#fff",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 16,
+                  padding: "22px 24px",
+                }}>
+                  {/*<div style={{
+                    fontSize: 11, fontWeight: 700, color: "#6b7280",
+                    textTransform: "uppercase", letterSpacing: "0.08em",
+                    marginBottom: 4,
+                  }}>
+                    Intelligence artificielle
+                  </div>*/}
+                  <h2 style={{
+                    fontSize: 16, fontWeight: 800, color: "#111827",
+                    margin: "0 0 16px",
+                  }}>
+                    Recommandations personnalisées
+                  </h2>
+                  <RecommendationEngine
+                    evaluationId={evId}
+                    organismeNom={evaluation?.organismeName}
+                  />
+                </div>
+              )}
             </>
 
         </div>

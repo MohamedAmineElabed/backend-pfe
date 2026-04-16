@@ -3,11 +3,27 @@ import axios from "axios";
 import { AppContext } from "../../context/AppContext.jsx";
 import { toast } from "react-toastify";
 import SiderbarAdmin from "../../components/siderbarAdmin.jsx";
+import  Input  from "../../components/ui/input.jsx";
+import { motion } from "framer-motion";
+
+const styles = {
+  tableSection: { background: "#fff", borderRadius: 16, border: "1px solid #e8eaf0", overflow: "hidden",width: "100%"},
+  tableWrap: { overflowX: "auto",width: "100%" },
+  thead: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "10px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
+  row: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "10px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
+  orgName: { fontSize: 13, fontWeight: 600, color: "#1e293b" },
+};
+
+const stagger = (i) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] } });
 
 const ListUtilisateurs = () => {
   const [users, setUsers] = useState([]);
   const [isEmpty, setIsEmpty] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("tous");
+
+
 
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDescription, setShowDescription] = useState(false);
@@ -21,6 +37,7 @@ const ListUtilisateurs = () => {
       const response = await axios.get(`${backendUrl}/users`);
       const filteredUsers = response.data.filter(user => user.role !== "ADMIN" && user.role !== "EVALUATEUR");
       setUsers(filteredUsers);
+      console.log("users: ",filteredUsers);
       setIsEmpty(filteredUsers.length === 0);
     } catch (err) {
       toast.error("Erreur lors de la récupération des utilisateurs");
@@ -87,13 +104,31 @@ const ListUtilisateurs = () => {
     }
   }, [backendUrl]);
 
+  // Filtered list
+  const filtered = users.filter(user => {
+    const nom = user.nom ? user.nom.toLowerCase() : "";
+    const prenom = user.prenom ? user.prenom.toLowerCase() : "";
+    const searchValue = search ? search.toLowerCase() : "";
+
+    const matchSearch=nom.includes(searchValue) || prenom.includes(searchValue);
+    const matchEtat= filter==="tous" || user.etat?.toLowerCase()===filter.toLowerCase();
+    return matchSearch && matchEtat;
+  });
+
+  const filters = [
+  { value: "tous", label: "Tous" },
+  { value: "actif", label: "Actif" },
+  { value: "inactif", label: "Non actif" },
+];
+
+
   return (
     <>
       <SiderbarAdmin />
 
       <div style={{ marginLeft: "200px" }} className="p-4">
         <div className="card shadow-sm border-0 rounded-4">
-          <div className="card-body">
+          <div className="card-body" style={{width: "80%"}}>
             <h2 className="mb-4 text-center text-primary">Liste des Utilisateurs</h2>
 
             {loading ? (
@@ -103,22 +138,81 @@ const ListUtilisateurs = () => {
                 Liste des utilisateurs est vide.
               </div>
             ) : (
-              <div className="table-responsive">
-                <table className="table table-striped table-hover align-middle">
-                  <thead className="table-dark">
-                    <tr>
-                      <th>Nom</th>
-                      <th>Prénom</th>
-                      <th>Email</th>
-                      <th>Organisme</th>
-                      <th>Poste</th>
-                      <th>Etat</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
+              <>
+              <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+                <Input placeholder="Rechercher..." value={search} onChange={e => setSearch(e.target.value)} />
+                {filters.map(f => (
+            <button key={f.value} onClick={() => setFilter(f.value)} style={{ padding: "6px 12px", borderRadius: 6, border: filter === f.value ? "1px solid #6366f1" : "1px solid #e5e7eb", background: filter === f.value ? "#6366f1" : "#f8fafc", color: filter === f.value ? "#fff" : "#475569", cursor: "pointer" }}>
+              {f.label}
+            </button>
+          ))}
+              </div>
+              <div style={styles.tableSection}>
 
-                  <tbody>
-                    {users.map((user) => (
+                  {/* Table */}
+        <motion.section {...stagger(3)} style={styles.tableSection}>
+          <div style={styles.tableWrap}>
+            <div style={styles.thead}>
+              {["Nom", "Prenom", "Organisme", "Role", "Etat", "Action"].map((col, i) => <span key={i}>{col}</span>)}
+            </div>
+
+            {filtered.map((user, idx) => {
+              //const cfg = STATUS[ev.statut] || { label: "Inconnu", dot: "#cbd5e1", text: "#475569", bg: "rgba(203,213,225,0.12)", border: "rgba(203,213,225,0.3)" };
+              //const color = progressColor(ev.progression || 0);
+              return (
+                <motion.div key={user.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} 
+                  transition={{ delay: 0.2 + idx * 0.05 }} style={{ ...styles.row, cursor: "pointer" }}
+                  onClick={() => {setSelectedUser(user);setShowDescription(true);}}>
+                  <span style={styles.orgName}>{user.nom}</span>
+                  {/*<span style={styles.dateCell}>{new Date(ev.dateSoumission).toLocaleDateString("fr-FR")}</span>*/}
+                  <span style={styles.orgName}>{user.prenom}</span>
+                  <span style={styles.orgName}>{user?.organisme?.nomOrganisme}</span>
+                  <span style={styles.orgName}>{user.role}</span>
+                  <span style={styles.orgName}>{user.etat}</span>
+                  <span style={styles.orgName}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            {user.etat ==="actif"? (
+                            <button
+                              className="btn btn-outline-danger btn-sm me-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                desactiverUser(user.id);
+                              }}
+                            >
+                              <i className="bi bi-x-circle"></i>
+                            </button>
+                            
+                          ) : (
+                            <button
+                              className="btn btn-outline-success btn-sm me-2"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                activerUser(user.id);
+                              }}
+                            >
+                              <i className="bi bi-check-circle"></i>
+                            </button>
+                          )}
+                          <button
+                            className="btn btn-outline-danger btn-sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteUser(user.id);
+                            }}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                          </div></span>
+                  
+                </motion.div>
+              );
+            })}
+            {filtered.length === 0 && <div style={{ padding: 20, textAlign: "center" }}>Aucun utilisateur trouvé.</div>}
+          </div>
+        </motion.section>
+
+                  {/*<tbody>
+                    {filtered.map((user) => (
                       <tr
                         key={user.id}
                         style={{ cursor: "pointer" }}
@@ -170,9 +264,9 @@ const ListUtilisateurs = () => {
                         
                       </tr>
                     ))}
-                  </tbody>
-                </table>
+                  </tbody>*/}
               </div>
+              </>
             )}
 
             {/* Modal description */}

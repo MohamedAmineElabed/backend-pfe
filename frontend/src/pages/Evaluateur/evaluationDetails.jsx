@@ -513,7 +513,9 @@ const handleActionSelect = (critereId, action) => {
       statut: newStatus,
     })
     .then(() => {
-      setEvaluation(prev => ({ ...prev, statut: newStatus }));
+      setEvaluation(prev => ({ ...prev, 
+                              statut: newStatus,
+                              dateTermination: newStatus==="terminé" ? new Date().toISOString : prev.dateTermination}));
       console.log("Statut mis à jour automatiquement:", newStatus);
     })
     .catch(err => console.error("Erreur mise à jour statut", err));
