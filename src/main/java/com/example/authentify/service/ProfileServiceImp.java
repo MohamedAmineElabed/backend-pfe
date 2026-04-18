@@ -16,6 +16,8 @@ import com.example.authentify.io.OrganismeResponse;
 import com.example.authentify.io.PasswordRequest;
 import com.example.authentify.io.ProfileRequest;
 import com.example.authentify.io.RegisterFromDemandeRequest;
+//import com.example.authentify.service.JwtService;
+
 
 import com.example.authentify.io.OrganismeRequest;
 
@@ -42,6 +44,8 @@ public class ProfileServiceImp implements ProfileService {
     private final DemandeRepository demandeRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+
 
     // Méthode utilitaire pour créer un OrganismeEntity
     private OrganismeEntity buildOrganismeFromRequest(ProfileRequest request) {
@@ -132,7 +136,11 @@ public class ProfileServiceImp implements ProfileService {
         if (!"actif".equalsIgnoreCase(user.getEtat())) {
             throw new RuntimeException("User is not active. Login denied.");
     }
-        return convertToProfileResponse(user);
+        String token = jwtService.generateToken(user.getEmail(), user.getRole());
+
+        ProfileResponse response=convertToProfileResponse(user);
+        response.setToken(token);
+        return response;
     }
     
 

@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 //import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 //import org.springframework.http.ResponseEntity;
 import org.springframework.http.ResponseEntity;
 import java.lang.Exception;
@@ -19,10 +20,14 @@ import com.example.authentify.io.ResetPasswordRequest;
 import com.example.authentify.repository.UserRepository;
 //import com.example.authentify.repository.DemandeRepository;
 import com.example.authentify.io.PasswordRequest;
+import com.example.authentify.service.JwtService;
 //import com.example.authentify.service.EmailService;
 import com.example.authentify.service.ProfileService;
 import java.util.List;
 import java.util.Map;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 //import org.springframework.http.MediaType;
@@ -35,6 +40,14 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
+//import org.springframework.security.core.Authentication;
+//import org.springframework.security.core.context.SecurityContextHolder;
+
+import org.springframework.http.HttpHeaders;
+//import org.springframework.http.ResponseCookie;
+//import jakarta.servlet.http.HttpServletResponse;
+import java.time.Duration;
+
 //import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -46,6 +59,9 @@ public class ProfileController {
     private final ProfileService profileService;
     //private final EmailService emailService;
     private final UserRepository userRepository;
+    private final JwtService jwtService;
+    //private final ProfileResponse profileResponse;
+
 
     //récuperer tous les users
     @GetMapping("/users")
@@ -78,8 +94,23 @@ public class ProfileController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body("Email ou mot de passe incorrect");
         }
+        //Set token as httpOnly cookie
+        ResponseCookie cookie = ResponseCookie.from("token", response.getToken())
+            .httpOnly(true)
+            .secure(false)      // set true in production
+            .path("/")
+            .maxAge(Duration.ofHours(8))
+            .sameSite("Lax")
+            //.secure(false)
+            .build();
+        //response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
 
-    return ResponseEntity.ok(response);
+        response.setToken(null); // don't expose token in body
+
+    //return ResponseEntity.ok(profileResponse);
+    return ResponseEntity.ok()
+            .header(HttpHeaders.SET_COOKIE, cookie.toString())
+            .body(response);
 }
 
     @GetMapping("/users/{id}") 
@@ -172,13 +203,55 @@ public class ProfileController {
     }
 }
 
-    @GetMapping("/users/me")
-    public ResponseEntity<UserEntity> getCurrentUser(@RequestParam String email) {
+    /*@GetMapping("/users/me")
+    public ResponseEntity<UserEntity> getCurrentUser(HttpServletRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         // For simplicity, fetch by email (or implement proper auth with JWT)
-        return userRepository.findByEmail(email)
+        if (auth == null || auth.getPrincipal() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+         String email = (String) auth.getPrincipal();
+        
+            return userRepository.findByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+    }*/
+
+    private ResponseCookie clearCookie() {
+    return ResponseCookie.from("token", "")
+            .httpOnly(true)
+            .path("/")
+            .maxAge(0)
+            .build();
+}
+
+    @GetMapping("/users/me")
+    public ResponseEntity<UserEntity> getCurrentUser(HttpServletRequest request) {
+
+    String token = null;
+
+    if (request.getCookies() != null) {
+        for (Cookie c : request.getCookies()) {
+            if ("token".equals(c.getName())) {
+                token = c.getValue();
+                break;
+            }
+        }
+    }
+
+    if (token == null || !jwtService.isTokenValid(token)) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        .header(HttpHeaders.SET_COOKIE, clearCookie().toString())
+        .build();
+    }
+
+    String email = jwtService.extractEmail(token);
+
+    return userRepository.findByEmail(email)
             .map(ResponseEntity::ok)
             .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
 }
+
 
     @DeleteMapping("/organismes/{id}")
     public ResponseEntity<?> deleteOrganisme(@PathVariable Long id) {

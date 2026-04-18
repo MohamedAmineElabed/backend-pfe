@@ -10,5 +10,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PrincipeRepository extends JpaRepository<PrincipeEntity, Long> {
     boolean existsByNom(String nom);
+    PrincipeEntity findByNom(String nom);
 
 }

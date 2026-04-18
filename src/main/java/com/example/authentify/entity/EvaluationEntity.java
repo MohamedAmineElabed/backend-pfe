@@ -58,11 +58,16 @@ public class EvaluationEntity {
     private Integer scoreMax;
 
     private String label;
+    @Column(columnDefinition = "TEXT")
+    private String recommandations;
 
 
     @CreationTimestamp
     @Column(updatable = false) //  creation time should not be updated after creation
     private java.sql.Timestamp dateSoumission;
+
+    @Column(updatable = true) //  creation time should not be updated after creation
+    private java.sql.Timestamp dateTermination;
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "organisme_id")

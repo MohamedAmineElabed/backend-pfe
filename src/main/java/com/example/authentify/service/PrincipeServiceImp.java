@@ -83,10 +83,19 @@ public class PrincipeServiceImp implements PrincipeService {
 
     PrincipeEntity principe = principeRepository.findById(newPrincipe.getId())
         .orElseThrow(() -> new RuntimeException("Principe not found"));
+    
+    if(newPrincipe.getNom().trim().isEmpty())
+        {throw new RuntimeException("Principe ne doit étre pas vide");}
+    if(newPrincipe.getDescription().trim().isEmpty())
+        {throw new RuntimeException("Description ne doit étre pas vide");}
+
     boolean exists = principeRepository.existsByNom(newPrincipe.getNom());
-    if (exists) {
+    if (exists && !principe.getId().equals(newPrincipe.getId())) {
         throw new RuntimeException("Principe with this name already exists");
     }
+    /*if (principeRepository.existsByNom(newPrincipe.getNom())) {
+            throw new RuntimeException("Principe already exists");
+        }*/
 
     principe.setNom(newPrincipe.getNom());
     principe.setDescription(newPrincipe.getDescription());
@@ -157,6 +166,16 @@ public class PrincipeServiceImp implements PrincipeService {
     if (exists) {
         throw new RuntimeException("Pratique with this name already exists");
     }
+    if(newPratique.getNom().trim().isEmpty())
+        {throw new RuntimeException("Pratique ne doit étre pas vide");}
+    /*if(newPratique.getDescription().trim().isEmpty())
+        {throw new RuntimeException("Description ne doit étre pas vide");}*/
+    if (exists && !pratique.getId().equals(newPratique.getId())) {
+        throw new RuntimeException("Pratique with this name already exists");
+    }
+    /*if (pratiqueRepository.existsByNom(newPratique.getNom())) {
+            throw new RuntimeException("Pratique already exists");
+        }*/
 
     pratique.setNom(newPratique.getNom());
     pratique.setDescription(newPratique.getDescription());
@@ -220,10 +239,12 @@ public class PrincipeServiceImp implements PrincipeService {
 
     CritereEntity critere = critereRepository.findById(newCritere.getId())
         .orElseThrow(() -> new RuntimeException("Critere not found"));
-    boolean exists = critereRepository.existsByNom(newCritere.getNom());
+    /*boolean exists = critereRepository.existsByNom(newCritere.getNom());
     if (exists) {
         throw new RuntimeException("Critére already exists");
-    }
+    }*/
+   if(newCritere.getNom().trim().isEmpty())
+        {throw new RuntimeException("Critere ne doit étre pas vide");}
 
     critere.setNom(newCritere.getNom());
     critere.setDescription(newCritere.getDescription());

@@ -305,6 +305,7 @@ public class EvaluationController {
         //int maxScore = ev.getReponses() != null ? ev.getReponses().size() * 3 : 0;
         String label = evaluationService.getLabel(totalScore, maxScore);
         String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
+        String dateTermination = ev.getDateTermination() != null ? ev.getDateTermination().toLocalDateTime().toLocalDate().toString() : "";
 
         // Use HashMap instead of Map.ofEntries
         Map<String, Object> map = new java.util.HashMap<>();
@@ -320,6 +321,7 @@ public class EvaluationController {
         map.put("maxScore", maxScore);
         map.put("label", label);
         map.put("dateCreation", dateCreation);
+        map.put("dateTermination", dateTermination);
         map.put("scoreMax", maxScore);
 
         return map;

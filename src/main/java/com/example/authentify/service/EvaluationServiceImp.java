@@ -17,7 +17,7 @@ import com.example.authentify.io.EvaluationRequest;
 //import com.example.authentify.entity.OrganismeEntity;
 
 //import com.example.authentify.io.ReponseRequest;
-
+import java.sql.Timestamp;
 import java.io.IOException;
 //import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -218,6 +218,10 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
     EvaluationEntity eval = evaluationRepository.findById(evaluationId)
         .orElseThrow(() -> new RuntimeException("Evaluation introuvable"));
     eval.setStatut(newStatut);
+    if("terminé".equalsIgnoreCase(newStatut)){
+        eval.setDateTermination(new Timestamp(System.currentTimeMillis()));
+
+    }
     evaluationRepository.save(eval);
 }
 

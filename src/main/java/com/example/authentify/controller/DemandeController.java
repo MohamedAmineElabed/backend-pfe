@@ -41,7 +41,7 @@ import java.nio.file.Path;
 @RestController
 @RequestMapping("/api/v1.0/demandes")
 @RequiredArgsConstructor
-@CrossOrigin("*") // Allow requests from any origin (you can specify allowed origins if needed)
+//@CrossOrigin("*") // Allow requests from any origin (you can specify allowed origins if needed)
 
 
 
