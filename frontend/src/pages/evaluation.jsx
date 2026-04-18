@@ -334,10 +334,10 @@ const Evaluation = () => {
       if (userData?.id) {
       const fetchCurrentUser = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/users/${userData.id}`);
+        const res = await axios.get(`${backendUrl}/users/${userData.id}`,{withCredentials: true});
         setCurrentUser(res.data);
 
-        const resEval = await axios.get(`${backendUrl}/evaluation?userId=${userData.id}`);
+        const resEval = await axios.get(`${backendUrl}/evaluation?userId=${userData.id}`,{withCredentials: true});
         console.log("Raw backend data:", resEval.data);
         const mappedEvals = resEval.data.map(ev => {
           let statutKey = (ev.statut || "").toLowerCase().trim();
@@ -378,6 +378,8 @@ const Evaluation = () => {
     try {
       const res = await axios.get(`${backendUrl}/evaluation/latest`, {
         params: { userId: userData.id },
+        withCredentials: true
+        
       });
       const latest = res.data;
       
@@ -407,7 +409,7 @@ const Evaluation = () => {
     return LABEL_COLORS[key] || { accent: "#3b82f6", bg: "#e0f2fe" };
   }, [latestLabel]);
 
-  if (currentUser && currentUser.etat !== "actif") {
+  if ((currentUser && currentUser.etat !== "actif") || !currentUser) {
   return (
     <>
       <Siderbar />

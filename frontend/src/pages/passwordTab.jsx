@@ -44,7 +44,7 @@ const PasswordTab = ({ user }) => {
   };
 
   try {
-      const response = await axios.put(`${backendUrl}/users/update-password`,requestBody)
+      const response = await axios.put(`${backendUrl}/users/update-password`,requestBody,{withCredentials: true})
       toast.success("mise à jour avec success!")
       // Clear fields after success
     setPasswordData({

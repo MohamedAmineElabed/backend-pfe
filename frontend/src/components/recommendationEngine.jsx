@@ -16,7 +16,7 @@ export default function RecommendationEngine({ evaluationId, nomOrganisme }) {
   setError(null);
 
   try {
-    const res = await axios.post(`${backendUrl}/recommendations/${evaluationId}`);
+    const res = await axios.post(`${backendUrl}/recommendations/${evaluationId}`,{withCredentials: true});
     let data = res.data;
 
     //Ensure string
@@ -60,7 +60,7 @@ export default function RecommendationEngine({ evaluationId, nomOrganisme }) {
     setLoading(true);
     setError(null);
     try{
-        await axios.delete(`${backendUrl}/recommendations/${evaluationId}/cache`);
+        await axios.delete(`${backendUrl}/recommendations/${evaluationId}/cache`,{withCredentials: true});
         setReport(null);
         setCached(false);
         generate();

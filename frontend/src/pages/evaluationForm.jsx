@@ -77,7 +77,7 @@ const EvaluationForm = () => {
         organismeId: currentUser.organisme.id,
         responsableId: currentUser.id,
         //score:0,
-      });
+      },{withCredentials: true});
 
       evaluationIdToUse = res.data?.id || res.data; // check how backend returns ID
       setCurrentEvaluationId(evaluationIdToUse);
@@ -100,7 +100,7 @@ const EvaluationForm = () => {
       await axios.post(
         `${backendUrl}/evaluation/reponses/reponse/save/${evaluationIdToUse}`,
         formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
+        { headers: { "Content-Type": "multipart/form-data" },withCredentials: true }
       );
     }
     //without botons valider et refuser in evaluationDetails
@@ -134,7 +134,7 @@ const EvaluationForm = () => {
   useEffect(() => {
     const fetchPrincipes = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/principes`);
+        const res = await axios.get(`${backendUrl}/principes`,{withCredentials: true});
         const mappedPrincipes = res.data.map((principe) => ({
           ...principe,
           label: principe.nom,
@@ -170,7 +170,7 @@ const EvaluationForm = () => {
   // --- Progress calculations ---
   const getPratiqueProgress = (pratique) => {
     const total = pratique.criteres?.length || 0;
-    const done = pratique.criteres?.filter((c) => selectedOption[c.id] !== undefined).length;
+    const done = pratique.criteres?.filter((c) => selectedOption[c.id] !== undefined && selectedFiles[c.id] !==undefined).length;
     return `${done}/${total}`;
   };
 
@@ -179,7 +179,7 @@ const EvaluationForm = () => {
     let done = 0;
     principe.pratiques?.forEach((p) => {
       total += p.criteres?.length || 0;
-      done += p.criteres?.filter((c) => selectedOption[c.id] !== undefined).length;
+      done += p.criteres?.filter((c) => selectedOption[c.id] !== undefined && selectedFiles[c.id] !==undefined).length;
     });
     return `${done}/${total}`;
   };

@@ -394,7 +394,7 @@ const Login = () => {
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { backendUrl, setIsloggedIn, setUserData } = useContext(AppContext);
+  const { backendUrl, setIsLoggedIn, setUserData } = useContext(AppContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -415,19 +415,23 @@ const Login = () => {
         if (logoFile) formData.append("logo", logoFile);
         const response = await axios.post(`${backendUrl}/demandes/registerDemande`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true 
         });
         if (response.status === 201) {
-          setUserData(response.data); setIsloggedIn(true);
+          setUserData(response.data); 
+          setIsLoggedIn(true);
+          //sessionStorage.setItem("userData", JSON.stringify(response.data));
           toast.success("Demande enregistrée avec succès !");
         }
       } else {
-        const response = await axios.post(`${backendUrl}/login`, { email, password });
+        const response = await axios.post(`${backendUrl}/login`, { email, password },{ withCredentials: true });
         if (response.status === 200) {
           const loggedInUser = response.data;
           setUserData(response.data);
-          sessionStorage.setItem("userData", JSON.stringify(response.data));
-          setIsloggedIn(true);
-          if (loggedInUser.role === "ADMIN") navigate('/homePageAdmin');
+          //sessionStorage.setItem("userData", JSON.stringify(response.data));
+          setIsLoggedIn(true);
+          //sessionStorage.setItem("userData", JSON.stringify(response.data));
+          if (loggedInUser.role === "ADMIN") navigate('/listUtilisateurs');
           else if (loggedInUser.role === "EVALUATEUR") navigate('/evaluationsListe');
           else navigate('/evaluation');
           toast.success("Connexion réussie !");
@@ -444,7 +448,7 @@ const Login = () => {
     if (!email.trim()) { toast.error("Veuillez saisir votre email"); return; }
     setShowCodeModal(true); setSendingOtp(true);
     try {
-      await axios.post(`${backendUrl}/email/send-reset-otp`, { email });
+      await axios.post(`${backendUrl}/email/send-reset-otp`, { email },{ withCredentials: true });
       toast.success("Code envoyé par email !");
     } catch (error) {
       toast.error(error.response?.data?.message || "Email introuvable");
@@ -455,7 +459,7 @@ const Login = () => {
   const verifyOtp = async () => {
     if (!otp.trim()) { toast.error("Veuillez saisir le code OTP"); return; }
     try {
-      await axios.post(`${backendUrl}/verify-otp`, { email, otp });
+      await axios.post(`${backendUrl}/verify-otp`, { email, otp },{ withCredentials: true });
       toast.success("OTP validé !");
       setShowCodeModal(false); setShowResetModal(true);
     } catch (error) { toast.error(error.response?.data?.message || "Code invalide ou expiré"); }
@@ -464,7 +468,7 @@ const Login = () => {
   const handleResetPassword = async () => {
     if (!newPassword.trim()) { toast.error("Veuillez saisir le nouveau mot de passe"); return; }
     try {
-      await axios.post(`${backendUrl}/reset-password`, { email, newPassword });
+      await axios.post(`${backendUrl}/reset-password`, { email, newPassword },{ withCredentials: true });
       toast.success("Mot de passe réinitialisé !");
       setShowResetModal(false); setOtp(''); setNewPassword('');
     } catch (error) { toast.error(error.response?.data?.message || "Mot de passe faible"); }

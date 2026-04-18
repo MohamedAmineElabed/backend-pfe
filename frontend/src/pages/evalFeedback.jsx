@@ -241,7 +241,7 @@ export default function EvalFeedback() {
   useEffect(() => {
   const fetchEvaluation = async () => {
     try {
-      const res = await axios.get(`${backendUrl}/evaluation/${evId}/reponses`);
+      const res = await axios.get(`${backendUrl}/evaluation/${evId}/reponses`,{withCredentials: true});
       const evalData = res.data;
       const organismeId = evalData.organisme?.id;
       const organismeName = evalData.organisme?.nomOrganisme || "—";
@@ -289,7 +289,7 @@ export default function EvalFeedback() {
   useEffect(() => {
     const fetchPrincipes = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/principes`);
+        const res = await axios.get(`${backendUrl}/principes`,{withCredentials: true});
         const mappedPrincipes = res.data.map(principe => ({
           ...principe,
           label: principe.nom,

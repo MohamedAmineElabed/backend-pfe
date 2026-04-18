@@ -92,7 +92,7 @@ const Labellisation = () => {
   useEffect(() => {
   const fetchData = async () => {
     try {
-        const res = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const res = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
         setEvaluations(res.data);
         console.log(res.data);
         /*const organismeDetails =await Promise.all(evaluations.map(async (org) => {

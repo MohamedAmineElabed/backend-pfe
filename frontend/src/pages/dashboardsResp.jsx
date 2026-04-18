@@ -78,7 +78,7 @@ export default function DashboardResp() {
     const fetchInfo = async () => {
       try {
         if (!userData?.id) return; // safety check
-        const response = await axios.get(`${backendUrl}/users/${userData?.id}`);
+        const response = await axios.get(`${backendUrl}/users/${userData?.id}`,{withCredentials: true});
         setUser(response.data);
       } catch (error) {
         toast.error("Erreur chargement profil");
@@ -131,10 +131,10 @@ export default function DashboardResp() {
     }
     try {
       console.log("Fetching scores for organisme:", userData?.organisme?.id);
-      const resPrincipes = await axios.get(`${backendUrl}/principes`);
+      const resPrincipes = await axios.get(`${backendUrl}/principes`,{withCredentials: true});
       const ListPrincipes = resPrincipes.data;
 
-      const res = await axios.get(`${backendUrl}/scoreParPrincipe/organisme/${userData?.organisme?.id}`);
+      const res = await axios.get(`${backendUrl}/scoreParPrincipe/organisme/${userData?.organisme?.id}`,{withCredentials: true});
       const scoresParOrg=res.data;
 
       const scores = scoresParOrg.length > 0 ? scoresParOrg.map(item => {
@@ -181,7 +181,7 @@ const scoresMoyen = useMemo(() => {
   
 }, [scorePrincipes]);
 
-if (user && user.etat !== "actif") {
+if ((user && user.etat !== "actif") || !user) {
   return (
     <>
       <Siderbar />

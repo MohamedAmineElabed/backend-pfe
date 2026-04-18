@@ -27,7 +27,7 @@ const VerifyAccount = () => {
       try {
         const res = await axios.get(`${backendUrl}/check-email`, {
           params: { email }
-        });
+        },{ withCredentials: true });
         if (res.data.exists) {
           toast.error("Un compte avec cet email existe déjà !");
           setEmailExists(true);
@@ -56,7 +56,7 @@ const VerifyAccount = () => {
       setLoading(true);
       const cleanEmail = email.trim();
       //const response = await axios.post(`${backendUrl}/register-from-demande`, { password });
-      const response =await axios.post(`${backendUrl}/register-from-demande/${encodeURIComponent(cleanEmail)}`, { password });
+      const response =await axios.post(`${backendUrl}/register-from-demande/${encodeURIComponent(cleanEmail)}`, { password },{ withCredentials: true });
       const user = response.data;
 
       localStorage.setItem("userData", JSON.stringify(user));

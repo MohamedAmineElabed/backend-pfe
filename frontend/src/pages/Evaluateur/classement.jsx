@@ -82,7 +82,7 @@ const Classement = () => {
   useEffect(() => {
   const fetchData = async () => {
     try {
-        const res = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const res = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
         setEvaluations(res.data);
         console.log("evaluations: ",res.data);
     } catch (err) {

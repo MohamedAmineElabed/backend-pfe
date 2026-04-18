@@ -20,17 +20,19 @@ function Profilepage({}) {
     const navigate = useNavigate(); // Hook pour la navigation  
     const[user,setUser] = useState(null); // État pour stocker les informations de l'utilisateur
     const {backendUrl, userData} = useContext(AppContext); // Récupération de l'URL du backend depuis le contexte
-    const[loading,setLoading] = useState(false); // État pour indiquer si les données sont en cours de chargement
+    const[loading,setLoading] = useState(true); // État pour indiquer si les données sont en cours de chargement
 
-    if (!userData) {
+    /*if (!userData) {
   return <Spinner animation="border" className="mt-5" />;
-}
+}*/
 
     useEffect(() => {
     const fetchInfo = async () => {
       try {
-        if (!userData?.id) return; // safety check
-        const response = await axios.get(`${backendUrl}/users/${userData?.id}`);
+        if (!userData?.id){
+          setLoading(false);
+          return;} // safety check
+        const response = await axios.get(`${backendUrl}/users/${userData?.id}`,{ withCredentials: true });
         setUser(response.data);
       } catch (error) {
         toast.error("Erreur chargement profil");
@@ -44,13 +46,13 @@ function Profilepage({}) {
     if (userData?.id) fetchInfo();
   }, [backendUrl,userData]);
 
-  if (!userData || loading) {
+  /*if (!userData || loading) {
     return (
       <div className="text-center mt-5">
         <Spinner animation="border" />
       </div>
     );
-  }
+  }*/
   const SidebarComponent =
         user?.role === "ADMIN"
             ? SiderbarAdmin
@@ -58,7 +60,7 @@ function Profilepage({}) {
             ? SiderbarEval
             : Siderbar;  
 
-  if (user && user.etat !== "actif") {
+  if ((user && user.etat !== "actif") || !user) {
   return (
     <>
       <Siderbar />

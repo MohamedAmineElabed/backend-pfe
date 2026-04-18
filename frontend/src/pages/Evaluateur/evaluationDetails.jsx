@@ -410,7 +410,7 @@ const handleActionSelect = (critereId, action) => {
   useEffect(() => {
   const fetchEvaluation = async () => {
     try {
-      const res = await axios.get(`${backendUrl}/evaluation/${id}/reponses`);
+      const res = await axios.get(`${backendUrl}/evaluation/${id}/reponses`,{withCredentials: true});
       const evalData = res.data;
       const organismeId = evalData.organisme?.id;
       const organismeName = evalData.organisme?.nomOrganisme || "—";
@@ -458,7 +458,7 @@ const handleActionSelect = (critereId, action) => {
   useEffect(() => {
     const fetchPrincipes = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/principes`);
+        const res = await axios.get(`${backendUrl}/principes`,{withCredentials: true});
         const mappedPrincipes = res.data.map(principe => ({
           ...principe,
           label: principe.nom,
@@ -511,7 +511,7 @@ const handleActionSelect = (critereId, action) => {
   if (evaluation.statut !== newStatus) {
     axios.put(`${backendUrl}/evaluation/${evaluation.id}/updateStatut`, {
       statut: newStatus,
-    })
+    },{withCredentials: true})
     .then(() => {
       setEvaluation(prev => ({ ...prev, 
                               statut: newStatus,
@@ -577,7 +577,7 @@ const handleActionSelect = (critereId, action) => {
       try {
         const response = await axios.put(
           `${backendUrl}/evaluation/${evaluation.id}/score`,
-          { score: totalScore }
+          { score: totalScore },{withCredentials: true}
         );
         /*const res=await Promise.all(
           scorePerPrincipe.map(sp =>
@@ -628,7 +628,7 @@ useEffect(() => {
               principeId: sp.principeId,
               score: sp.score,
               scoreMax: sp.maxScore,
-            })
+            },{withCredentials: true})
           )
         );
         //scoreSavedRef.current = true; // prevent future saves
@@ -669,7 +669,8 @@ useEffect(() => {
   try {
     const response = await axios.put(
       `${backendUrl}/evaluation/reponses/${id}/valider`,
-      { comment,evaluationId: evaluation.id } // send comment and score to backend
+      { comment,evaluationId: evaluation.id }, // send comment and score to backend
+      {withCredentials: true}
     );
     
 
@@ -707,7 +708,8 @@ useEffect(() => {
   try {
     const response = await axios.put(
       `${backendUrl}/evaluation/reponses/${id}/refuser`,
-      { comment,evaluationId: evaluation.id, } // send comment to backend
+      { comment,evaluationId: evaluation.id, }, // send comment to backend
+      {withCredentials: true}
     );
 
     if (response.status === 200) {

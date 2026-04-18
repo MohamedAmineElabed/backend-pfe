@@ -78,7 +78,8 @@ const ProfileInfoTab = ({ user }) => {
       await axios.put(`${backendUrl}/users/update/${formData.id}`, formData,{
     headers: {
       "Content-Type": "application/json"
-    }
+    },
+    withCredentials: true
   });
 
       toast.success("Mise à jour réussie !");

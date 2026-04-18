@@ -4,12 +4,14 @@ import { AppContext } from "../context/AppContext.jsx";
 
 const navItems = [
   {
-    to: "/dashboardsAdmin",
-    label: "Dashboards",
+    to: "/listUtilisateurs",
+    label: "Liste Utilisateurs",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
       </svg>
     ),
   },
@@ -53,23 +55,22 @@ const navItems = [
     ),
   },
   {
-    to: "/listUtilisateurs",
-    label: "Liste Utilisateurs",
+    to: "/dashboardsAdmin",
+    label: "Dashboards",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <rect x="3" y="3" width="7" height="7" />
-        <rect x="14" y="3" width="7" height="7" />
-        <rect x="14" y="14" width="7" height="7" />
-        <rect x="3" y="14" width="7" height="7" />
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
       </svg>
     ),
   },
+  
 ];
 
 function SidebarAdmin() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { setIsloggedIn, userData } = React.useContext(AppContext);
+  const { setIsLoggedIn, userData } = React.useContext(AppContext);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const menuRef = React.useRef(null);
 
@@ -85,7 +86,7 @@ function SidebarAdmin() {
   }, []);
 
   const handleLogout = () => {
-    setIsloggedIn(false);
+    setIsLoggedIn(false);
     navigate("/login");
   };
 

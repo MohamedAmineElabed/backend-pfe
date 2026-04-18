@@ -72,7 +72,7 @@ const EvaluationsListe = () => {
 const handleStatusChange = (ev, newStatus) => {
   updateEvaluation(ev.id, { statut: newStatus });
 
-  axios.put(`${backendUrl}/evaluation/${ev.id}`, { status: newStatus })
+  axios.put(`${backendUrl}/evaluation/${ev.id}`, { status: newStatus },{withCredentials: true})
     .then(res => console.log("Saved status for", ev.id))
     .catch(err => console.error(err));
 };
@@ -84,7 +84,7 @@ const handleStatusChange = (ev, newStatus) => {
   const fetchEvaluations = async () => {
     try {
       // Fetch evaluations with treated progression
-      const resEval = await axios.get(`${backendUrl}/evaluation/all/treated`);
+      const resEval = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
       // Map the response directly; no need to recalc progression in frontend
       const evalsWithProgress = resEval.data.map(ev => {
         let statutKey;
@@ -134,7 +134,7 @@ const handleStatusChange = (ev, newStatus) => {
     /*const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette demande ?");
     if (!confirmDelete) return;*/
     try {
-      await axios.delete(`${backendUrl}/evaluation/${evaluationId}`);
+      await axios.delete(`${backendUrl}/evaluation/${evaluationId}`,{withCredentials: true});
       setEvaluations((prev) => {
         const updated=prev.filter((e) => e.id !== evaluationId);
         return updated;});

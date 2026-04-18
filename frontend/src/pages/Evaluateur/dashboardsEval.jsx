@@ -61,7 +61,7 @@ export default function DashboardsEval() {
   useEffect(() => {
   const fetchData = async () => {
     try {
-        const evaluations = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const evaluations = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
         console.log(evaluations.data);
         const evaluationsRes=evaluations.data;
         setStats(prev=> ({
@@ -90,13 +90,13 @@ export default function DashboardsEval() {
   useEffect(() => {
   const fetchResponses = async () => {
     try {
-        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
         const evaluations=evaluationsRes.data;
         console.log("evaluations: ",evaluations);
          // Fetch all responses in parallel
         const allResponsesArrays = await Promise.all(
           evaluations.map(evalItem => 
-            axios.get(`${backendUrl}/evaluation/${evalItem.id}/reponses`)
+            axios.get(`${backendUrl}/evaluation/${evalItem.id}/reponses`,{withCredentials: true})
             .then(res => Array.isArray(res.data.reponses) ? res.data.reponses : [])
           
         )
@@ -126,7 +126,7 @@ export default function DashboardsEval() {
   useEffect(() => {
   const fetchData = async () => {
     try {
-        const users = await axios.get(`${backendUrl}/users`);
+        const users = await axios.get(`${backendUrl}/users`,{withCredentials: true});
         const userArray = Array.isArray(users.data) ? users.data : users.data.users || [];
         const filteredUsers = userArray.filter(user => user.role !== "ADMIN" && user.role !== "EVALUATEUR");
         console.log(filteredUsers);
@@ -149,7 +149,7 @@ export default function DashboardsEval() {
         const fetchOrganismes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${backendUrl}/organismes`);
+      const response = await axios.get(`${backendUrl}/organismes`,{withCredentials: true});
       const filteredOrganismes = response.data.filter(org => org.responsable?.role !== "ADMIN" && org.responsable?.role !== "EVALUATEUR");    //org.responsable?.role iptional chaing pour verifier si le responsable existe ou non
         setStats(prev => ({
             ...prev,
@@ -169,7 +169,7 @@ export default function DashboardsEval() {
   useEffect(() => {
     const fetchPrincipes = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/principes`);
+        const res = await axios.get(`${backendUrl}/principes`,{withCredentials: true});
         const mappedPrincipes = res.data.map((principe) => ({
           ...principe,
           label: principe.nom,
@@ -208,7 +208,7 @@ export default function DashboardsEval() {
   useEffect(() => {
     const fetchScoresParPrincipes = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/scoreParPrincipe/scores`);
+        const res = await axios.get(`${backendUrl}/scoreParPrincipe/scores`,{withCredentials: true});
         const scoresData={};
         res.data.forEach(item=>{
           const pid=item.principeId; //pid is the principe id
@@ -236,7 +236,7 @@ export default function DashboardsEval() {
   useEffect(()=>{
     const fetchScoresParOrganismeType=async()=>{
       try{
-        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
         const evaluations=evaluationsRes.data;
 
         const orgScores=evaluations.reduce((acc,ev)=>{

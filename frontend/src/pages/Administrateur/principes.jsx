@@ -70,7 +70,7 @@ const Principes = () => {
 
     const fetchPrincipes = async () => {
         try {
-            const res = await axios.get(`${backendUrl}/principes`);
+            const res = await axios.get(`${backendUrl}/principes`,{withCredentials: true});
             setPrincipes(res.data);
             } catch (error) {
                 console.error("Erreur chargement principes", error);
@@ -78,7 +78,7 @@ const Principes = () => {
     };
     const fetchPratiques = async () => {
         try {
-            const res = await axios.get(`${backendUrl}/pratiques`);
+            const res = await axios.get(`${backendUrl}/pratiques`,{withCredentials: true});
             setPratiques(res.data);
             } catch (error) {
                 console.error("Erreur chargement pratiques", error);
@@ -86,7 +86,7 @@ const Principes = () => {
     };
     const fetchCriteres = async () => {
         try {
-            const res = await axios.get(`${backendUrl}/criteres`);
+            const res = await axios.get(`${backendUrl}/criteres`,{withCredentials: true});
             setCriteres(res.data);
             } catch (error) {
                 console.error("Erreur chargement criteres", error);
@@ -101,7 +101,7 @@ const Principes = () => {
   }
         try {
     // Send newPrincipe to backend
-    const response = await axios.post(`${backendUrl}/principes/create`, newPrincipe);
+    const response = await axios.post(`${backendUrl}/principes/create`, newPrincipe,{withCredentials: true});
 
     // Update local state
     setPrincipes((prev) => [...prev, response.data]);
@@ -138,7 +138,7 @@ const Principes = () => {
         try {
     // Send newPrincipe to backend
     const response = await axios.post(`${backendUrl}/pratiques/create/${selectedPrincipeId}`,
-         { ...newPratique, principeId: selectedPrincipeId });
+         { ...newPratique, principeId: selectedPrincipeId },{withCredentials: true});
 
     // Update local state
     setPrincipes(prev =>prev.map(p =>p.id === selectedPrincipeId
@@ -179,7 +179,7 @@ const Principes = () => {
         try {
     // Send newCritere to backend
     const response = await axios.post(`${backendUrl}/criteres/create/${selectedPratiqueId}`,
-         { ...newCritere, pratiqueId: selectedPratiqueId });
+         { ...newCritere, pratiqueId: selectedPratiqueId },{withCredentials: true});
 
     // Update local state
     setPrincipes(prev =>prev.map(principe => ({
@@ -213,7 +213,7 @@ const Principes = () => {
     //pour supprimer principe
   const deletePrincipe = async (id) => {
     try {
-      await axios.delete(`${backendUrl}/principes/${id}`);
+      await axios.delete(`${backendUrl}/principes/${id}`,{withCredentials: true});
       setPrincipes((prev) => prev.filter((d) => d.id !== id));
       toast.success("Principe supprimée");
     } catch (error) {
@@ -224,7 +224,7 @@ const Principes = () => {
   //pour supprimer pratique
   const deletePratique = async (id) => {
     try {
-      await axios.delete(`${backendUrl}/pratiques/${id}`);
+      await axios.delete(`${backendUrl}/pratiques/${id}`,{withCredentials: true});
       //setPratiques((prev) => prev.filter((d) => d.id !== id)); 
       setPrincipes(prev =>prev.map(principe => ({      //so u don't have to refresh to see deleted pratiques
         ...principe,
@@ -240,7 +240,7 @@ const Principes = () => {
   //pour supprimer critere
   const deleteCritere = async (id) => {
     try {
-      await axios.delete(`${backendUrl}/criteres/${id}`);
+      await axios.delete(`${backendUrl}/criteres/${id}`,{withCredentials: true});
       setPrincipes(prev =>prev.map(principe => ({
         ...principe,
         pratiques: principe.pratiques?.map(pratique => ({
@@ -262,7 +262,7 @@ const Principes = () => {
   try {
     if (!critereId) return toast.error("Critère non sélectionné");
 
-    await axios.put(`${backendUrl}/criteres/update/${critereId}`, {...editingCritereData,id: critereId, });
+    await axios.put(`${backendUrl}/criteres/update/${critereId}`, {...editingCritereData,id: critereId, },{withCredentials: true});
     setPrincipes((prev) =>
       prev.map((principe) => ({
         ...principe,
@@ -288,7 +288,7 @@ const Principes = () => {
 const handleSavePrincipe = async () => {
   if (!principeId) return toast.error("principe non sélectionné");
   try {
-    await axios.put(`${backendUrl}/principes/update/${principeId}`, {...editingPrincipeData,id: principeId, });
+    await axios.put(`${backendUrl}/principes/update/${principeId}`, {...editingPrincipeData,id: principeId, },{withCredentials: true});
     setPrincipes(prev =>
       prev.map(p => p.id === principeId ? { ...p, ...editingPrincipeData } : p)
     );
@@ -305,7 +305,7 @@ const handleSavePrincipe = async () => {
   // Save pratique edits
 const handleSavePratique = async () => {
   try {
-    await axios.put(`${backendUrl}/pratiques/update/${pratiqueId}`, {...editingPratiqueData,id: pratiqueId, });
+    await axios.put(`${backendUrl}/pratiques/update/${pratiqueId}`, {...editingPratiqueData,id: pratiqueId, },{withCredentials: true});
     setPrincipes(prev =>
       prev.map(principe => ({
         ...principe,

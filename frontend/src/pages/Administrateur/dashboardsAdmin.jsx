@@ -74,7 +74,7 @@ export default function DashboardsAdmin() {
     const fetchDemandes=async() =>{
     try{
         setLoading(true);
-        const demandes = await axios.get(`${backendUrl}/demandes`);
+        const demandes = await axios.get(`${backendUrl}/demandes`,{ withCredentials: true });
         setDemandes(demandes.data);
         console.log("demandes: ",demandes.data);
         setIsEmpty(demandes.data.length === 0);
@@ -89,7 +89,7 @@ export default function DashboardsAdmin() {
   
   // Fetch evaluation
   const calculerScoreParMois=(listEvals)=>{
-    if(!listEvals || listEvals.length===0) return 0;
+    if(!listEvals || listEvals.length===0) return [];
     const dict=listEvals.reduce((acc,ev)=>{
       const rawDate = ev.dateTermination || ev.dateSoumission;
       console.log("RAW DATE =", ev.dateTermination);
@@ -133,7 +133,7 @@ export default function DashboardsAdmin() {
   useEffect(() => {
   const fetchData = async () => {
     try {
-        const evaluations = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const evaluations = await axios.get(`${backendUrl}/evaluation/all/treated`,{ withCredentials: true });
         console.log(evaluations.data);
         setListEvals(evaluations.data);
         const evaluationsRes=evaluations.data;
@@ -177,13 +177,13 @@ export default function DashboardsAdmin() {
   useEffect(() => {
   const fetchResponses = async () => {
     try {
-        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`,{ withCredentials: true });
         const evaluations=evaluationsRes.data;
         console.log("evaluations: ",evaluations);
          // Fetch all responses in parallel
         const allResponsesArrays = await Promise.all(
           evaluations.map(evalItem => 
-            axios.get(`${backendUrl}/evaluation/${evalItem.id}/reponses`)
+            axios.get(`${backendUrl}/evaluation/${evalItem.id}/reponses`,{withCredentials: true})
             .then(res => Array.isArray(res.data.reponses) ? res.data.reponses : [])
           
         )
@@ -213,7 +213,7 @@ export default function DashboardsAdmin() {
   useEffect(() => {
   const fetchData = async () => {
     try {
-        const users = await axios.get(`${backendUrl}/users`);
+        const users = await axios.get(`${backendUrl}/users`,{ withCredentials: true });
         const userArray = Array.isArray(users.data) ? users.data : users.data.users || [];
         const filteredUsers = userArray.filter(user => user.role !== "ADMIN" && user.role !== "EVALUATEUR");
         console.log(filteredUsers);
@@ -236,7 +236,7 @@ export default function DashboardsAdmin() {
         const fetchOrganismes = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${backendUrl}/organismes`);
+      const response = await axios.get(`${backendUrl}/organismes`,{ withCredentials: true });
       const filteredOrganismes = response.data.filter(org => org.responsable?.role !== "ADMIN" && org.responsable?.role !== "EVALUATEUR");    //org.responsable?.role iptional chaing pour verifier si le responsable existe ou non
         setStats(prev => ({
             ...prev,
@@ -256,7 +256,7 @@ export default function DashboardsAdmin() {
   useEffect(() => {
     const fetchPrincipes = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/principes`);
+        const res = await axios.get(`${backendUrl}/principes`,{ withCredentials: true });
         const mappedPrincipes = res.data.map((principe) => ({
           ...principe,
           label: principe.nom,
@@ -295,7 +295,7 @@ export default function DashboardsAdmin() {
   useEffect(() => {
     const fetchScoresParPrincipes = async () => {
       try {
-        const res = await axios.get(`${backendUrl}/scoreParPrincipe/scores`);
+        const res = await axios.get(`${backendUrl}/scoreParPrincipe/scores`,{ withCredentials: true });
         const scoresData={};
         res.data.forEach(item=>{
           const pid=item.principeId; //pid is the principe id
@@ -306,7 +306,8 @@ export default function DashboardsAdmin() {
           name: principesMap[pid] || `Principe ${pid}`,
           score: scoresArray.reduce((a, b) => a + b, 0) / scoresArray.length // Average score
         }));
-        setChartData(scores);
+        //setChartData(scores);
+        setChartData(Array.isArray(scores) ? scores : []);
         console.log("score moyen per principe ",scores);
        
     
@@ -323,7 +324,7 @@ export default function DashboardsAdmin() {
   useEffect(()=>{
     const fetchScoresParOrganismeType=async()=>{
       try{
-        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`);
+        const evaluationsRes = await axios.get(`${backendUrl}/evaluation/all/treated`,{ withCredentials: true });
         const evaluations=evaluationsRes.data;
 
         const orgScores=evaluations.reduce((acc,ev)=>{
@@ -370,9 +371,9 @@ export default function DashboardsAdmin() {
     const fetchScoresParTypeEtPrincipe=async()=>{
       try {
       const [resPrincipes,resScores,resOrganismes] = await Promise.all([
-        axios.get(`${backendUrl}/principes`),
-        axios.get(`${backendUrl}/scoreParPrincipe/scores`),
-        axios.get(`${backendUrl}/organismes`)
+        axios.get(`${backendUrl}/principes`,{ withCredentials: true }),
+        axios.get(`${backendUrl}/scoreParPrincipe/scores`,{ withCredentials: true }),
+        axios.get(`${backendUrl}/organismes`,{ withCredentials: true })
       ]);
       const principes=resPrincipes.data;
       const scores=resScores.data;
@@ -407,7 +408,7 @@ export default function DashboardsAdmin() {
 
         return acc;
       }, {});
-      const chartData = Object.entries(grouped).map(([principe,types]) => {
+      const chartDataParType = Object.entries(grouped).map(([principe,types]) => {
         const result = { principe};
         /*Object.keys(row).forEach(key => {
           if (key !== "principe") {
@@ -420,8 +421,8 @@ export default function DashboardsAdmin() {
         return result;
       });
 
-      console.log("FINAL CHART:", chartData);
-      setScoresParPrincipeParType(chartData);
+      console.log("FINAL CHART:", chartDataParType);
+      setScoresParPrincipeParType(chartDataParType);
       }catch(error){
         console.error(err);
         toast.error("Erreur lors du calcul des scores par organisme");
@@ -524,7 +525,7 @@ export default function DashboardsAdmin() {
             <h3 style={{ marginBottom: "20px", color: "#374151" }}>Scores Moyens par principe</h3>
             <div style={{ width: "100%", minWidth: 0 }}>
               <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}
+                <BarChart data={Array.isArray(chartData) ? chartData : []}
                   //margin={{ top: 10, right: 20, left: 10, bottom: 100 }}
                   >
                   <CartesianGrid strokeDasharray="3 3" />
