@@ -312,6 +312,7 @@ public class EvaluationController {
         map.put("id", ev.getId());
         map.put("organismeName", org != null ? org.getNomOrganisme() : "_");
         map.put("organismeType", org != null ? org.getType() : "_");
+        map.put("organismeSecteur", org != null ? org.getSecteur() : "_");
         map.put("responsableName", (org != null && org.getResponsable() != null) ? org.getResponsable().getNom() : "_");
         map.put("status", ev.getStatut());
         map.put("progression", progression);

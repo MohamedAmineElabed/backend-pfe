@@ -94,13 +94,15 @@ public class ProfileController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body("Email ou mot de passe incorrect");
         }
+        String token = response.getToken(); //save token before nulling it
         //Set token as httpOnly cookie
         ResponseCookie cookie = ResponseCookie.from("token", response.getToken())
             .httpOnly(true)
-            .secure(false)      // set true in production
+            .secure(true)      // set true in production
+            .sameSite("None")
             .path("/")
             .maxAge(Duration.ofHours(8))
-            .sameSite("Lax")
+            //.sameSite("Lax")
             //.secure(false)
             .build();
         //response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -110,6 +112,7 @@ public class ProfileController {
     //return ResponseEntity.ok(profileResponse);
     return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, cookie.toString())
+            .header("X-Auth-Token", token)
             .body(response);
 }
 
