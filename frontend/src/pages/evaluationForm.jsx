@@ -96,7 +96,7 @@ const EvaluationForm = () => {
           formData.append("files", file);
         });
       }
-
+      toast.success("Toutes les réponses ont été enregistrés avec succès !");
       await axios.post(
         `${backendUrl}/evaluation/reponses/reponse/save/${evaluationIdToUse}`,
         formData,
@@ -115,7 +115,6 @@ const EvaluationForm = () => {
       score: totalScore,
     });*/
 
-    toast.success("Toutes les réponses ont été enregistrés avec succès !");
     console.log("Evaluation + score saved successfully!");
   } catch (err) {
     console.error("Erreur lors de la sauvegarde de l'évaluation", err);

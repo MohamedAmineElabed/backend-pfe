@@ -6,7 +6,7 @@ import { toast } from 'react-toastify';
 import { AppContext } from '../context/AppContext.jsx';
 
 const VerifyAccount = () => {
-  const { backendUrl,setUserData } = useContext(AppContext);
+  const { backendUrl,setUserData,setIsLoggedIn } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
   // Extract email from query param
@@ -20,6 +20,14 @@ const VerifyAccount = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
+
+  //clears any existing session when page loads
+  useEffect(() => {
+    setUserData(null);
+    setIsLoggedIn(false);
+    sessionStorage.removeItem('token');
+  }, []);
+
   //Verifier si l'email existe déja
   useEffect(() => {
     if (!email) return;
@@ -56,14 +64,17 @@ const VerifyAccount = () => {
       setLoading(true);
       const cleanEmail = email.trim();
       //const response = await axios.post(`${backendUrl}/register-from-demande`, { password });
-      const response =await axios.post(`${backendUrl}/register-from-demande/${encodeURIComponent(cleanEmail)}`, { password },{ withCredentials: true });
+      const response =await axios.post(`${backendUrl}/register-from-demande/${encodeURIComponent(cleanEmail)}`, 
+      { password },{ withCredentials: true });
       const user = response.data;
 
-      localStorage.setItem("userData", JSON.stringify(user));
-      setUserData(user);
-      console.log(localStorage.getItem("userData"));
-      toast.success("Inscription réussie ! Welcome");
-      navigate("/homepage");
+      //localStorage.setItem("userData", JSON.stringify(user));
+      //setUserData(user);
+      //console.log(localStorage.getItem("userData"));
+      toast.success("Votre compte a été cré avec succés!");
+      //navigate("/Login");
+      window.location.href = "/Login";
+
     } catch (error) {
       let message = error.response?.data || "Erreur serveur";
         if (typeof message === "object") {

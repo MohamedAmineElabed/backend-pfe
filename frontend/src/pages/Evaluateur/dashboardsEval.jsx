@@ -1,7 +1,7 @@
 ﻿// pages/Dashboards.jsx
 import { useEffect, useState, useContext, useMemo } from "react";
 import axios from "axios";
-import SidebarAdmin from "../../components/siderbarAdmin.jsx";
+import SidebarEval from "../../components/siderbarEval.jsx";
 import StatCard from "../../components/evaluateur/statCard.jsx";
 import { AppContext } from "../../context/AppContext.jsx";
 import { toast } from "react-toastify";
@@ -161,7 +161,7 @@ function FilterBar({filterDateFrom,setFilterDateFrom,filterDateTo,setFilterDateT
 }
 
 // ─── Main Dashboard ────────────────────────────────────────────────────────────
-export default function DashboardsAdmin() {
+export default function DashboardsEval() {
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalEvals: 0,
@@ -532,7 +532,7 @@ export default function DashboardsAdmin() {
   if (loading) {
     return (
       <div style={{ display: 'flex' }}>
-        <SidebarAdmin />
+        <SidebarEval />
         <div style={{
           flex: 1, padding: 20, marginLeft: '250px',
           display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh'
@@ -546,7 +546,7 @@ export default function DashboardsAdmin() {
   // Render
   return (
     <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f3f4f6' }}>
-      <SidebarAdmin />
+      <SidebarEval />
 
       <div style={{ flex: 1, marginLeft: '250px', padding: '20px', overflowX: 'auto' }}>
 

@@ -381,6 +381,7 @@ const Login = () => {
   const [organisme, setOrganisme] = useState('');
   const [typeOrganisme, setTypeOrganisme] = useState('');
   const [role, setRole] = useState('');
+  const [jobRole, setJobRole] = useState('');
   const [telephone, setTelephone] = useState('');
   const [description, setDescription] = useState('');
   const [adresse, setAdresse] = useState('');
@@ -406,8 +407,8 @@ const Login = () => {
         if (fax.length !== 8) { toast.error("Le fax doit contenir exactement 8 chiffres"); setLoading(false); return; }
         const formData = new FormData();
         formData.append("nom", nom); formData.append("prenom", prenom);
-        formData.append("email", email); formData.append("nomOrganisme", organisme);
-        formData.append("typeOrganisme", typeOrganisme); formData.append("role", role);
+        formData.append("email", email); formData.append("nomOrganisme", organisme);formData.append("role","RESPONSABLE");
+        formData.append("typeOrganisme", typeOrganisme); formData.append("jobRole", jobRole);
         formData.append("telephone", telephone); formData.append("description", description);
         formData.append("adresse", adresse); formData.append("secteur", secteur);
         formData.append("fax", fax); formData.append("dateCreation", dateCreation);
@@ -418,16 +419,18 @@ const Login = () => {
           withCredentials: true 
         });
         if (response.status === 201) {
-          setUserData(response.data); 
-          setIsLoggedIn(true);
+          //setUserData(response.data); 
+          //setIsLoggedIn(true);
           //sessionStorage.setItem("userData", JSON.stringify(response.data));
-          toast.success("Demande enregistrée avec succès !");
+          toast.success("Demande enregistrée avec succès ! Attendez la validation de l'admin.");
+          setIsCreateAccount(false);
         }
       } else {
         const response = await axios.post(`${backendUrl}/login`, { email, password },{ withCredentials: true });
         if (response.status === 200) {
           //save token from header
           const token = response.headers['x-auth-token'];
+          console.log("TOKEN RECEIVED:", token);
           if (token) sessionStorage.setItem('token', token);
 
           const loggedInUser = response.data;
@@ -572,7 +575,7 @@ const Login = () => {
                           { label: "Nom", value: nom, set: setNom, type: "text" },
                           { label: "Prénom", value: prenom, set: setPrenom, type: "text" },
                           { label: "Email personnel", value: email, set: setEmail, type: "email" },
-                          { label: "Rôle dans l'organisme", value: role, set: setRole, type: "text" },
+                          { label: "Rôle dans l'organisme", value: jobRole, set: setJobRole, type: "text" },
                         ].map(f => (
                           <div key={f.label}>
                             <label style={labelStyle}>{f.label}</label>
