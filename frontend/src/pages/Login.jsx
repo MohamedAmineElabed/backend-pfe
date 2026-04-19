@@ -426,6 +426,10 @@ const Login = () => {
       } else {
         const response = await axios.post(`${backendUrl}/login`, { email, password },{ withCredentials: true });
         if (response.status === 200) {
+          //save token from header
+          const token = response.headers['x-auth-token'];
+          if (token) sessionStorage.setItem('token', token);
+
           const loggedInUser = response.data;
           setUserData(response.data);
           //sessionStorage.setItem("userData", JSON.stringify(response.data));

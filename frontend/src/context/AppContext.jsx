@@ -11,6 +11,7 @@ export const AppContextProvider = (props) => {
     const backendUrl = Appconstants.BACKEND_URL; // Exemple d'URL de backend
     //const [isloggedIn, setIsloggedIn] = React.useState(false); // Exemple d'état de connexion
     const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [loadingUser, setLoadingUser] = useState(true);
     const [userData, setUserData] = useState(null);
     /*const [userData, setUserData] = useState(
         JSON.parse(sessionStorage.getItem("userData")) || null
@@ -18,8 +19,20 @@ export const AppContextProvider = (props) => {
     
     const loadUser = async () => {
     try {
+      const token = sessionStorage.getItem('token'); //read token
+      //no token and no cookie = not logged in
+            if (!token) {
+                setUserData(null);
+                setIsLoggedIn(false);
+                setLoadingUser(false);
+                return;
+            }
       const res = await axios.get(`${backendUrl}/users/me`, {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+                'ngrok-skip-browser-warning': 'true', //for ngrok
+                ...(token && { Authorization: `Bearer ${token}` })
+            }
       });
 
       setUserData(res.data);
@@ -27,6 +40,9 @@ export const AppContextProvider = (props) => {
     } catch (err) {
       setUserData(null);
       setIsLoggedIn(false);
+      sessionStorage.removeItem('token'); //clear bad token
+    }finally {
+        setLoadingUser(false); //always runs
     }
   };
 
@@ -39,6 +55,7 @@ export const AppContextProvider = (props) => {
         backendUrl,
         isLoggedIn,setIsLoggedIn,
         userData, setUserData,
+        loadingUser
     };
     return (
         <AppContext.Provider value={contextValue}>

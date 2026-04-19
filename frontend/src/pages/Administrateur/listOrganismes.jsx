@@ -575,7 +575,7 @@ const ListOrganismes = () => {
     return matchSearch && matchType;
   });
 
-  const COLS = "44px 1.2fr 1.3fr 1.1fr 90px 100px 90px 100px";
+  const COLS = "44px 1fr 1fr 1fr 75px 70px 100px 100px";
 
   return (
     <>

@@ -820,14 +820,14 @@ const handleSavePratique = async () => {
     required
   />
 
-  <textarea
+  {/*<textarea
     name="description"
     placeholder="description bréve de pratique"
     value={newPratique.description}
     onChange={handleChangeNewPratique}
     className="form-control mb-2"
     //required
-  />
+  />*/}
 
   
 
@@ -887,14 +887,14 @@ const handleSavePratique = async () => {
     required
   />
 
-  <textarea
+  {/*<textarea
     name="description"
     placeholder="description bréve de critere"
     value={newCritere.description}
     onChange={handleChangeNewCritere}
     className="form-control mb-2"
     //required
-  />
+  />*/}
 
   
 
