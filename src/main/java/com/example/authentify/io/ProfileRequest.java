@@ -43,6 +43,7 @@ public class ProfileRequest {
     @NotBlank(message = "Nom organisme is required")
     private String nomOrganisme;
 
+    private String jobRole;
     private String emailOrganisme;
     private String adresse;
     private String secteur;

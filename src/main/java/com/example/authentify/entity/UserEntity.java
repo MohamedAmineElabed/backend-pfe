@@ -39,6 +39,7 @@ public class UserEntity {
     //private String organisme;
     //private String typeOrganisme;
     private String role;
+    private String jobRole;
     //@Builder.Default
     private String etat; // Default value for the "etat" field
     //private String telephone;

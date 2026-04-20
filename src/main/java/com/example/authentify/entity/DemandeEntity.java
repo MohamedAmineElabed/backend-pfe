@@ -35,6 +35,7 @@ public class DemandeEntity {
     private String nomOrganisme;
     private String typeOrganisme;
     private String role;
+    private String jobRole;
     private String telephone;
     private String description;
     private String adresse;

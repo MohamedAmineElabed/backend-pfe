@@ -17,6 +17,8 @@ import com.example.authentify.io.PasswordRequest;
 import com.example.authentify.io.ProfileRequest;
 import com.example.authentify.io.RegisterFromDemandeRequest;
 //import com.example.authentify.service.JwtService;
+//import com.example.authentify.service.CloudinaryService;
+
 
 
 import com.example.authentify.io.OrganismeRequest;
@@ -29,9 +31,9 @@ import jakarta.transaction.Transactional;
 
 import com.example.authentify.repository.OrganismeRepository;
 import java.lang.Long;
-import java.nio.file.Path;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+//import java.nio.file.Path;
+//import java.nio.file.Files;
+//import java.nio.file.Paths;
 import java.util.concurrent.ThreadLocalRandom;
 
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,7 @@ public class ProfileServiceImp implements ProfileService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final CloudinaryService cloudinaryService;
 
 
     // Méthode utilitaire pour créer un OrganismeEntity
@@ -179,7 +182,8 @@ public UserEntity registerUserFromDemande(String email, RegisterFromDemandeReque
     user.setEmail(demande.getEmail());
     user.setNom(demande.getNom());
     user.setPrenom(demande.getPrenom());
-    user.setRole(demande.getRole());
+    user.setRole("RESPONSABLE");
+    user.setJobRole(demande.getJobRole());
     user.setEtat("actif");
     user.setPassword(passwordEncoder.encode(password));
 
@@ -242,6 +246,7 @@ private boolean isStrongPassword(String password) {
     user.setPrenom(request.getPrenom());
     user.setEmail(request.getEmail());
     user.setRole(request.getRole());
+    user.setJobRole(request.getJobRole());
 
     /*// Optional: update organisme if provided
     if (request.getOrganisme() != null) {
@@ -456,7 +461,7 @@ private boolean isStrongPassword(String password) {
     if (logoFile != null && !logoFile.isEmpty()) {
         try {
             // Generate unique filename
-            String fileName = System.currentTimeMillis() + "_" + logoFile.getOriginalFilename();
+           /* String fileName = System.currentTimeMillis() + "_" + logoFile.getOriginalFilename();
             Path uploadPath = Paths.get("uploads/");
             if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
 
@@ -466,7 +471,8 @@ private boolean isStrongPassword(String password) {
 
             // Save path as String in the entity
             //organisme.setLogoUrl("/uploads/" + fileName);
-            organisme.setLogoUrl("http://localhost:8080/api/v1.0/uploads/" + fileName);
+            organisme.setLogoUrl("http://localhost:8080/api/v1.0/uploads/" + fileName);*/
+            organisme.setLogoUrl(cloudinaryService.uploadLogo(logoFile));
         } catch (Exception e) {
             throw new RuntimeException("Failed to upload logo", e);
         }

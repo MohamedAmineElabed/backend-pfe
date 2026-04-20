@@ -108,7 +108,8 @@ public class DemandeServiceImp implements DemandeService {
                 .nomOrganisme(request.getNomOrganisme())
                 .typeOrganisme(request.getTypeOrganisme())
                 .role(request.getRole())
-                .description(request.getDescription())
+                .jobRole(request.getJobRole())
+                //.description(request.getDescription())
                 .emailOrganisme(request.getEmailOrganisme())
                 .adresse(request.getAdresse())
                 .fax(request.getFax())
@@ -163,7 +164,7 @@ public class DemandeServiceImp implements DemandeService {
         //String validationUrl = "http://localhost:3000/auth/verify?token=" + generateTokenFor(demande);
         /*String validationUrl = "http://localhost:5173/verifyAccount?email="
             + URLEncoder.encode(savedDemande.getEmail(), StandardCharsets.UTF_8); */
-        String validationUrl = "https://projet-pfe-one.vercel.app/verifyAccount?email="
+        String validationUrl = "https://projet-pfe-three.vercel.app/verifyAccount?email="
                     + URLEncoder.encode(savedDemande.getEmail(), StandardCharsets.UTF_8); ;
 
     // Send validation email
