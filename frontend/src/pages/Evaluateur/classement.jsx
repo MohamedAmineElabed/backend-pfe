@@ -254,7 +254,9 @@ const Classement = () => {
           </div>
 
           {/* Rows */}
-          {filtered.map((org, index) => {
+          {[...filtered]
+          .sort((a,b)=>(b.score || 0) - (a.score || 0)) //DESC (highest first)
+          .map((org, index) => {
             const rank = index + 1;
             const pct =org.score && org.maxScore ?Math.round(org.score / org.maxScore * 100) : 0;
 
@@ -276,7 +278,7 @@ const Classement = () => {
                 
 
                 {/* Badge */}
-            {org.label || getLabelBadge(pct)}
+            {getLabelBadge(pct) || org.label}
               </div>
             );
           })}

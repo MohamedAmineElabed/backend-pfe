@@ -70,6 +70,7 @@ export default function DashboardResp() {
   const[user,setUser] = useState(null); // État pour stocker les informations de l'utilisateur
   const progress = Math.round((monOrganisme.evaluationsCompletes / monOrganisme.evaluationsTotal) * 100);
   const { backendUrl,userData } = useContext(AppContext);
+  //const[loading,setLoading] = useState(true); // État pour indiquer si les données sont en cours de chargement
   const location = useLocation();
   //const evaluation = location.state?.evaluation;
   const [scorePrincipes, setScorePrincipes] = useState([]);
@@ -181,7 +182,7 @@ const scoresMoyen = useMemo(() => {
   
 }, [scorePrincipes]);
 
-if ((user && user.etat !== "actif") || !user) {
+/*if ((user && user.etat !== "actif") || !user) {
   return (
     <>
       <Siderbar />
@@ -191,7 +192,7 @@ if ((user && user.etat !== "actif") || !user) {
       </div>
     </>
   );
-}
+}*/
   
 
   return (

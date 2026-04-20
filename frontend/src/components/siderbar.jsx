@@ -79,7 +79,7 @@ function Sidebar() {
   };
 
   const displayName = userData?.nom || "not found";
-  const displayRole = userData?.role || "not found";
+  const displayRole = userData?.jobRole || "not found";
 
   return (
     <>

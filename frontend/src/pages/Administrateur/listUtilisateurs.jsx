@@ -602,7 +602,7 @@ const ListUtilisateurs = () => {
                 <span style={{ fontSize: 13, color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {user.organisme?.nomOrganisme ?? "—"}
                 </span>
-                <RolePill role={user.role} />
+                <RolePill role={user.jobRole} />
                 <Badge active={user.etat === "actif"} />
 
                 {/* Actions */}
@@ -684,7 +684,7 @@ const ListUtilisateurs = () => {
                   </p>
                   {[
                     { label: "Email", value: selectedUser.email, icon: "✉" },
-                    { label: "Rôle", value: selectedUser.role, icon: "🏷" },
+                    { label: "Rôle", value: selectedUser.jobRole, icon: "🏷" },
                     { label: "État", value: selectedUser.etat, icon: "●" },
                   ].map(({ label, value, icon }) => (
                     <div key={label} style={{ marginBottom: 14, display: "flex", gap: 10, alignItems: "flex-start" }}>

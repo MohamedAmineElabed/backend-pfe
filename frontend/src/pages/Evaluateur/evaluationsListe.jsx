@@ -33,6 +33,7 @@ const styles = {
   thead: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
   row: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
   orgName: { fontSize: 13, fontWeight: 600, color: "#1e293b" },
+  orgRole: {fontSize: 12,color: '#888',fontStyle: 'italic',marginTop: 2,display: 'block',},
   dateCell: { fontSize: 12, color: "#94a3b8", fontFamily: "monospace" },
   badge: { display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, letterSpacing: "0.01em" },
   badgeDot: { width: 6, height: 6, borderRadius: "50%", flexShrink: 0 },
@@ -183,7 +184,9 @@ const handleStatusChange = (ev, newStatus) => {
                   onClick={() => navigate(`/evaluateur/evaluations/${ev.id}`, { state: { evaluation: ev } })}>
                   <span style={styles.orgName}>{ev.organismeName}</span>
                   {/*<span style={styles.dateCell}>{new Date(ev.dateSoumission).toLocaleDateString("fr-FR")}</span>*/}
-                  <span style={styles.orgName}>{ev.responsableName}</span>
+                  <span style={styles.orgName}>{ev.responsableName}
+                    <span style={styles.orgRole}>{ev.responsableRole}</span>
+                  </span>
                   <span style={{ ...styles.badge, color: cfg.text, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
                     <span style={{ ...styles.badgeDot, background: cfg.dot }} /> {cfg.label}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

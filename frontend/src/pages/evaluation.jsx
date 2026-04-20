@@ -304,6 +304,8 @@ const Evaluation = () => {
   const [evaluations, setEvaluations] = useState([]);
   const [latestEval, setLatestEval] = useState(null);
   const [latestLabel, setLatestLabel] = useState("_"); // displayed label
+  const [loading, setLoading] = useState(true);
+
 
   const calculerScoreMoyen=useMemo(()=>{
     if(evaluations.length===0) return ;
@@ -329,6 +331,7 @@ const Evaluation = () => {
   },[evaluations]);
   console.log("latest eval: ",latestEval);*/
   
+/*
   // récupérer les utilisateurs
     useEffect(() => {
       if (userData?.id) {
@@ -394,7 +397,50 @@ const Evaluation = () => {
   };
 
   fetchLatestEval();
-}, [backendUrl, userData, evaluations]);
+}, [backendUrl, userData, evaluations]);*/
+
+useEffect(() => {
+  if (!userData?.id) return;
+
+  const fetchAll = async () => {
+    try {
+      //All 3 requests fire at the same time
+      const [userRes, evalRes, latestRes] = await Promise.all([
+        axios.get(`${backendUrl}/users/${userData.id}`, { withCredentials: true }),
+        axios.get(`${backendUrl}/evaluation?userId=${userData.id}`, { withCredentials: true }),
+        axios.get(`${backendUrl}/evaluation/latest`, { params: { userId: userData.id }, withCredentials: true }),
+      ]);
+
+      setCurrentUser(userRes.data);
+
+      const mappedEvals = evalRes.data.map(ev => {
+        let statutKey = (ev.statut || "").toLowerCase().trim();
+        if (ev.statut === "en attente") statutKey = "en_attente";
+        if (ev.statut === "en cours") statutKey = "en_cours";
+        if (ev.statut === "terminé") statutKey = "terminé";
+        return {
+          ...ev,
+          statut: statutKey,
+          organismeName: ev.organismeName || "—",
+          responsableName: ev.responsableName || "—",
+          preuves: ev.preuves || 0,
+        };
+      });
+      setEvaluations(mappedEvals);
+
+      if (latestRes.data) {
+        setLatestEval(latestRes.data);
+        setLatestLabel(latestRes.data.label);
+      }
+    } catch (err) {
+      console.error("Erreur fetching data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAll();
+}, [backendUrl, userData?.id]); //only re-runs if userId changes
 
     const startEvaluation=async()=>{
       if (!currentUser) return alert("Utilisateur introuvable !");
@@ -409,6 +455,36 @@ const Evaluation = () => {
     return LABEL_COLORS[key] || { accent: "#3b82f6", bg: "#e0f2fe" };
   }, [latestLabel]);
 
+  /*if (loading) return (
+  <div style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100vh",
+    gap: 16,
+    background: "#f8f9fc",
+  }}>
+    <div style={{
+      width: 40,
+      height: 40,
+      border: "3px solid #e2e8f0",
+      borderTop: "3px solid #6366f1",
+      borderRadius: "50%",
+      animation: "spin 0.8s linear infinite",
+    }} />
+    <p style={{ color: "#94a3b8", fontSize: 14, fontWeight: 500 }}>
+      Chargement...
+    </p>*/
+
+    {/*Required for the spin animation to work */}
+    /*<style>{`
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
   if ((currentUser && currentUser.etat !== "actif") || !currentUser) {
   return (
     <>
@@ -419,7 +495,7 @@ const Evaluation = () => {
       </div>
     </>
   );
-}
+}*/
   return (
     <>
     

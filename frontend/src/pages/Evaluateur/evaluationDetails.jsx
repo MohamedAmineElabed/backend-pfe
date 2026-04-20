@@ -36,7 +36,6 @@ const CritereItem = ({ critere, index, evaluation, onValiderCritere, onRefuserCr
   const currentState = critereStates[critere.id] || {};
   const comment = currentState.comment || "";
   const selectedAction = critereStates[critere.id]?.action || null;
-
   const { backendUrl } = useContext(AppContext);
 
   const responsesForThisCritere = (evaluation?.reponses || []).filter(
@@ -44,6 +43,12 @@ const CritereItem = ({ critere, index, evaluation, onValiderCritere, onRefuserCr
   );
   const response = responsesForThisCritere[0];
   const isLocked = isEvaluationComplete || selectedAction !== null;
+
+  const displayStatus = selectedAction === "valider" ? "validé"
+    : selectedAction === "refuser"
+    ? "refusé"
+    : response?.statut;
+
 
   const [selectedFile, setSelectedFile] = useState(null);
   
@@ -155,10 +160,8 @@ const handleRefuserClick = () => {
       marginTop: 12,
       padding: "14px 16px",
       borderRadius: 12,
-      background: response.statut === "validé" ? "#ecfdf5" : "#fef2f2",
-      border: `1px solid ${
-        response.statut === "validé" ? "#bbf7d0" : "#fecaca"
-      }`,
+      background: displayStatus === "validé" ? "#ecfdf5" : "#fef2f2",
+      border: `1px solid ${displayStatus === "validé" ? "#bbf7d0" : "#fecaca"}`,
     }}
   >
     {/* Top row */}
@@ -170,12 +173,12 @@ const handleRefuserClick = () => {
           fontSize: 12,
           fontWeight: 600,
           background:
-            response.statut === "validé" ? "#d1fae5" : "#fee2e2",
+            displayStatus === "validé" ? "#d1fae5" : "#fee2e2",
           color:
-            response.statut === "validé" ? "#065f46" : "#991b1b",
+            displayStatus === "validé" ? "#065f46" : "#991b1b",
         }}
       >
-        {response.statut === "validé" ? "Validé" : "Refusé"}
+        {displayStatus === "validé" ? "Validé" : "Refusé"}
       </span>
 
       <span style={{ fontSize: 14, fontWeight: 500 }}>
@@ -373,14 +376,6 @@ const EvaluationDetails = () => {
   );
 }, [principes]);
 
-/*const isEvaluationComplete = useMemo(() => {
-  if (!allCriteres.length || !evaluation?.reponses) return false;
-
-  return allCriteres.every(c => {
-    const response = evaluation.reponses.find(r => r.critereId === c.id);
-    return response && (response.statut === "validé" || response.statut === "refusé");
-  });
-}, [allCriteres, evaluation]);*/
 const isEvaluationComplete=evaluation?.statut==="terminé";
 
   // when user types a comment

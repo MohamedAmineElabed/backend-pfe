@@ -86,7 +86,9 @@ const EvaluationForm = () => {
     }
 
     // --- Step 2: Save all responses ---
-    for (const [critereId, valeur] of Object.entries(selectedOption)) {
+        // Show loading toast immediately
+      const toastId = toast.loading("Enregistrement en cours...");
+      for (const [critereId, valeur] of Object.entries(selectedOption)) {
       const formData = new FormData();
       formData.append("critereId", Number(critereId));
       formData.append("valeur", valeur);
@@ -96,7 +98,6 @@ const EvaluationForm = () => {
           formData.append("files", file);
         });
       }
-      toast.success("Toutes les réponses ont été enregistrés avec succès !");
       await axios.post(
         `${backendUrl}/evaluation/reponses/reponse/save/${evaluationIdToUse}`,
         formData,
@@ -114,11 +115,22 @@ const EvaluationForm = () => {
     await axios.put(`${backendUrl}/evaluation/${evaluationIdToUse}/score`, {
       score: totalScore,
     });*/
-
+    //Update to success only if all requests passed
+    toast.update(toastId, {
+      render: "Toutes les réponses ont été enregistrés avec succès !",
+      type: "success",
+      isLoading: false,
+      autoClose: 3000,
+    });
     console.log("Evaluation + score saved successfully!");
   } catch (err) {
     console.error("Erreur lors de la sauvegarde de l'évaluation", err);
-    toast.error("Erreur lors de la sauvegarde de l'évaluation");
+    toast.update(toastId, {
+      render: "Erreur lors de la sauvegarde de l'évaluation",
+      type: "error",
+      isLoading: false,
+      autoClose: 3000,
+  });
   }
 };
 

@@ -14,7 +14,8 @@ const ProfileInfoTab = ({ user }) => {
     nom: "",
     prenom: "",
     email: "",
-    role: ""
+    role: "",
+    jobRole: ""
   });
 
   // Initialisation des données utilisateur
@@ -28,7 +29,8 @@ const ProfileInfoTab = ({ user }) => {
       nom: user.nom || "",
       prenom: user.prenom || "",
       email: user.email || "",
-      role: user.role || ""
+      role: user.role || "",
+      jobRole: user.jobRole || ""
     });
   }, [user]);
 
@@ -54,7 +56,8 @@ const ProfileInfoTab = ({ user }) => {
       nom: user.nom || "",
       prenom: user.prenom || "",
       email: user.email || "",
-      role: user.role || ""
+      role: user.role || "",
+      jobRole: user.jobRole || ""
     });
   };
 
@@ -154,9 +157,9 @@ const ProfileInfoTab = ({ user }) => {
           <Form.Label>Rôle</Form.Label>
           <Form.Control
             type="text"
-            name="role"
-            value={formData.role}
-            readOnly={!isEditing || formData.role === "ADMIN"}
+            name={formData?.role==="RESPONSABLE" ? "jobRole" : "role" }
+            value={formData?.role==="RESPONSABLE" ?formData?.jobRole: formData?.role }
+            readOnly={!isEditing || formData.role === "ADMIN" || formData.role === "EVALUATEUR"}
             onChange={handleChange}
           />
         </Form.Group>

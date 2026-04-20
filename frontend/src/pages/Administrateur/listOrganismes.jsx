@@ -769,7 +769,7 @@ const ListOrganismes = () => {
                         </div>
                         <div>
                           <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{selectedOrg.responsable.prenom} {selectedOrg.responsable.nom}</div>
-                          <div style={{ fontSize: 12, color: T.muted }}>{selectedOrg.responsable.role}</div>
+                          <div style={{ fontSize: 12, color: T.muted }}>{selectedOrg.responsable.jobRole}</div>
                         </div>
                       </div>
                       <div>

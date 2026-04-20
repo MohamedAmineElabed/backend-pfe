@@ -59,6 +59,37 @@ function Profilepage({}) {
             : user?.role === "EVALUATEUR"
             ? SiderbarEval
             : Siderbar;  
+    //spinner
+ /* if (loading) return (
+  <div style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100vh",
+    gap: 16,
+    background: "#f8f9fc",
+  }}>
+    <div style={{
+      width: 40,
+      height: 40,
+      border: "3px solid #e2e8f0",
+      borderTop: "3px solid #6366f1",
+      borderRadius: "50%",
+      animation: "spin 0.8s linear infinite",
+    }} />
+    <p style={{ color: "#94a3b8", fontSize: 14, fontWeight: 500 }}>
+      Chargement...
+    </p>*/
+
+    {/*Required for the spin animation to work */}
+   /* <style>{`
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    `}</style>
+  </div>
+);
 
   if ((user && user.etat !== "actif") || !user) {
   return (
@@ -70,7 +101,7 @@ function Profilepage({}) {
       </div>
     </>
   );
-}
+}*/
     return (
       <>
       <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>

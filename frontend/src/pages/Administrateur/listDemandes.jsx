@@ -515,7 +515,7 @@ const ListDemandes = () => {
                 <span style={{ fontSize: 13, color: T.text }}>{d.prenom}</span>
                 <span style={{ fontSize: 12, color: T.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.email}</span>
                 <span style={{ fontSize: 13, color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.nomOrganisme || "—"}</span>
-                <span style={{ fontSize: 12, color: T.muted }}>{d.role || "—"}</span>
+                <span style={{ fontSize: 12, color: T.muted }}>{d.jobRole || "—"}</span>
                 <StateBadge etat={d.etat} />
                 <span style={{ fontSize: 12, color: T.muted }}>
                   {d.created_at ? new Date(d.created_at).toLocaleDateString("fr-FR") : "—"}
@@ -589,7 +589,7 @@ const ListDemandes = () => {
                   </p>
                   <InfoRow icon="👤" label="Nom complet" value={`${selected.prenom} ${selected.nom}`} />
                   <InfoRow icon="✉" label="Email" value={selected.email} accent />
-                  <InfoRow icon="🏷" label="Poste dans l'organisme" value={selected.role} />
+                  <InfoRow icon="🏷" label="Poste dans l'organisme" value={selected.jobRole} />
                   <InfoRow icon="📅" label="Date de demande" value={selected.created_at ? new Date(selected.created_at).toLocaleDateString("fr-FR") : null} />
                 </div>
 
