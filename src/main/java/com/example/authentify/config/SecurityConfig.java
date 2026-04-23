@@ -148,7 +148,9 @@ public class SecurityConfig {
                     "/api/v1.0/uploads/**",
                     "/api/v1.0/files/**",     
                     "/api/v1.0/demandes/**",
-                    "/api/v1.0/email/**"
+                    "/api/v1.0/email/**",
+                    "/api/v1.0/evaluation/**"
+                    
                 ).permitAll()
 
                 //Public demande registration
@@ -161,6 +163,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1.0/users/*/activer").hasAuthority("ADMIN")
                 .requestMatchers("/api/v1.0/users/*/desactiver").hasAuthority("ADMIN")
                 .requestMatchers("/api/v1.0/principes/update/**").hasAuthority("ADMIN")
+                .requestMatchers("/api/v1.0/*/listOrganismesEval/").hasAuthority("EVALUATEUR")
 
                 //Everything else requires login
                 .anyRequest().authenticated()

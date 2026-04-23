@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 //import java.util.List;
 //import com.example.authentify.entity.DemandeEntity;
 import com.example.authentify.entity.ReponseEntity;
+import com.example.authentify.entity.CritereEntity;
 //import com.example.authentify.entity.CritereEntity;
 //import com.example.authentify.entity.DemandeEntity;
 import com.example.authentify.entity.EvaluationEntity;
@@ -15,6 +16,8 @@ import com.example.authentify.entity.OrganismeEntity;
 import com.example.authentify.entity.PreuveEntity;
 import com.example.authentify.io.EvaluationRequest;
 //import com.example.authentify.entity.OrganismeEntity;
+import com.example.authentify.io.UpdateEvaluationRequest;
+import com.example.authentify.io.UpdateReponseRequest;
 
 //import com.example.authentify.io.ReponseRequest;
 import java.sql.Timestamp;
@@ -22,6 +25,7 @@ import java.io.IOException;
 //import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 
 //import com.example.authentify.io.OrganismeRequest;
 
@@ -30,12 +34,17 @@ import java.nio.file.Paths;
 //import com.example.authentify.repository.UserRepository;
 
 //import com.example.authentify.repository.OrganismeRepository;
-//import java.lang.Long;
+import java.lang.Long;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Map;
+
 import com.example.authentify.repository.EvaluationRepository;
 import com.example.authentify.repository.OrganismeRepository;
 import com.example.authentify.repository.ReponseRepository;
 import com.example.authentify.repository.PreuveRepository;
+import com.example.authentify.repository.CritereRepository;
+
 
 import lombok.RequiredArgsConstructor;
 
@@ -51,9 +60,13 @@ public class EvaluationServiceImp {
     private final ReponseRepository reponseRepository;
     private final PreuveRepository preuveRepository;
     private final OrganismeRepository organismeRepository;  
-    //private final CritereRepository critereRepository;
+    private final CritereRepository critereRepository;
 
 
+    private int calculerMaxScore() {
+    List<CritereEntity> allCriteres = critereRepository.findAll();
+    return allCriteres.size() * 3;
+}
     public EvaluationEntity createEvaluation(EvaluationRequest request) {
         // Create evaluation
         EvaluationEntity evaluation = new EvaluationEntity();
@@ -64,7 +77,7 @@ public class EvaluationServiceImp {
         evaluation.setResponsableId(request.getResponsableId());
         evaluation.setStatut("en attente");
         evaluation.setScore(0);
-        evaluation.setScoreMax(0);
+        evaluation.setScoreMax(calculerMaxScore());
 
         evaluation = evaluationRepository.save(evaluation);
         return evaluation; // return the entity so frontend can get its ID
@@ -118,7 +131,15 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
 
     reponse.setEvaluation(evaluation);
     reponse.setCritereId(critereId);
+
     reponse.setValeur(valeur);
+    if(valeur!=null && (valeur==0 || valeur==1 )){
+        reponse.setStatut("validé");
+    }else{
+        reponse.setStatut(null);
+    }
+    
+
     
 
     // 3. Save response first (so we have an ID for the file)
@@ -194,9 +215,11 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
         if (comment != null && !comment.isEmpty()) {
             reponse.setCommentaire(comment); // save the comment
     }
+            //save reponse
         ReponseEntity savedReponse= reponseRepository.save(reponse);
+            //update statut
+        //updateEvalStatut(savedReponse.getEvaluation().getId());
 
-    
     return savedReponse;
 }    
  
@@ -208,9 +231,11 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
         if (comment != null && !comment.isEmpty()) {
             reponse.setCommentaire(comment); // save the comment
     }
+            //save reponse
         ReponseEntity savedReponse= reponseRepository.save(reponse);
+            //update statut
+        //updateEvalStatut(savedReponse.getEvaluation().getId());
 
-    
     return savedReponse;
 }
 
@@ -256,9 +281,13 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
 
     evaluation.setScore(score); // set total score here
 
-    // Calculate max score (sum of all criteria max values)
-    int maxScore = evaluation.getReponses() != null ? evaluation.getReponses().size() * 3 : 0;
-    evaluation.setScoreMax(maxScore);
+     // Calculate max score (sum of all criteria max values)
+    //int maxScore = evaluation.getReponses() != null ? evaluation.getReponses().size() * 3 : 0;
+
+     // calculate maxScore for all criteres
+    int maxScore=evaluation.getScoreMax();
+
+    //evaluation.setScoreMax(maxScore);
     String label = getLabel(score, maxScore);
     evaluation.setLabel(label);
     return evaluationRepository.save(evaluation);
@@ -277,4 +306,121 @@ public String getLabel(int score,int maxscore){
 public EvaluationEntity getLatestEvaluation(Long userId){
     return evaluationRepository.findLatestEval(userId).orElse(null);
 }
+
+public EvaluationEntity updateEvaluation(Long evaluationId,UpdateEvaluationRequest request){
+    EvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
+            .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
+    
+    //Load all existing responses ONCE
+    List<ReponseEntity> existingResponses =reponseRepository.findByEvaluationId(evaluationId);
+    Map<Long, ReponseEntity> responseMap = existingResponses.stream()
+            .collect(Collectors.toMap(ReponseEntity::getCritereId, r -> r));
+
+    List<ReponseEntity> toSave = new ArrayList<>();
+
+
+    for (UpdateReponseRequest r : request.getReponses()) {
+        if (r.getCritereId() == null) {
+            continue; // ignore invalid payload
+        }
+
+        ReponseEntity reponse = responseMap.get(r.getCritereId());
+
+        if (reponse == null) {
+            reponse = new ReponseEntity();
+            reponse.setEvaluation(evaluation);
+            reponse.setCritereId(r.getCritereId());
+        }
+
+        if (r.getValeur() != null) {
+            Integer oldValue = reponse.getValeur();
+            reponse.setValeur(r.getValeur());
+
+            // Only update statut if value actually changed OR it's a new response
+            if (oldValue == null || !oldValue.equals(r.getValeur())) {
+
+                if (r.getValeur() == 0 || r.getValeur() == 1) {
+                    reponse.setStatut("validé");
+                } 
+                else{
+                    reponse.setStatut(null);
+                }
+            }
+        }
+
+        toSave.add(reponse);
+
+        /*reponse.setEvaluation(evaluation);
+        reponse.setCritereId(r.getCritereId());*/
+
+        //reponseRepository.save(reponse);
+        reponseRepository.saveAll(toSave);
+            //update evaluation statut
+        updateEvalStatut(evaluationId);
+
+    }
+    
+    //save score
+    /*List<ReponseEntity> savedResponses = reponseRepository.saveAll(toSave);
+    int score = savedResponses.stream()
+        .filter(r -> r.getValeur() != null)
+        .mapToInt(ReponseEntity::getValeur)
+        .sum();
+    int maxScore = savedResponses.size() * 3;
+
+    evaluation.setScore(score);
+    evaluation.setScoreMax(maxScore);
+    evaluation.setLabel(getLabel(score,maxScore));*/
+
+    return evaluationRepository.save(evaluation);
+
+}
+
+public EvaluationEntity updateLabel(Long evaluationId){
+    EvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
+            .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
+    Integer score=evaluation.getScore();
+    Integer scoreMax=evaluation.getScoreMax();
+
+    // Safety check
+    if (score == null || scoreMax == null) {
+        throw new RuntimeException("Score or maxScore is missing");
+    }
+
+    String label=getLabel(score,scoreMax);
+    evaluation.setLabel(label);
+
+    return evaluationRepository.save(evaluation);
+
+}
+
+private void updateEvalStatut(Long evaluationId){
+    EvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
+            .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
+    List<ReponseEntity> reponses =reponseRepository.findByEvaluationId(evaluationId);
+    if(reponses.isEmpty()){
+        evaluation.setStatut(null);
+        evaluationRepository.save(evaluation);
+        return;
+    };
+
+    boolean allDecided = reponses.stream()
+        .allMatch(r -> "validé".equals(r.getStatut()) || "refusé".equals(r.getStatut()));
+
+    boolean anyFilled = reponses.stream()
+        .anyMatch(r -> r.getValeur() != null);
+
+    if (allDecided) {
+        evaluation.setStatut("terminé");
+        evaluation.setDateTermination(new Timestamp(System.currentTimeMillis()));
+    } else if (anyFilled) {
+        evaluation.setStatut("en cours");
+    } else {
+        evaluation.setStatut("en attente");
+    }
+
+    evaluationRepository.save(evaluation);
+}
+
+
 }

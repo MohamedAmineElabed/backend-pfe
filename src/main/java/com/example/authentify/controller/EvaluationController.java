@@ -17,11 +17,13 @@ import com.example.authentify.entity.ReponseEntity;
 
 //import com.example.authentify.entity.UserEntity;
 import com.example.authentify.io.EvaluationRequest;
+import com.example.authentify.io.UpdateEvaluationRequest;
 //import com.example.authentify.io.ReponseRequest;
 //import com.example.authentify.repository.DemandeRepository;
 import com.example.authentify.service.PrincipeService;
 import com.example.authentify.service.ProfileService;
 import com.example.authentify.service.EvaluationServiceImp;
+
 //import java.util.Map;
 import java.util.List;
 //import jakarta.validation.Valid;
@@ -75,7 +77,7 @@ public class EvaluationController {
         @PathVariable Long evaluationId,
         @RequestParam Long critereId,
         @RequestParam Integer valeur,
-        @RequestParam(required = true) MultipartFile[] files // optional file
+        @RequestParam(required = false) MultipartFile[] files // optional file
 ) {
     try {
         ReponseEntity savedEvaluation = evaluationService.saveReponse(evaluationId, critereId, valeur, files);
@@ -95,10 +97,64 @@ public class EvaluationController {
 
 
     @GetMapping("/organisme/{organismeId}")
-    public ResponseEntity<List<EvaluationEntity>> getEvaluationsByOrganisme(@PathVariable Long organismeId) {
+    /*public ResponseEntity<List<EvaluationEntity>> getEvaluationsByOrganisme(@PathVariable Long organismeId) {
         List<EvaluationEntity> evaluations = evaluationService.getEvaluationsByOrganisme(organismeId);
     return ResponseEntity.ok(evaluations);
+}*/
+
+    public ResponseEntity<List<Map<String, Object>>> getEvaluationsByOrganisme(@PathVariable Long organismeId){
+        List<EvaluationEntity> evaluations = evaluationService.getEvaluationsByOrganisme(organismeId);
+
+        List<Map<String, Object>> response = evaluations.stream().map((EvaluationEntity ev) -> {
+            //int preuvesCount = ev.getReponses() != null ? ev.getReponses().size() : 0;
+            int preuvesCount = 0;
+            if (ev.getReponses() != null) {
+                preuvesCount = ev.getReponses().stream()
+                .mapToInt(r -> r.getPreuves() != null ? r.getPreuves().size() : 0)
+                .sum();
+        }
+            //calculer progress pour chaque evaluation
+            int total = ev.getReponses() != null ? ev.getReponses().size() : 0;
+
+            int evaluated = 0;
+            if (ev.getReponses() != null) {
+                evaluated = (int) ev.getReponses().stream()
+                    .filter(r -> r.getStatut() != null &&
+                        (r.getStatut().equals("validé") || r.getStatut().equals("refusé")))
+                    .count();
+            }
+            int progress = total == 0 ? 0 : (int) ((evaluated * 100.0) / total);
+
+            String statut = ev.getStatut();
+            String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
+            //String organisme = "Organisme #" + ev.getId();
+            Integer score=ev.getScore();
+            Integer scoreMax=ev.getScoreMax();
+            String label=ev.getLabel();
+
+            // Fetch organisme
+            OrganismeEntity org = organismeService.getOrganismeById(ev.getOrganisme().getId());
+            String organismeName = org != null ? org.getNomOrganisme() : "_";
+            String responsableName = (org != null && org.getResponsable() != null) ? org.getResponsable().getNom() : "_";
+
+            Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", ev.getId());
+            map.put("organismeId", ev.getId());
+            map.put("organismeName", organismeName);
+            map.put("responsableName", responsableName);
+            map.put("statut", statut);
+            map.put("dateCreation", dateCreation);
+            map.put("progress", progress);
+            map.put("preuves", preuvesCount);
+            map.put("score", score);
+            map.put("scoreMax", scoreMax);
+            map.put("label", label);
+            return map;
+        }).toList();
+
+    return ResponseEntity.ok(response);
 }
+
 //////////////////////////////////////////////////////////////////////
 
     @GetMapping
@@ -253,23 +309,32 @@ public class EvaluationController {
 }
 
     @PutMapping("/{evaluationId}/score")
-    public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId,@RequestBody Map<String, Object> body) {
-        Integer score = null;
-        Object scoreObj = body.get("score");
+public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId,@RequestBody Map<String, Object> body) {
+    Integer score = null;
+    //Integer maxScore = null;
 
-        if (scoreObj != null) {
-            if (scoreObj instanceof Number) {
-                score = ((Number) scoreObj).intValue();
-            } else if (scoreObj instanceof String) {
-                score = Integer.parseInt((String) scoreObj);
-            }
+    Object scoreObj = body.get("score");
+    //Object maxScoreObj = body.get("maxScore");
+
+    if (scoreObj != null) {
+        if (scoreObj instanceof Number) {
+            score = ((Number) scoreObj).intValue();
+        } else {
+            score = Integer.parseInt(scoreObj.toString());
         }
-
-        if (score == null) {
-            return ResponseEntity.badRequest().body("Score is required");
+    }
+    /*if (maxScoreObj != null) {
+        if (maxScoreObj instanceof Number) {
+            maxScore = ((Number) maxScoreObj).intValue();
+        } else {
+            maxScore = Integer.parseInt(maxScoreObj.toString());
         }
+    }*/
+    if (score == null) {
+        return ResponseEntity.badRequest().body("Score and maxScore are required");
+    }
+    evaluationService.setScoreForEvaluation(evaluationId, score);
 
-        evaluationService.setScoreForEvaluation(evaluationId, score);
     return ResponseEntity.ok("Score set successfully for evaluation " + evaluationId);
 }
 
@@ -325,6 +390,7 @@ public class EvaluationController {
         map.put("dateCreation", dateCreation);
         map.put("dateTermination", dateTermination);
         map.put("scoreMax", maxScore);
+        map.put("logoUrl", org != null ? org.getLogoUrl() : "_");
 
         return map;
 
@@ -341,6 +407,16 @@ public class EvaluationController {
             return ResponseEntity.ok().body(null);
         }
         return ResponseEntity.ok(latest);
+    }
+
+    @PutMapping("/update/{evaluationId}")
+    public ResponseEntity<EvaluationEntity> updateEval(@PathVariable Long evaluationId,@RequestBody UpdateEvaluationRequest request){
+        return ResponseEntity.ok(evaluationService.updateEvaluation(evaluationId, request));
+    }
+
+    @PutMapping("/updateLabel/{evaluationId}")
+    public ResponseEntity<EvaluationEntity> updateLabel(@PathVariable Long evaluationId){
+        return ResponseEntity.ok(evaluationService.updateLabel(evaluationId));
     }
 
     
