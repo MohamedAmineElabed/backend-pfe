@@ -14,6 +14,19 @@ const STATUS = {
   terminé: { label: "Terminé", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
 };
 
+const OrgLogo = ({ url, nom, size = 65 }) => {
+  const initial = (nom ?? "?")[0].toUpperCase();
+  const hue = (nom?.charCodeAt(0) ?? 0) * 47 % 360;
+  if (url) return <img src={url} alt="logo" style={{ width: size, height: size, objectFit: "contain", borderRadius: 8, 
+    border: "1px solid #e8eaf0" }} />;
+  return (
+    <div style={{ width: size, height: size, borderRadius: 8, background: `hsl(${hue},55%,90%)`, color: `hsl(${hue},50%,35%)`, 
+    display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.42, fontWeight: 800, flexShrink: 0 }}>
+      {initial}
+    </div>
+  );
+};
+
 const LABEL_COLORS = {
   "non conforme": { accent: "#f87171", bg: "rgba(248,113,113,0.1)" }, // red
   bronze:       { accent: "#a16207", bg: "rgba(161,98,7,0.1)" },      // bronze/brown
@@ -503,11 +516,14 @@ useEffect(() => {
       <div style={{ ...styles.page, marginLeft: "200px" }}>
         {/* Header */}
         <motion.header initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }} style={styles.header}>
-          <div>
-            <div style={styles.headerEyebrow}>{currentUser?.organisme?.nomOrganisme}</div>
-            <h1 style={styles.headerTitle}>Évaluations</h1>
-            <p style={styles.headerSub}>Suivi des évaluations et des preuves justificatives</p>
-          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div><OrgLogo url={currentUser?.organisme?.logoUrl}/></div>
+            <div>
+              <div style={styles.headerEyebrow}>{currentUser?.organisme?.nomOrganisme}</div>
+                <h1 style={styles.headerTitle}>Évaluations</h1>
+                <p style={styles.headerSub}>Suivi des évaluations et des preuves justificatives</p>
+            </div>
+            </div>
 
           <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} style={styles.newBtn} onClick={startEvaluation}>
             <Plus size={15} strokeWidth={2.5} />
@@ -558,11 +574,13 @@ useEffect(() => {
                   <motion.div key={ev.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} 
                   transition={{ delay: 0.3 + idx * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={styles.row}
                   onClick={() => {
-                    if(ev?.statut==="terminé"){
+                    /*if(ev?.statut==="terminé"){
                     navigate("/evalFeedback", { state: { evaluation: ev } })}
                     else{
                       toast.error("l'evaluation n'est pas encore compléte!");
-                    }}
+                    }*/
+                   navigate("/EvalEdit", { state: { evaluation: ev } });
+                   }
                   }
                   >
                     {/* Organisme */}

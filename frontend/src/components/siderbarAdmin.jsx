@@ -16,16 +16,6 @@ const navItems = [
     ),
   },
   {
-    to: "/profilepage",
-    label: "Profile",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-  {
     to: "/listDemandes",
     label: "Listes demandes",
     icon: (
@@ -61,6 +51,25 @@ const navItems = [
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
         <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    ),
+  },
+  {
+    to: "/labelisation",
+    label: "Labelisation",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+        <line x1="7" y1="7" x2="7.01" y2="7" />
+      </svg>
+    ),
+  },
+  {
+    to: "/classement",
+    label: "Classement",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
       </svg>
     ),
   },
@@ -108,7 +117,7 @@ function SidebarAdmin() {
       <div className="sse-sidebar">
         {/* Logo */}
         <div className="sse-logo">
-          <span className="sse-logo-badge">S</span>
+          <span className="sse-logo-badge">🏛</span>
           <span className="sse-logo-text">SSE</span>
         </div>
 
@@ -207,15 +216,14 @@ function SidebarAdmin() {
         }
 
         .sse-logo-badge {
-          width: 30px;
-          height: 30px;
+          width: 42px;
+          height: 42px;
+          border-radius: 12px;
           background: linear-gradient(135deg, #6c63ff, #a78bfa);
-          border-radius: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 14px;
-          font-weight: 700;
+          font-size: 20px;
           color: #fff;
           flex-shrink: 0;
         }

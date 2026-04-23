@@ -7,12 +7,26 @@ import { AppContext } from "../../context/AppContext.jsx";
 import axios from "axios";
 import  Input  from "../../components/ui/input.jsx";
 import { toast } from "react-toastify";
+import { useLocation } from "react-router-dom";
 
 const STATUS = {
   en_attente: { label: "En attente", dot: "#94a3b8", text: "#475569", bg: "rgba(148,163,184,0.12)", border: "rgba(148,163,184,0.3)" },
   en_cours: { label: "En cours", dot: "#f59e0b", text: "#92400e", bg: "rgba(245,158,11,0.1)", border: "rgba(245,158,11,0.3)" },
   //soumise: { label: "Soumise", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
   terminé: { label: "Terminé", dot: "#10b981", text: "#065f46", bg: "rgba(16,185,129,0.1)", border: "rgba(16,185,129,0.3)" },
+};
+
+const OrgLogo = ({ url, nom, size = 35 }) => {
+  const initial = (nom ?? "?")[0].toUpperCase();
+  const hue = (nom?.charCodeAt(0) ?? 0) * 47 % 360;
+  if (url) return <img src={url} alt="logo" style={{ width: size, height: size, objectFit: "contain", borderRadius: 8, 
+    border: "1px solid #e8eaf0" }} />;
+  return (
+    <div style={{ width: size, height: size, borderRadius: 8, background: `hsl(${hue},55%,90%)`, color: `hsl(${hue},50%,35%)`, 
+    display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.42, fontWeight: 800, flexShrink: 0 }}>
+      {initial}
+    </div>
+  );
 };
 
 function progressColor(pct) {
@@ -46,6 +60,10 @@ const styles = {
 const stagger = (i) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] } });
 
 const EvaluationsListe = () => {
+  const location = useLocation();
+  const org = location.state?.organisme;
+  console.log("org: ",org);
+
   const [evaluations, setEvaluations] = useState([]);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("tous");
@@ -81,15 +99,17 @@ const handleStatusChange = (ev, newStatus) => {
   // Fetch evaluations
   useEffect(() => {
   if (!backendUrl || !userData?.id) return;
+  if (!org?.id) return;
 
   const fetchEvaluations = async () => {
     try {
       // Fetch evaluations with treated progression
-      const resEval = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
+      const resEval = await axios.get(`${backendUrl}/evaluation/organisme/${org.id}`,{withCredentials: true});
+      console.log("liste evaluations :",resEval.data);
       // Map the response directly; no need to recalc progression in frontend
       const evalsWithProgress = resEval.data.map(ev => {
         let statutKey;
-        const progression = ev.progression || 0;
+        const progression = ev.progress || 0;
 
         if (progression === 0) {
           statutKey = "en_attente";
@@ -113,16 +133,16 @@ const handleStatusChange = (ev, newStatus) => {
   };
 
   fetchEvaluations();
-}, [backendUrl, userData]);
+}, [backendUrl, userData, org?.id]);
 
 
   // Filtered list
-  const filtered = evaluations.filter(e => {
-    const matchSearch = e.organismeName.toLowerCase().includes(search.toLowerCase());
+  /*const filtered = evaluations.filter(e => {
+    const matchSearch = e.nomOrganisme.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "tous" || e.statut === filter;
     return matchSearch && matchFilter;
   });
-
+*/
   const filters = [
   { value: "tous", label: "Tous" },
   { value: "en_attente", label: "En attente" },
@@ -151,11 +171,14 @@ const handleStatusChange = (ev, newStatus) => {
       <div style={{ ...styles.page, marginLeft: "200px" }}>
         {/* Header */}
         <div style={styles.header}>
-          <div>
-            <h1 style={styles.headerTitle}>Évaluations</h1>
-            <p style={styles.headerSub}>Gérer et valider les évaluations soumises</p>
+          <div style={{ display: "column", alignItems: "center", gap: 14 }}>
+            <OrgLogo url={org.logoUrl}/>
+            <span style={styles.orgName}>{org?.nomOrganisme}</span>
+            <div>
+              <h1 style={styles.headerTitle}>Évaluations</h1>
+              <p style={styles.headerSub}>Gérer et valider les évaluations soumises</p>
+            </div>
           </div>
-          
         </div>
 
         {/* Filters */}
@@ -172,18 +195,18 @@ const handleStatusChange = (ev, newStatus) => {
         <motion.section {...stagger(3)} style={styles.tableSection}>
           <div style={styles.tableWrap}>
             <div style={styles.thead}>
-              {["Organisme", "Responsable", "Statut", "Progression", "Score", "Labelisation"].map((col, i) => <span key={i}>{col}</span>)}
+              {["Index","Date création", "Responsable", "Statut", "Progression", "Score", "Labelisation"].map((col, i) => <span key={i}>{col}</span>)}
             </div>
 
-            {filtered.map((ev, idx) => {
+            {evaluations.map((ev, idx) => {
               const cfg = STATUS[ev.statut] || { label: "Inconnu", dot: "#cbd5e1", text: "#475569", bg: "rgba(203,213,225,0.12)", border: "rgba(203,213,225,0.3)" };
-              const color = progressColor(ev.progression || 0);
+              const color = progressColor(ev.progress || 0);
               return (
                 <motion.div key={ev.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} 
                   transition={{ delay: 0.2 + idx * 0.05 }} style={{ ...styles.row, cursor: "pointer" }}
                   onClick={() => navigate(`/evaluateur/evaluations/${ev.id}`, { state: { evaluation: ev } })}>
-                  <span style={styles.orgName}>{ev.organismeName}</span>
-                  {/*<span style={styles.dateCell}>{new Date(ev.dateSoumission).toLocaleDateString("fr-FR")}</span>*/}
+                  <span style={styles.orgName}>{idx+1}</span>
+                  <span style={styles.dateCell}>{new Date(ev.dateCreation).toLocaleDateString("fr-FR")}</span>
                   <span style={styles.orgName}>{ev.responsableName}
                     <span style={styles.orgRole}>{ev.responsableRole}</span>
                   </span>
@@ -193,14 +216,14 @@ const handleStatusChange = (ev, newStatus) => {
                     <div style={styles.progressTrack} onClick={(e) => { e.stopPropagation(); handleProgressClick(ev); }}>
                       <motion.div 
                       initial={{ width: 0 }} 
-                      animate={{ width: `${ev.progression || 0}%` }} 
+                      animate={{ width: `${ev.progress || 0}%` }} 
                       transition={{ duration: 0.7 }} 
                       style={{ ...styles.progressFill, background: color }} 
                       />
                     </div>
-                    <span style={{ ...styles.progressPct, color }}>{ev.progression || 0}%</span>
+                    <span style={{ ...styles.progressPct, color }}>{ev.progress || 0}%</span>
                   </div>
-                  <span style={{ fontSize: 16, fontWeight: 700, color }}>{ev.score || 0}/{ev.maxScore || 0}</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color }}>{ev.score || 0}/{ev.scoreMax || 0}</span>
                   <span style={styles.orgName}>{ev.label || "Non labellisé"}</span>
                   
                   <button
@@ -214,7 +237,7 @@ const handleStatusChange = (ev, newStatus) => {
               );
             })}
 
-            {filtered.length === 0 && <div style={{ padding: 20, textAlign: "center" }}>Aucune évaluation trouvée.</div>}
+            {evaluations.length === 0 && <div style={{ padding: 20, textAlign: "center" }}>Aucune évaluation trouvée.</div>}
           </div>
         </motion.section>
       </div>

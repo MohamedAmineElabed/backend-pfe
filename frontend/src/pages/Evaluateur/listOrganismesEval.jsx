@@ -2,8 +2,9 @@ import React, { useState, useEffect, useContext } from "react";
 import axios from "axios";
 import { AppContext } from "../../context/AppContext.jsx";
 import { toast } from "react-toastify";
-import SiderbarAdmin from "../../components/siderbarAdmin.jsx";
+import SiderbarEval from "../../components/siderbarEval.jsx";
 import { motion, AnimatePresence } from "framer-motion";
+import { useLocation,useNavigate } from "react-router-dom";
 
 /* ─────────────────────── Design tokens (same system) ─────────────────────── */
 const T = {
@@ -79,7 +80,9 @@ const inputStyle = {
 };
 
 /* ─────────────────────── Main Component ─────────────────────── */
-const ListOrganismes = () => {
+const ListOrganismesEval = () => {
+  const navigate = useNavigate();
+
   const [organismes, setOrganismes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -113,17 +116,6 @@ const ListOrganismes = () => {
     } catch { toast.error("Erreur lors de la suppression"); }
   };
 
-  const handleAdd = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post(`${backendUrl}/organismes/createOrganisme`, newOrganisme, { withCredentials: true });
-      setOrganismes(p => [...p, res.data]);
-      toast.success("Organisme ajouté avec succès");
-      setShowAddModal(false);
-      setNewOrganisme({ nomOrganisme: "", adresse: "", emailOrganisme: "", type: "", telephone: "", fax: "", dateCreation: "" });
-    } catch { toast.error("Erreur lors de l'ajout de l'organisme"); }
-  };
-
   useEffect(() => { if (backendUrl) fetchOrganismes(); }, [backendUrl]);
 
   const filtered = organismes.filter(o => {
@@ -137,7 +129,7 @@ const ListOrganismes = () => {
 
   return (
     <>
-      <SiderbarAdmin />
+      <SiderbarEval />
 
       <div style={{ marginLeft: 220, minHeight: "100vh", background: T.bg, padding: "32px 28px", fontFamily: T.font }}>
 
@@ -152,18 +144,6 @@ const ListOrganismes = () => {
               Consultez et gérez tous les organismes enregistrés.
             </p>
           </div>
-          <button onClick={() => setShowAddModal(true)} style={{
-            display: "flex", alignItems: "center", gap: 7,
-            padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700,
-            background: T.accent, color: "#fff", border: "none", cursor: "pointer",
-            boxShadow: "0 2px 12px rgba(79,110,247,0.3)", transition: "opacity .15s",
-          }}
-            onMouseEnter={e => e.currentTarget.style.opacity = "0.88"}
-            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-            Ajouter un organisme
-          </button>
         </motion.div>
 
         {/* ── Stats ── */}
@@ -230,7 +210,8 @@ const ListOrganismes = () => {
               <motion.div key={org.id}
                 initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.04 + idx * 0.035, duration: 0.28 }}
-                onClick={() => setSelectedOrg(org)}
+                //onClick={() => setSelectedOrg(org)}
+                onClick={()=>{navigate("/evaluationsListe", { state: { organisme: org } });}}
                 style={{ display: "grid", gridTemplateColumns: COLS, gap: 8, padding: "13px 22px", borderBottom: `1px solid ${T.border}`, alignItems: "center", cursor: "pointer", transition: "background .15s" }}
                 onMouseEnter={e => e.currentTarget.style.background = "#f8fafd"}
                 onMouseLeave={e => e.currentTarget.style.background = "transparent"}
@@ -366,113 +347,8 @@ const ListOrganismes = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ─────────────── Add Modal ─────────────── */}
-      <AnimatePresence>
-        {showAddModal && (
-          <motion.div key="add-overlay"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setShowAddModal(false)}
-            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050, padding: 24 }}>
-            <motion.div key="add-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 320, damping: 28 }}
-              onClick={e => e.stopPropagation()}
-              style={{ background: T.surface, borderRadius: 18, width: "100%", maxWidth: 560, overflow: "hidden", boxShadow: "0 32px 80px rgba(15,23,42,0.2)", border: `1px solid ${T.border}` }}>
-
-              {/* Header */}
-              <div style={{ padding: "18px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent }}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                  </div>
-                  <span style={{ fontSize: 15, fontWeight: 700, color: T.text }}>Ajouter un organisme</span>
-                </div>
-                <button onClick={() => setShowAddModal(false)}
-                  style={{ background: T.bg, border: `1px solid ${T.border}`, width: 30, height: 30, borderRadius: 8, cursor: "pointer", color: T.muted, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-              </div>
-
-              {/* Form */}
-              <form onSubmit={handleAdd}>
-                <div style={{ padding: "22px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <Field label="Nom de l'organisme *">
-                      <input type="text" name="nomOrganisme" placeholder="Ex: Ministère de l'Éducation" value={newOrganisme.nomOrganisme}
-                        onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                        required style={inputStyle}
-                        onFocus={e => e.target.style.borderColor = T.accent}
-                        onBlur={e => e.target.style.borderColor = T.border} />
-                    </Field>
-                  </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
-                    <Field label="Adresse *">
-                      <input type="text" name="adresse" placeholder="Ex: 12 Rue de la République, Tunis" value={newOrganisme.adresse}
-                        onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                        required style={inputStyle}
-                        onFocus={e => e.target.style.borderColor = T.accent}
-                        onBlur={e => e.target.style.borderColor = T.border} />
-                    </Field>
-                  </div>
-                  <Field label="Email *">
-                    <input type="email" name="emailOrganisme" placeholder="contact@organisme.tn" value={newOrganisme.emailOrganisme}
-                      onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                      required style={inputStyle}
-                      onFocus={e => e.target.style.borderColor = T.accent}
-                      onBlur={e => e.target.style.borderColor = T.border} />
-                  </Field>
-                  <Field label="Type *">
-                    <select name="type" value={newOrganisme.type}
-                      onChange={e => setNewOrganisme(p => ({ ...p, type: e.target.value }))}
-                      required style={{ ...inputStyle, cursor: "pointer" }}
-                      onFocus={e => e.target.style.borderColor = T.accent}
-                      onBlur={e => e.target.style.borderColor = T.border}>
-                      <option value="">Choisir…</option>
-                      <option value="publique">Publique</option>
-                      <option value="prive">Privé</option>
-                      <option value="societe civile">Société civile</option>
-                    </select>
-                  </Field>
-                  <Field label="Téléphone *">
-                    <input type="text" name="telephone" placeholder="+216 XX XXX XXX" value={newOrganisme.telephone}
-                      onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                      required style={inputStyle}
-                      onFocus={e => e.target.style.borderColor = T.accent}
-                      onBlur={e => e.target.style.borderColor = T.border} />
-                  </Field>
-                  <Field label="Fax">
-                    <input type="text" name="fax" placeholder="+216 XX XXX XXX" value={newOrganisme.fax}
-                      onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                      style={inputStyle}
-                      onFocus={e => e.target.style.borderColor = T.accent}
-                      onBlur={e => e.target.style.borderColor = T.border} />
-                  </Field>
-                  <Field label="Date de création *">
-                    <input type="date" name="dateCreation" value={newOrganisme.dateCreation}
-                      onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                      required style={inputStyle}
-                      onFocus={e => e.target.style.borderColor = T.accent}
-                      onBlur={e => e.target.style.borderColor = T.border} />
-                  </Field>
-                </div>
-
-                {/* Footer */}
-                <div style={{ padding: "13px 24px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                  <button type="button" onClick={() => setShowAddModal(false)}
-                    style={{ padding: "8px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer", border: `1px solid ${T.border}`, background: T.bg, color: T.muted }}>
-                    Annuler
-                  </button>
-                  <button type="submit"
-                    style={{ padding: "8px 20px", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", border: "none", background: T.accent, color: "#fff", boxShadow: "0 2px 10px rgba(79,110,247,0.3)" }}>
-                    Sauvegarder
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 };
 
-export default ListOrganismes;
+export default ListOrganismesEval;

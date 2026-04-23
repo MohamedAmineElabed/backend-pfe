@@ -1,5 +1,6 @@
 import { Award, FileText, Table2 } from "lucide-react";
 import SiderbarEval from "../../components/siderbarEval.jsx";
+import SiderbarAdmin from "../../components/siderbarAdmin.jsx";
 import React from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useEffect, useState, useContext } from "react";
@@ -72,7 +73,7 @@ const labels = [
     },
   },
 ];
-
+  
 const AwardIcon = ({ stroke }) => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
     stroke={stroke} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -82,12 +83,20 @@ const AwardIcon = ({ stroke }) => (
 );
 
 const Labellisation = () => {
-    const { backendUrl } = useContext(AppContext);
+    const { backendUrl, userData } = useContext(AppContext);
     const { id } = useParams();
     //const [organisme, setOrganisme] = useState([]);
     const [evaluations, setEvaluations] = useState([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("tous");
+
+    const SidebarComponent =
+        userData?.role === "ADMIN"
+            ? SiderbarAdmin
+            : userData?.role === "EVALUATEUR"
+            ? SiderbarEval
+            : Siderbar;
+            
     // Fetch evaluation
   useEffect(() => {
   const fetchData = async () => {
@@ -164,7 +173,7 @@ const Labellisation = () => {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <div style={{ width: 300 }}>
-        <SiderbarEval />
+        <SidebarComponent />
       </div>
     
     <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem", padding: "1.5rem 0", fontFamily: "var(--font-sans, sans-serif)" }}>

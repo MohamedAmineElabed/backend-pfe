@@ -285,6 +285,17 @@ const T = {
   font: "'DM Sans', 'Segoe UI', sans-serif",
 };
 
+const OrgLogo = ({ url, nom, size = 34 }) => {
+  const initial = (nom ?? "?")[0].toUpperCase();
+  const hue = (nom?.charCodeAt(0) ?? 0) * 47 % 360;
+  if (url) return <img src={url} alt="logo" style={{ width: size, height: size, objectFit: "contain", borderRadius: 8, border: `1px solid ${T.border}` }} />;
+  return (
+    <div style={{ width: size, height: size, borderRadius: 8, background: `hsl(${hue},55%,90%)`, color: `hsl(${hue},50%,35%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.42, fontWeight: 800, flexShrink: 0 }}>
+      {initial}
+    </div>
+  );
+};
+
 /* ─────────────────────── Helpers ─────────────────────── */
 const Stat = ({ label, value, color }) => (
   <div style={{
@@ -553,7 +564,8 @@ const ListDemandes = () => {
           <motion.div key="overlay"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setSelected(null)}
-            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050, padding: 24 }}>
+            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", 
+            backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050, padding: 24 }}>
 
             <motion.div key="modal"
               initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
@@ -598,7 +610,7 @@ const ListDemandes = () => {
                   <p style={{ margin: "0 0 16px", fontSize: 11, fontWeight: 700, color: T.label, textTransform: "uppercase", letterSpacing: "0.07em" }}>
                     Organisme
                   </p>
-                  <InfoRow icon="🏢" label="Nom" value={selected.nomOrganisme} />
+                  <InfoRow icon={<OrgLogo url={selected.logoUrl}/>} label="Nom" value={selected.nomOrganisme} />
                   <InfoRow icon="📍" label="Adresse" value={selected.adresse} />
                   <InfoRow icon="✉" label="Email organisme" value={selected.emailOrganisme} accent />
                   <InfoRow icon="📞" label="Téléphone" value={selected.telephone} />

@@ -4,6 +4,7 @@ import { Trophy, ArrowUpDown, Search } from "lucide-react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import SiderbarEval from "../../components/siderbarEval";
+import SiderbarAdmin from "../../components/siderbarAdmin";
 import { AppContext } from "../../context/AppContext.jsx";
 
 const styles = {
@@ -55,8 +56,15 @@ const Classement = () => {
   const [sortBy, setSortBy] = useState("score");
   const [filter, setFilter] = useState("tous");
   const [search, setSearch] = useState("");
-  const { backendUrl } = useContext(AppContext);
+  const { backendUrl, userData } = useContext(AppContext);
   const [isEmpty, setIsEmpty] = useState(false);
+
+  const SidebarComponent =
+        userData?.role === "ADMIN"
+            ? SiderbarAdmin
+            : userData?.role === "EVALUATEUR"
+            ? SiderbarEval
+            : Siderbar;
   
 
   // récupérer les utilisateurs
@@ -200,7 +208,7 @@ const Classement = () => {
     
     {/* Sidebar */}
     <div style={{ width: 260, flexShrink: 0 }}>
-      <SiderbarEval />
+      <SidebarComponent />
     </div>
 
     {/* Main content */}

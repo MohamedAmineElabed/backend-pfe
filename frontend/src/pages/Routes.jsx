@@ -20,6 +20,10 @@ import DashboardsEval from "./Evaluateur/dashboardsEval.jsx";
 import DashboardsResp from "./dashboardsResp.jsx";
 import EvalFeedback from "./evalFeedback.jsx";
 import DashboardsAdmin from "./Administrateur/dashboardsAdmin.jsx";
+//import EvalEdit from "./editEvaluation.jsx";
+import EvalEdit from "./EvalEdit.jsx";
+import ListOrganismesEval from "./Evaluateur/listOrganismesEval.jsx";
+
 
 import DocumentViewer from "../components/documentsViewer.jsx";
 
@@ -49,6 +53,9 @@ function AppRoutes(){
                 <Route path="/evalFeedback" element={<EvalFeedback />} />
                 <Route path="/view/:filename" element={<DocumentViewer />} />
                 <Route path="/dashboardsAdmin" element={<DashboardsAdmin />} />
+               { /*<Route path="/editEvaluation" element={<EvalEdit />} />*/}
+                <Route path="/EvalEdit" element={<EvalEdit />} />
+                <Route path="/listOrganismesEval" element={<ListOrganismesEval />} />
 
 
 

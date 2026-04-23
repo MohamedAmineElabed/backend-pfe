@@ -45,7 +45,7 @@ const EvaluationForm = () => {
     principe.pratiques?.forEach((pratique) => {
       pratique.criteres?.forEach((c) => {
         totalCriteres += 1;
-        if (selectedOption[c.id] !== undefined && selectedFiles[c.id]?.length > 0) {
+        if (selectedOption[c.id] !== undefined) {
           treatedCriteres += 1;
         }
       });
@@ -68,6 +68,7 @@ const EvaluationForm = () => {
   const submitAllAnswers = async () => {
   if (!currentUser?.organisme?.id) return alert("Organisme introuvable !");
 
+  let toastId;
   try {
     // --- Step 1: Create evaluation if not exists ---
     let evaluationIdToUse = currentEvaluationId;
@@ -87,13 +88,13 @@ const EvaluationForm = () => {
 
     // --- Step 2: Save all responses ---
         // Show loading toast immediately
-      const toastId = toast.loading("Enregistrement en cours...");
+      toastId = toast.loading("Enregistrement en cours...");
       for (const [critereId, valeur] of Object.entries(selectedOption)) {
       const formData = new FormData();
       formData.append("critereId", Number(critereId));
       formData.append("valeur", valeur);
 
-      if (selectedFiles[critereId]) {
+      if (selectedFiles[critereId]?.length>0) {
         selectedFiles[critereId].forEach((file) => {
           formData.append("files", file);
         });
@@ -105,7 +106,7 @@ const EvaluationForm = () => {
       );
     }
     //without botons valider et refuser in evaluationDetails
-    /*// --- Step 3: Calculate total score ---
+   /* // --- Step 3: Calculate total score ---
     const totalScore = Object.values(selectedOption).reduce(
       (sum, val) => sum + Number(val || 0),
       0
@@ -181,7 +182,7 @@ const EvaluationForm = () => {
   // --- Progress calculations ---
   const getPratiqueProgress = (pratique) => {
     const total = pratique.criteres?.length || 0;
-    const done = pratique.criteres?.filter((c) => selectedOption[c.id] !== undefined && selectedFiles[c.id] !==undefined).length;
+    const done = pratique.criteres?.filter((c) => selectedOption[c.id] !== undefined).length;
     return `${done}/${total}`;
   };
 
@@ -190,12 +191,12 @@ const EvaluationForm = () => {
     let done = 0;
     principe.pratiques?.forEach((p) => {
       total += p.criteres?.length || 0;
-      done += p.criteres?.filter((c) => selectedOption[c.id] !== undefined && selectedFiles[c.id] !==undefined).length;
+      done += p.criteres?.filter((c) => selectedOption[c.id] !== undefined).length;
     });
     return `${done}/${total}`;
   };
 
-  const allCriteresAnswered = () => {
+  /*const allCriteresAnswered = () => {
     let totalCriteres = 0;
     principes.forEach((principe) =>
       principe.pratiques?.forEach((p) => {
@@ -213,7 +214,7 @@ const EvaluationForm = () => {
       })
     );
     return Object.keys(selectedFiles).length === totalCriteres;
-  };
+  };*/
 
   // --- Handle file input change ---
   const handleFileChange = (critereId, files) => {
@@ -572,17 +573,15 @@ const EvaluationForm = () => {
           <div style={{ marginBottom: 24 }}>
             <button
               onClick={submitAllAnswers}
-              disabled={!allCriteresAnswered() || !allFilesUploaded()}
+              //disabled={!allCriteresAnswered() || !allFilesUploaded()}
               style={{
                 padding: "8px 16px",
                 borderRadius: 6,
                 border: "none",
-                background:
-                  allCriteresAnswered() && allFilesUploaded() ? "#3b82f6" : "#cbd5e1",
+                background: "#3b82f6",
                 color: "#fff",
                 fontWeight: 600,
-                cursor:
-                  allCriteresAnswered() && allFilesUploaded() ? "pointer" : "not-allowed",
+                cursor: "pointer",
                 marginBottom: 16,
               }}
             >

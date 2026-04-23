@@ -684,6 +684,7 @@ const ListUtilisateurs = () => {
                   </p>
                   {[
                     { label: "Email", value: selectedUser.email, icon: "✉" },
+                    {/*{ label: "Mot de passe", value: selectedUser.password, icon: "✉" },*/},
                     { label: "Rôle", value: selectedUser.jobRole, icon: "🏷" },
                     { label: "État", value: selectedUser.etat, icon: "●" },
                   ].map(({ label, value, icon }) => (
