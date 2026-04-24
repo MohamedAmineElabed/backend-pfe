@@ -89,6 +89,8 @@ const ListOrganismesEval = () => {
   const [filterType, setFilterType] = useState("tous");
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState(null);  // detail modal
+  const [evalsByOrganisme, setEvalsByOrganisme] = useState({});
+
 
   const [newOrganisme, setNewOrganisme] = useState({
     nomOrganisme: "", adresse: "", emailOrganisme: "",
@@ -107,16 +109,27 @@ const ListOrganismesEval = () => {
     finally { setLoading(false); }
   };
 
-  const deleteOrganisme = async (id) => {
-    if (!window.confirm("Supprimer cet organisme ?")) return;
-    try {
-      await axios.delete(`${backendUrl}/organismes/${id}`, { withCredentials: true });
-      setOrganismes(p => p.filter(o => o.id !== id));
-      toast.success("Organisme supprimé");
-    } catch { toast.error("Erreur lors de la suppression"); }
-  };
-
   useEffect(() => { if (backendUrl) fetchOrganismes(); }, [backendUrl]);
+
+  useEffect(() => {
+    const fetchAllEvals = async () => {
+        try {
+            const res = await axios.get(`${backendUrl}/evaluation/all`, { withCredentials: true });
+            // Group by organisme id
+            const map = {};
+            res.data.forEach(ev => {
+                const orgId = ev?.organismeId;
+                if (!map[orgId]) map[orgId] = [];
+                map[orgId].push(ev);
+            });
+            setEvalsByOrganisme(map);
+            console.log("evals by organismes: ",map);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+    if (backendUrl) fetchAllEvals();
+}, [backendUrl]);
 
   const filtered = organismes.filter(o => {
     const s = search.toLowerCase();
@@ -125,7 +138,37 @@ const ListOrganismesEval = () => {
     return matchSearch && matchType;
   });
 
-  const COLS = "44px 1fr 1fr 1fr 75px 70px 100px 100px";
+  const EvalIndicator = ({ evals = [] }) => {
+    const pending = evals.filter(e =>e.status === "en attente" || e.status === "en cours" ).length;
+    const total = evals.length;
+
+    if (total === 0) return (
+        <span style={{ fontSize: 11, color: T.muted, fontStyle: "italic" }}>Aucune</span>
+    );
+
+    return (
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 12, color: T.muted }}>{total} éval{total > 1 ? "s" : ""}</span>
+            {pending > 0 && (
+                <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 4,
+                    background: "#fef3c7", color: "#92400e",
+                    border: "1px solid #fde68a",
+                    borderRadius: 20, padding: "2px 8px",
+                    fontSize: 11, fontWeight: 600,
+                    animation: "pulse 2s infinite"
+                }}>
+                    <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} />
+                    {pending} nouvelle{pending > 1 ? "s" : ""}
+                </span>
+            )}
+        </div>
+    );
+};
+
+  const COLS = "44px 0.3fr 0.4fr 0.2fr 150px 100px 100px 100px 120px";
+  //const COLS = "44px 80px 100px 90px 100px 75px 100px";
+
 
   return (
     <>
@@ -138,10 +181,10 @@ const ListOrganismesEval = () => {
           style={{ marginBottom: 28, display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <div>
             <h1 style={{ fontSize: 22, fontWeight: 800, color: T.text, margin: 0, letterSpacing: "-0.4px" }}>
-              Gestion des organismes
+              Liste des organismes
             </h1>
             <p style={{ fontSize: 13, color: T.muted, margin: "4px 0 0" }}>
-              Consultez et gérez tous les organismes enregistrés.
+              Consultez tous les organismes enregistrés.
             </p>
           </div>
         </motion.div>
@@ -190,7 +233,7 @@ const ListOrganismesEval = () => {
             background: "#f8fafd", borderBottom: `1px solid ${T.border}`,
             fontSize: 10, fontWeight: 700, color: T.label, textTransform: "uppercase", letterSpacing: "0.08em",
           }}>
-            {["", "Nom", "Adresse", "Email", "Type", "Téléphone", "Fax", "Responsable"].map((h, i) => <span key={i}>{h}</span>)}
+            {["", "Nom", "Responsable", "Évaluations", "Adresse", "Type", "Téléphone", "Fax", ""].map((h, i) => <span key={i}>{h}</span>)}
           </div>
 
           {/* Table body */}
@@ -221,24 +264,19 @@ const ListOrganismesEval = () => {
                   <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>{org.nomOrganisme || "—"}</div>
                   {org.secteur && <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{org.secteur}</div>}
                 </div>
+                {/* Responsable*/}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {org.responsable ? `${org.responsable.nom} ${org.responsable.prenom}` : "—"}
+                  </span>
+                </div>
                 <span style={{ fontSize: 13, color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{org.adresse || "—"}</span>
                 <span style={{ fontSize: 13, color: T.accent, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{org.emailOrganisme || "—"}</span>
                 <TypeBadge type={org.type} />
                 <span style={{ fontSize: 13, color: T.text }}>{org.telephone || "—"}</span>
                 <span style={{ fontSize: 13, color: T.muted }}>{org.fax || "—"}</span>
 
-                {/* Responsable + action */}
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontSize: 12, color: T.muted, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {org.responsable ? `${org.responsable.nom} ${org.responsable.prenom}` : "—"}
-                  </span>
-                  <button onClick={e => { e.stopPropagation(); deleteOrganisme(org.id); }} title="Supprimer"
-                    style={{ width: 28, height: 28, borderRadius: 7, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", border: `1px solid #fca5a5`, background: T.dangerSoft, color: T.danger, transition: "all .15s", flexShrink: 0, marginLeft: 6 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
-                    </svg>
-                  </button>
-                </div>
+                <EvalIndicator evals={evalsByOrganisme[org.id] || []} />
               </motion.div>
             ))
           )}
@@ -248,105 +286,7 @@ const ListOrganismesEval = () => {
             {filtered.length} organisme{filtered.length !== 1 ? "s" : ""}
           </div>
         </motion.div>
-      </div>
-
-      {/* ─────────────── Detail Modal ─────────────── */}
-      <AnimatePresence>
-        {selectedOrg && (
-          <motion.div key="detail-overlay"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            onClick={() => setSelectedOrg(null)}
-            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.5)", backdropFilter: "blur(6px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1050, padding: 24 }}>
-            <motion.div key="detail-modal"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 320, damping: 28 }}
-              onClick={e => e.stopPropagation()}
-              style={{ background: T.surface, borderRadius: 18, width: "100%", maxWidth: 640, overflow: "hidden", boxShadow: "0 32px 80px rgba(15,23,42,0.2)", border: `1px solid ${T.border}` }}>
-
-              {/* Header */}
-              <div style={{ padding: "18px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <OrgLogo url={selectedOrg.logoUrl} nom={selectedOrg.nomOrganisme} size={42} />
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: T.text }}>{selectedOrg.nomOrganisme}</div>
-                    <TypeBadge type={selectedOrg.type} />
-                  </div>
-                </div>
-                <button onClick={() => setSelectedOrg(null)}
-                  style={{ background: T.bg, border: `1px solid ${T.border}`, width: 30, height: 30, borderRadius: 8, cursor: "pointer", color: T.muted, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-              </div>
-
-              {/* Body */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 0 }}>
-                {/* Left */}
-                <div style={{ padding: "22px 24px", borderRight: `1px solid ${T.border}` }}>
-                  <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: T.label, textTransform: "uppercase", letterSpacing: "0.07em" }}>Coordonnées</p>
-                  {[
-                    ["Adresse", selectedOrg.adresse, "📍"],
-                    ["Email", selectedOrg.emailOrganisme, "✉"],
-                    ["Téléphone", selectedOrg.telephone, "📞"],
-                    ["Fax", selectedOrg.fax, "📠"],
-                    ["Date création", selectedOrg.dateCreation, "📅"],
-                  ].map(([l, v, icon]) => (
-                    <div key={l} style={{ marginBottom: 12, display: "flex", gap: 9 }}>
-                      <span style={{ fontSize: 14, flexShrink: 0 }}>{icon}</span>
-                      <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.label, textTransform: "uppercase", letterSpacing: "0.07em" }}>{l}</div>
-                        <div style={{ fontSize: 13, color: l === "Email" ? T.accent : T.text, marginTop: 1 }}>{v || "—"}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                {/* Right */}
-                <div style={{ padding: "22px 24px" }}>
-                  <p style={{ margin: "0 0 14px", fontSize: 11, fontWeight: 700, color: T.label, textTransform: "uppercase", letterSpacing: "0.07em" }}>Responsable</p>
-                  {selectedOrg.responsable ? (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 38, height: 38, borderRadius: "50%", background: T.accentSoft, color: T.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700 }}>
-                          {(selectedOrg.responsable.prenom?.[0] ?? "") + (selectedOrg.responsable.nom?.[0] ?? "")}
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: T.text }}>{selectedOrg.responsable.prenom} {selectedOrg.responsable.nom}</div>
-                          <div style={{ fontSize: 12, color: T.muted }}>{selectedOrg.responsable.jobRole}</div>
-                        </div>
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.label, textTransform: "uppercase", letterSpacing: "0.07em" }}>Email</div>
-                        <div style={{ fontSize: 13, color: T.accent }}>{selectedOrg.responsable.email || "—"}</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 13, color: T.muted, padding: "16px 0" }}>Aucun responsable assigné.</div>
-                  )}
-
-                  <div style={{ marginTop: 22 }}>
-                    <p style={{ margin: "0 0 10px", fontSize: 11, fontWeight: 700, color: T.label, textTransform: "uppercase", letterSpacing: "0.07em" }}>Détails</p>
-                    {[["Secteur", selectedOrg.secteur], ["Type", selectedOrg.type]].map(([l, v]) => (
-                      <div key={l} style={{ marginBottom: 8 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: T.label, textTransform: "uppercase", letterSpacing: "0.07em" }}>{l}</div>
-                        <div style={{ fontSize: 13, color: T.text }}>{v || "—"}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div style={{ padding: "13px 24px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                <button onClick={() => { deleteOrganisme(selectedOrg.id); setSelectedOrg(null); }}
-                  style={{ padding: "7px 16px", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer", border: `1px solid #fca5a5`, background: T.dangerSoft, color: T.danger }}>
-                  Supprimer
-                </button>
-                <button onClick={() => setSelectedOrg(null)}
-                  style={{ padding: "7px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer", border: `1px solid ${T.border}`, background: T.bg, color: T.muted }}>
-                  Fermer
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </div>      
     </>
   );
 };

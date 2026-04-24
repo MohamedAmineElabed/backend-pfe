@@ -217,6 +217,21 @@ export default function DashboardsEval() {
     });
   }, [listEvals, filterDateFrom, filterDateTo, filterOrgType,filterOrgSecteur]);
 
+  const latestEvalsByOrganisme = useMemo(() => {
+  const map = {};
+  filteredEvals.forEach(ev => {
+    const orgId = ev.organismeId;
+    const date = ev.dateTermination || ev.dateSoumission || "";
+    const existing = map[orgId];
+    if (!existing || date > (existing.dateTermination || existing.dateSoumission || "")) {
+      map[orgId] = ev;
+    }
+  });
+  return Object.values(map);
+}, [filteredEvals]);
+
+  console.log("latestEvalsByOrganisme",latestEvalsByOrganisme);
+
   // Filtered demandes
   const filteredDemandes = useMemo(() => {
     return demandes.filter(d => {
@@ -244,17 +259,17 @@ export default function DashboardsEval() {
 
   // Organisme types present in current filtered set (for legend keys)
   const filteredOrganismeTypes = useMemo(() => {
-    return [...new Set(filteredEvals.map(ev => ev.organismeType || "undefined"))];
-  }, [filteredEvals]);
+    return [...new Set(latestEvalsByOrganisme.map(ev => ev.organismeType || "undefined"))];
+  }, [latestEvalsByOrganisme]);
 
   // Organisme types present in current filtered set (for legend keys)
   const filteredOrganismeSecteurs = useMemo(() => {
-    return [...new Set(filteredEvals.map(ev => ev.organismeSecteur || "undefined"))];
-  }, [filteredEvals]);
+    return [...new Set(latestEvalsByOrganisme.map(ev => ev.organismeSecteur || "undefined"))];
+  }, [latestEvalsByOrganisme]);
 
   // Score moyen par type d'organisme
   const organismeData = useMemo(() => {
-    const orgScores = filteredEvals.reduce((acc, ev) => {
+    const orgScores = latestEvalsByOrganisme.reduce((acc, ev) => {
       const orgType = ev.organismeType || "undefined";
       const score = ev.score && ev.scoreMax ? (ev.score / ev.scoreMax) * 100 : 0;
       if (!acc[orgType]) acc[orgType] = { total: 0, count: 0 };
@@ -266,7 +281,7 @@ export default function DashboardsEval() {
       organismeType: orgType,
       averageScore: data.total / data.count,
     }));
-  }, [filteredEvals]);
+  }, [latestEvalsByOrganisme]);
 
   // Monthly evolution
   const monthData = useMemo(() => {
@@ -291,17 +306,20 @@ export default function DashboardsEval() {
 
   // Labels donut (filtered by org type + date via filteredEvals)
   const filteredDonutDataLabels = useMemo(() => {
-    const map = filteredEvals.reduce((acc, ev) => {
+    const map = latestEvalsByOrganisme.reduce((acc, ev) => {
       const key = ev.label ?? "undefined";
       acc[key] = (acc[key] || 0) + 1;
       return acc;
     }, {});
     return Object.entries(map).map(([key, count]) => ({ name: key, count }));
-  }, [filteredEvals]);
+  }, [latestEvalsByOrganisme]);
 
   // Répartition des réponses (valeur)
   const filteredChartDataReponse = useMemo(() => {
-    const map = filteredResponses.reduce((acc, p) => {
+  // Get eval IDs that are "latest" per organisme
+    const latestEvalIds = new Set(latestEvalsByOrganisme.map(ev => ev.id));
+    const latestResponses = filteredResponses.filter(r => latestEvalIds.has(r.evaluationId));
+    const map = latestResponses.reduce((acc, p) => {
       const key = p.valeur ?? "undefined";
       acc[key] = (acc[key] || 0) + 1;
       return acc;
@@ -310,17 +328,19 @@ export default function DashboardsEval() {
       name: valeurLabels[key] || key,
       count
     }));
-  }, [filteredResponses]);
+  }, [filteredResponses, latestEvalsByOrganisme]);
 
   // Pie: décisions validé/refusé
   const pieData = useMemo(() => {
-    const resValidé = filteredResponses.filter(r => r.statut?.toLowerCase() === "validé").length;
-    const resRefusé = filteredResponses.filter(r => r.statut?.toLowerCase() === "refusé").length;
-    return [
-      { name: "Validé", value: resValidé },
-      { name: "Refusé", value: resRefusé },
-    ];
-  }, [filteredResponses]);
+  const latestEvalIds = new Set(latestEvalsByOrganisme.map(ev => ev.id));
+  const latestResponses = filteredResponses.filter(r => latestEvalIds.has(r.evaluationId));
+  return [
+    { name: "Validé", value: latestResponses.filter(r => r.statut?.toLowerCase() === "validé").length },
+    { name: "Refusé", value: latestResponses.filter(r => r.statut?.toLowerCase() === "refusé").length },
+  ];
+}, [filteredResponses, latestEvalsByOrganisme]);
+
+console.log("pie data : ",pieData);
 
   // Scores par principe (raw scores filtered by org type via organismeId→type map)
   const orgIdToType = useMemo(() => {
@@ -330,48 +350,54 @@ export default function DashboardsEval() {
   }, [organismes]);
 
   const chartData = useMemo(() => {
-    const filtered = rawScores.filter(item => {
-      if (filterOrgType !== "all") return orgIdToType[item.organismeId] === filterOrgType;
-      return true;
-    });
-    const scoresData = {};
-    filtered.forEach(item => {
-      const pid = item.principeId;
-      if (!scoresData[pid]) scoresData[pid] = [];
-      scoresData[pid].push(item.score || 0);
-    });
-    return Object.entries(scoresData).map(([pid, arr]) => ({
-      name: principesMap[pid] || `Principe ${pid}`,
-      score: arr.reduce((a, b) => a + b, 0) / arr.length
-    }));
-  }, [rawScores, filterOrgType, orgIdToType, principesMap]);
+  const latestOrgIds = new Set(latestEvalsByOrganisme.map(ev => ev.organismeId));
+  const filtered = rawScores.filter(item => {
+    if (!latestOrgIds.has(item.organismeId)) return false;       // only latest evals
+    if (filterOrgType !== "all") return orgIdToType[item.organismeId] === filterOrgType;
+    return true;
+  });
+
+  const scoresData = {};
+  filtered.forEach(item => {
+    const pid = item.principeId;
+    if (!scoresData[pid]) scoresData[pid] = [];
+    scoresData[pid].push(item.score || 0);
+  });
+  return Object.entries(scoresData).map(([pid, arr]) => ({
+    name: principesMap[pid] || `Principe ${pid}`,
+    score: arr.reduce((a, b) => a + b, 0) / arr.length
+  }));
+}, [rawScores, filterOrgType, orgIdToType, principesMap, latestEvalsByOrganisme]);
 
   // Scores par principe par type d'organisme
   const scoresParPrincipeParType = useMemo(() => {
-    const filtered = rawScores.filter(item => {
-      if (filterOrgType !== "all") return orgIdToType[item.organismeId] === filterOrgType;
-      return true;
+  const latestOrgIds = new Set(latestEvalsByOrganisme.map(ev => ev.organismeId));
+  const filtered = rawScores.filter(item => {
+    if (!latestOrgIds.has(item.organismeId)) return false;
+    if (filterOrgType !== "all") return orgIdToType[item.organismeId] === filterOrgType;
+    return true;
+  });
+  const valeurs = filtered.map(item => ({
+    principe: principesMap[item.principeId],
+    typeOrg: orgIdToType[item.organismeId],
+    //score: item.scoreMax ? (item.score / item.scoreMax) * 100 : 0
+    score: item.score
+  }));
+  const grouped = valeurs.reduce((acc, item) => {
+    if (!acc[item.principe]) acc[item.principe] = {};
+    if (!acc[item.principe][item.typeOrg]) acc[item.principe][item.typeOrg] = { total: 0, count: 0 };
+    acc[item.principe][item.typeOrg].total += item.score;
+    acc[item.principe][item.typeOrg].count += 1;
+    return acc;
+  }, {});
+  return Object.entries(grouped).map(([principe, types]) => {
+    const result = { principe };
+    Object.entries(types).forEach(([typeOrg, data]) => {
+      result[typeOrg] = data.total / data.count;
     });
-    const valeurs = filtered.map(item => ({
-      principe: principesMap[item.principeId],
-      typeOrg: orgIdToType[item.organismeId],
-      score: item.scoreMax ? (item.score / item.scoreMax) * 100 : 0
-    }));
-    const grouped = valeurs.reduce((acc, item) => {
-      if (!acc[item.principe]) acc[item.principe] = {};
-      if (!acc[item.principe][item.typeOrg]) acc[item.principe][item.typeOrg] = { total: 0, count: 0 };
-      acc[item.principe][item.typeOrg].total += item.score;
-      acc[item.principe][item.typeOrg].count += 1;
-      return acc;
-    }, {});
-    return Object.entries(grouped).map(([principe, types]) => {
-      const result = { principe };
-      Object.entries(types).forEach(([typeOrg, data]) => {
-        result[typeOrg] = data.total / data.count;
-      });
-      return result;
-    });
-  }, [rawScores, filterOrgType, orgIdToType, principesMap]);
+    return result;
+  });
+}, [rawScores, filterOrgType, orgIdToType, principesMap, latestEvalsByOrganisme]);
 
   //////////////// Data fetching
 
@@ -429,7 +455,8 @@ export default function DashboardsEval() {
                   ...r,
                   organismeType: evalItem.organismeType,
                   evalDate: evalItem.dateTermination || evalItem.dateSoumission,
-                  organismeSecteur: evalItem.organismeSecteur
+                  organismeSecteur: evalItem.organismeSecteur,
+                  evaluationId: evalItem.id
                 }));
               })
           )
@@ -581,7 +608,7 @@ export default function DashboardsEval() {
           marginBottom: "30px"
         }}>
           <StatCard title="👤 Responsables" value={stats.totalUsers} />
-          <StatCard title="🏢 Organismes" value={stats.totalOrganismes} />
+          <StatCard title="🏢 Organismes" value={latestEvalsByOrganisme.length} />
           <StatCard title="📄 Evaluations totales" value={filteredEvals.length} />
           <StatCard
             title="📌 Principes"

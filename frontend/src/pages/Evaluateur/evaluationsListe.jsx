@@ -44,8 +44,8 @@ const styles = {
   newBtn: { display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" },
   tableSection: { background: "#fff", borderRadius: 16, border: "1px solid #e8eaf0", overflow: "hidden" },
   tableWrap: { overflowX: "auto" },
-  thead: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
-  row: { display: "grid", gridTemplateColumns: "140px 140px 180px 180px 50px 50px 100px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
+  thead: { display: "grid", gridTemplateColumns: "44px 0.5fr 0.5fr 0.3fr 1fr 0.3fr 100px 100px 70px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
+  row: { display: "grid", gridTemplateColumns: "44px 0.5fr 0.5fr 0.3fr 1fr 0.3fr 100px 100px 70px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
   orgName: { fontSize: 13, fontWeight: 600, color: "#1e293b" },
   orgRole: {fontSize: 12,color: '#888',fontStyle: 'italic',marginTop: 2,display: 'block',},
   dateCell: { fontSize: 12, color: "#94a3b8", fontFamily: "monospace" },
@@ -195,7 +195,7 @@ const handleStatusChange = (ev, newStatus) => {
         <motion.section {...stagger(3)} style={styles.tableSection}>
           <div style={styles.tableWrap}>
             <div style={styles.thead}>
-              {["Index","Date création", "Responsable", "Statut", "Progression", "Score", "Labelisation"].map((col, i) => <span key={i}>{col}</span>)}
+              {["Index","Date création", "Responsable", "Statut", "Progression", "Score", "Labelisation", ""].map((col, i) => <span key={i}>{col}</span>)}
             </div>
 
             {evaluations.map((ev, idx) => {

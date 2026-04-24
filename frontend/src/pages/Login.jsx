@@ -3,11 +3,13 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AppContext } from '../context/AppContext.jsx';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Login = () => {
   const [iscreateAccount, setIsCreateAccount] = useState(false);
   const [showResetModal, setShowResetModal] = useState(false);
   const [sendingOtp, setSendingOtp] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
@@ -73,8 +75,8 @@ const Login = () => {
           //sessionStorage.setItem("userData", JSON.stringify(response.data));
           setIsLoggedIn(true);
           //sessionStorage.setItem("userData", JSON.stringify(response.data));
-          if (loggedInUser.role === "ADMIN") navigate('/listUtilisateurs');
-          else if (loggedInUser.role === "EVALUATEUR") navigate('/evaluationsListe');
+          if (loggedInUser.role === "ADMIN") navigate('/dashboardsAdmin');
+          else if (loggedInUser.role === "EVALUATEUR") navigate('/listOrganismesEval');
           else navigate('/evaluation');
           toast.success("Connexion réussie !");
         }
@@ -312,9 +314,25 @@ const Login = () => {
                   </div>
                   <div>
                     <label style={labelStyle}>Mot de passe</label>
-                    <input className="login-input" style={inputStyle} type="password"
+                    <div style={{ position: "relative" }}>
+                    <input className="login-input" style={inputStyle} type={showPassword ? "text" : "password"}
                       placeholder="••••••••" value={password}
                       onChange={e => setPassword(e.target.value)} required />
+                    <span
+                        onClick={() => setShowPassword(prev => !prev)}
+                        style={{
+                        position: "absolute",
+                        right: 10,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        cursor: "pointer",
+                        fontSize: 12,
+                        color: "#3b82f6",
+                        fontWeight: 600
+                        }}>
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </span>
+                    </div>
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <span className="switch-link" onClick={handleForgotPassword} style={{

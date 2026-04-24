@@ -90,7 +90,7 @@ const Classement = () => {
   useEffect(() => {
   const fetchData = async () => {
     try {
-        const res = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
+        const res = await axios.get(`${backendUrl}/evaluation/all/latest/treated`,{withCredentials: true});
         setEvaluations(res.data);
         console.log("evaluations: ",res.data);
     } catch (err) {
@@ -106,7 +106,7 @@ const Classement = () => {
   
 
 
-  const uniqueEvaluations = useMemo(() => {
+  /*const uniqueEvaluations = useMemo(() => {
   const map = new Map();
 
   evaluations.forEach((evalItem) => {
@@ -124,12 +124,16 @@ const Classement = () => {
     }
   });
   return Array.from(map.values());
+}, [evaluations]);*/
+
+  const rankedEvaluations = useMemo(() => {
+  return [...evaluations]
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .map((org, index) => ({ ...org, rank: index + 1 })); // rank assigned globally
 }, [evaluations]);
 
-
-
   // Filtered list
-  const filtered = uniqueEvaluations.filter(e => {
+  const filtered = rankedEvaluations.filter(e => {
     const matchSearch = e.organismeName.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "tous" || e.organismeType?.toLowerCase() === filter.toLowerCase();
     return matchSearch && matchFilter;
@@ -262,10 +266,11 @@ const Classement = () => {
           </div>
 
           {/* Rows */}
-          {[...filtered]
-          .sort((a,b)=>(b.score || 0) - (a.score || 0)) //DESC (highest first)
-          .map((org, index) => {
-            const rank = index + 1;
+          {//[...filtered]
+          //.sort((a,b)=>(b.score || 0) - (a.score || 0)) //DESC (highest first)
+          filtered
+          .map((org) => {
+            const rank = org.rank;
             const pct =org.score && org.maxScore ?Math.round(org.score / org.maxScore * 100) : 0;
 
             return (

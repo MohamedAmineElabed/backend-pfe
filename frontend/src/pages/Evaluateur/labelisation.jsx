@@ -101,9 +101,10 @@ const Labellisation = () => {
   useEffect(() => {
   const fetchData = async () => {
     try {
-        const res = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
-        setEvaluations(res.data);
+        const res = await axios.get(`${backendUrl}/evaluation/all/latest/treated`,{withCredentials: true});
         console.log(res.data);
+        setEvaluations(res.data);
+        //console.log(res.data);
         /*const organismeDetails =await Promise.all(evaluations.map(async (org) => {
           const orgRes = await axios.get(`${backendUrl}/organismes/${org.id}`);
           return { ...org, typeOrg: orgRes.data.type }; // add type to object
@@ -118,31 +119,8 @@ const Labellisation = () => {
   fetchData();
 }, [backendUrl]);
 
-  
-
-
-  const uniqueEvaluations = useMemo(() => {
-  const map = new Map();
-
-  evaluations.forEach((evalItem) => {
-    const key = evalItem.organismeName;
-
-    if (!map.has(key)) {
-      map.set(key, evalItem);
-    } else {
-      const existing = map.get(key);
-
-      // compare scores → keep highest
-      if ((evalItem.score || 0) > (existing.score || 0)) {
-        map.set(key, evalItem);
-      }
-    }
-  });
-  return Array.from(map.values());
-}, [evaluations]);
-
   // Filtered list
-  const filteredEvaluations = uniqueEvaluations.filter(e => {
+  const filteredEvaluations = evaluations.filter(e => {
     const matchSearch = e.organismeName.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "tous" || e.organismeType?.toLowerCase() === filter.toLowerCase();
     return matchSearch && matchFilter;
@@ -161,14 +139,14 @@ const Labellisation = () => {
             counts[l.label] = 0;
         });
 
-        uniqueEvaluations.forEach((org) => {
-        if (org.label && counts.hasOwnProperty(org.label)) {
-        counts[org.label]++;
-        }
-  });
+        evaluations.forEach((org) => {
+          if (org.label && counts.hasOwnProperty(org.label)) {
+          counts[org.label]++;
+          }
+        });
 
   return counts;
-}, [uniqueEvaluations]);
+}, [evaluations]);
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
@@ -327,7 +305,7 @@ const Labellisation = () => {
         </div>
 
         <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "0.5px solid var(--color-border-tertiary)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{uniqueEvaluations.length} organisme(s) au total</span>
+          <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{evaluations.length} organisme(s) au total</span>
         </div>
       </div>
 

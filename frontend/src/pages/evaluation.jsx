@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Plus, ArrowUpRight, ClipboardList, FileCheck, PenLine, TrendingUp, Clock, Tag} from "lucide-react";
+import { Plus, ArrowUpRight, ClipboardList, FileCheck, PenLine, TrendingUp, Clock, Tag, MessageSquare} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import Siderbar from "../components/siderbar";
 import { useState, useEffect, useContext } from "react";
@@ -291,9 +291,24 @@ const styles = {
     cursor: "pointer",
     transition: "all 0.15s",
   },
+  //comment badge
+  commentBadge: {
+    fontSize: 12,
+    fontWeight: 700,
+    color: "#f59e0b",
+    background: "rgba(245,158,11,0.08)",
+    border: "1px solid rgba(245,158,11,0.2)",
+    borderRadius: 20,
+    padding: "2px 10px",
+    fontFamily: "monospace",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 5,
+  },
 };
 
-const stagger = (i) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, transition: { delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] } });
+const stagger = (i) => ({ initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 }, 
+  transition: { delay: i * 0.07, duration: 0.45, ease: [0.16, 1, 0.3, 1] } });
 
 function Metric({ title, value, sub, icon, accent, index }) {
   return (
@@ -312,6 +327,88 @@ function Metric({ title, value, sub, icon, accent, index }) {
     </motion.div>
   );
 }
+
+const CommentTooltip = ({ commentaires }) => {
+  const [visible, setVisible] = useState(false);
+  if (!commentaires?.length) return null;
+
+  return (
+    <div
+      style={{ position: "relative", display: "inline-flex" }}
+      onMouseEnter={() => setVisible(true)}
+      onMouseLeave={() => setVisible(false)}
+    >
+      {/* Trigger pill */}
+      <span style={{
+        display: "inline-flex", alignItems: "center", gap: 4,
+        fontSize: 10, fontWeight: 700, color: "#92400e",
+        background: "rgba(245,158,11,0.12)",
+        border: "1px solid rgba(245,158,11,0.3)",
+        borderRadius: 20, padding: "2px 8px",
+        cursor: "default", letterSpacing: "0.02em",
+      }}>
+        <MessageSquare size={9} strokeWidth={2.5} />
+        {commentaires.length} commentaire{commentaires.length > 1 ? "s" : ""}
+      </span>
+
+      {/* Tooltip */}
+      {visible && (
+        <div style={{
+          position: "absolute", bottom: "calc(100% + 8px)", left: 0,
+          zIndex: 999, background: "#1e293b", borderRadius: 12,
+          padding: "12px", minWidth: 280, maxWidth: 340,
+          boxShadow: "0 8px 32px rgba(15,23,42,0.25)",
+          border: "1px solid rgba(255,255,255,0.08)",
+        }}>
+          {/* Arrow */}
+          <div style={{
+            position: "absolute", bottom: -5, left: 16,
+            width: 10, height: 10, background: "#1e293b",
+            transform: "rotate(45deg)",
+            borderRight: "1px solid rgba(255,255,255,0.08)",
+            borderBottom: "1px solid rgba(255,255,255,0.08)",
+          }} />
+
+          <p style={{
+            fontSize: 10, fontWeight: 700, color: "#64748b",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            margin: "0 0 10px",
+          }}>
+            Commentaires de l'évaluateur
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {commentaires.map((c, i) => {
+              const isValidé = c.statut === "validé";
+              const accent = isValidé ? "#10b981" : "#f87171";
+              return (
+                <div key={i} style={{
+                  background: "rgba(255,255,255,0.05)",
+                  borderRadius: 8, padding: "8px 10px",
+                  borderLeft: `3px solid ${accent}`,
+                }}>
+                  <div style={{
+                    fontSize: 10, fontWeight: 700, color: accent,
+                    marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.06em",
+                  }}>
+                    {c.critereNom}
+                    <span style={{ marginLeft: 6, opacity: 0.7, fontWeight: 500, textTransform: "capitalize" }}>
+                      · {c.statut}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: "#cbd5e1", margin: 0, lineHeight: 1.5 }}>
+                    {c.commentaire}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+const getSeenEvals = () => JSON.parse(localStorage.getItem("seenEvals") || "[]");
 
 const Evaluation = () => {
   const [evaluations, setEvaluations] = useState([]);
@@ -437,9 +534,11 @@ useEffect(() => {
           organismeName: ev.organismeName || "—",
           responsableName: ev.responsableName || "—",
           preuves: ev.preuves || 0,
+          totalCommentaires: ev.totalCommentaires || 0,
         };
       });
       setEvaluations(mappedEvals);
+      console.log("evals: ",mappedEvals);
 
       if (latestRes.data) {
         setLatestEval(latestRes.data);
@@ -570,16 +669,17 @@ useEffect(() => {
                   border: "rgba(203,213,225,0.3)"
 };
                 const color = progressColor(ev.progress || 0);
+                const seenEvals = getSeenEvals();
+
                 return (
                   <motion.div key={ev.id} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} 
                   transition={{ delay: 0.3 + idx * 0.06, duration: 0.35, ease: [0.16, 1, 0.3, 1] }} style={styles.row}
                   onClick={() => {
-                    /*if(ev?.statut==="terminé"){
-                    navigate("/evalFeedback", { state: { evaluation: ev } })}
-                    else{
-                      toast.error("l'evaluation n'est pas encore compléte!");
-                    }*/
-                   navigate("/EvalEdit", { state: { evaluation: ev } });
+                    // remove comment badge for this evaluation
+                    const seen = getSeenEvals();
+                    localStorage.setItem("seenEvals", JSON.stringify([...seen, ev.id]));
+
+                    navigate("/EvalEdit", { state: { evaluation: ev } });
                    }
                   }
                   >
@@ -617,6 +717,14 @@ useEffect(() => {
                     {/* Preuves */}
                     <div style={{ display: "flex", justifyContent: "center" }}>
                       <span style={styles.preuvesBadge}>{ev.preuves || 0}</span>
+                    </div>
+
+                    {/*Comment */}
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      <span>
+                        {ev.commentaires?.length > 0 && !seenEvals.includes(ev.id) 
+                        && (<CommentTooltip commentaires={ev.commentaires} />)}
+                      </span>
                     </div>
 
                     {/* Arrow 
