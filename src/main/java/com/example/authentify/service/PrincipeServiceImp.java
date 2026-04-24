@@ -260,6 +260,10 @@ public class PrincipeServiceImp implements PrincipeService {
     return critereRepository.save(critere);
 }
 
+    public PrincipeEntity getCritereById(Long id) {
+        return principeRepository.findById(id).orElse(null);
+}
+
 
 
 

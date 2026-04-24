@@ -169,6 +169,29 @@ public class EvaluationController {
                 .mapToInt(r -> r.getPreuves() != null ? r.getPreuves().size() : 0)
                 .sum();
         }
+            List<Map<String, Object>> commentaires = new java.util.ArrayList<>();
+            boolean hasComments = false;
+            if (ev.getReponses() != null) {
+                ev.getReponses().stream()
+                    .filter(r -> r.getCommentaire() != null && !r.getCommentaire().isBlank())
+                    .forEach(r -> {
+                         // use principeService to get the critere name by id
+                        String critereNom = "Critère #" + r.getCritereId(); // fallback
+                        if (r.getCritereId() != null) {
+                            try {
+                                PrincipeEntity critere = principeService.getCritereById(r.getCritereId());
+                                if (critere != null) critereNom = critere.getNom();
+                            } catch (Exception ignored) {}
+                        }
+
+            Map<String, Object> c = new java.util.HashMap<>();
+            c.put("critereNom", critereNom);
+            c.put("commentaire", r.getCommentaire());
+            c.put("statut", r.getStatut());
+            commentaires.add(c);
+        });
+        hasComments = !commentaires.isEmpty();
+}
 
             int progress = 0;
             if(ev.getReponses() != null && !ev.getReponses().isEmpty()) {
@@ -199,6 +222,8 @@ public class EvaluationController {
             map.put("preuves", preuvesCount);
             map.put("score", score);
             map.put("label", label);
+            map.put("hasComments", hasComments);
+            map.put("commentaires", commentaires);
             return map;
         }).toList();
 
@@ -236,6 +261,7 @@ public class EvaluationController {
 
         return Map.<String, Object>of(
             "id", ev.getId(),
+            "organismeId", org != null ? org.getId() : "_",
             "organismeName", org != null ? org.getNomOrganisme() : "_",
             "responsableName", (org != null && org.getResponsable() != null) ? org.getResponsable().getNom() : "_",
             "status", ev.getStatut(),
@@ -375,6 +401,7 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
         // Use HashMap instead of Map.ofEntries
         Map<String, Object> map = new java.util.HashMap<>();
         map.put("id", ev.getId());
+        map.put("organismeId", org != null ? org.getId() : "_");
         map.put("organismeName", org != null ? org.getNomOrganisme() : "_");
         map.put("organismeType", org != null ? org.getType() : "_");
         map.put("organismeSecteur", org != null ? org.getSecteur() : "_");
@@ -418,6 +445,68 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
     public ResponseEntity<EvaluationEntity> updateLabel(@PathVariable Long evaluationId){
         return ResponseEntity.ok(evaluationService.updateLabel(evaluationId));
     }
+
+
+    @GetMapping("/all/latest/treated")
+    public ResponseEntity<List<Map<String, Object>>> getLatestTreatedPerOrganisme() {
+        List<EvaluationEntity> evaluations = evaluationService.getLatestTreatedPerOrganisme();
+
+    List<Map<String, Object>> response = evaluations.stream().map(ev -> {
+
+        int totalCriteria = ev.getReponses() != null ? ev.getReponses().size() : 0;
+
+        int treated = 0;
+        if (ev.getReponses() != null) {
+            treated = (int) ev.getReponses().stream()
+                .filter(r -> "validé".equalsIgnoreCase(r.getStatut()) || "refusé".equalsIgnoreCase(r.getStatut())) //avec les boutons valider et refuser
+                .count();
+        }
+
+        int progression = totalCriteria > 0 ? (int) ((double) treated / totalCriteria * 100) : 0;
+
+        OrganismeEntity org = organismeService.getOrganismeById(ev.getOrganisme().getId());
+        
+
+        int totalScore = 0;
+        if (ev.getReponses() != null) {
+            totalScore = ev.getReponses().stream()
+                .filter(r -> "validé".equalsIgnoreCase(r.getStatut()))
+                .mapToInt(r -> r.getValeur() != null ? r.getValeur() : 0)
+                .sum();
+        }
+        int maxScore=ev.getScoreMax();
+        //int maxScore = ev.getReponses() != null ? ev.getReponses().size() * 3 : 0;
+        String label = evaluationService.getLabel(totalScore, maxScore);
+        String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
+        String dateTermination = ev.getDateTermination() != null ? ev.getDateTermination().toLocalDateTime().toLocalDate().toString() : "";
+
+        // Use HashMap instead of Map.ofEntries
+        Map<String, Object> map = new java.util.HashMap<>();
+        map.put("id", ev.getId());
+        map.put("organismeId", org != null ? org.getId() : "_");
+        map.put("organismeName", org != null ? org.getNomOrganisme() : "_");
+        map.put("organismeType", org != null ? org.getType() : "_");
+        map.put("organismeSecteur", org != null ? org.getSecteur() : "_");
+        map.put("responsableName", (org != null && org.getResponsable() != null) ? org.getResponsable().getNom() : "_");
+        map.put("responsableRole", (org != null && org.getResponsable() != null) ? org.getResponsable().getJobRole() : "_");
+        map.put("status", ev.getStatut());
+        map.put("progression", progression);
+        map.put("totalCriteria", totalCriteria);
+        map.put("treatedCriteria", treated);
+        map.put("score", totalScore);
+        map.put("maxScore", maxScore);
+        map.put("label", label);
+        map.put("dateCreation", dateCreation);
+        map.put("dateTermination", dateTermination);
+        map.put("scoreMax", maxScore);
+        map.put("logoUrl", org != null ? org.getLogoUrl() : "_");
+
+        return map;
+
+    }).toList();
+
+    return ResponseEntity.ok(response);
+}
 
     
 

@@ -15,6 +15,8 @@ public interface PrincipeService {
     void deletePrincipe(Long id);
     PrincipeEntity updatePrincipe(PrincipeEntity principe);
 
+    PrincipeEntity getCritereById(Long id);
+
     //pratique
     PrincipeResponse createPratique(PrincipeRequest request);
     List<PratiqueEntity> getAllPratiques();

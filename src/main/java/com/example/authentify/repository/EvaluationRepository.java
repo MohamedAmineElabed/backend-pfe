@@ -32,6 +32,13 @@ public interface EvaluationRepository extends JpaRepository<EvaluationEntity, Lo
        "LEFT JOIN FETCH r.preuves " +
        "WHERE e.id = :id")
     Optional<EvaluationEntity> findByIdWithResponses(@Param("id") Long id);*/
+
+    //fetch only evaluations with responsable actif
+    @Query("""
+      SELECT e FROM EvaluationEntity e
+        WHERE e.organisme.responsable.etat = "actif"
+    """)
+    List<EvaluationEntity> findAllActive();
     
     
 

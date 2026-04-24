@@ -177,7 +177,7 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
 }
 
     public List<EvaluationEntity> getAllEvaluations() {
-    return evaluationRepository.findAll();
+    return evaluationRepository.findAllActive();
 }
 
     public EvaluationEntity getEvaluationByIdWithResponsesAndPreuves(Long evaluationId) {
@@ -358,6 +358,8 @@ public EvaluationEntity updateEvaluation(Long evaluationId,UpdateEvaluationReque
             //update evaluation statut
         updateEvalStatut(evaluationId);
 
+        evaluation.setDateUpdate(new java.sql.Timestamp(System.currentTimeMillis()));
+
     }
     
     //save score
@@ -420,6 +422,23 @@ private void updateEvalStatut(Long evaluationId){
     }
 
     evaluationRepository.save(evaluation);
+}
+
+
+    public List<EvaluationEntity> getLatestTreatedPerOrganisme() {
+    return evaluationRepository.findAll()
+        .stream()
+        .filter(e -> "terminé".equals(e.getStatut()))
+        .collect(Collectors.toMap(
+            e -> e.getOrganisme().getId(),
+            e -> e,
+            (existing, newer) ->
+                newer.getDateTermination().after(existing.getDateTermination())
+                    ? newer : existing
+        ))
+        .values()
+        .stream()
+        .toList();
 }
 
 

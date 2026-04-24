@@ -68,6 +68,10 @@ public class EvaluationEntity {
 
     @Column(updatable = true) //  creation time should not be updated after creation
     private java.sql.Timestamp dateTermination;
+
+    @CreationTimestamp
+    @Column(updatable = true) //  creation time should not be updated after creation
+    private java.sql.Timestamp dateUpdate;
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "organisme_id")
