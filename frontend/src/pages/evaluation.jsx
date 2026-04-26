@@ -518,7 +518,7 @@ useEffect(() => {
       const [userRes, evalRes, latestRes] = await Promise.all([
         axios.get(`${backendUrl}/users/${userData.id}`, { withCredentials: true }),
         axios.get(`${backendUrl}/evaluation?userId=${userData.id}`, { withCredentials: true }),
-        axios.get(`${backendUrl}/evaluation/latest`, { params: { userId: userData.id }, withCredentials: true }),
+        axios.get(`${backendUrl}/evaluation/latest/${userData?.organisme?.id}`, {withCredentials: true }),
       ]);
 
       setCurrentUser(userRes.data);

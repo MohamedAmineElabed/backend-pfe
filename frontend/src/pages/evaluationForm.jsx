@@ -21,14 +21,16 @@ function ProgressBar({ value, color, height = 6 }) {
 
 
 const EvaluationForm = () => {
-  const location = useLocation();
-  const { currentUser, evaluationId } = location.state || {};
+  /*const location = useLocation();
+  const { currentUser, evaluationId } = location.state || {};*/
   /*console.log("Current user passed from Evaluation:", currentUser);
   console.log("Evaluation ID:", evaluationId);*/
 
   const { backendUrl } = useContext(AppContext);
+  const { userData } = useContext(AppContext);
+  const currentUser = userData;
   const [selectedFiles, setSelectedFiles] = useState({});
-  const [currentEvaluationId, setCurrentEvaluationId] = useState(evaluationId);
+  const [currentEvaluationId, setCurrentEvaluationId] = useState(null);
   const [organismeId, setOrganismeId] = useState(currentUser?.organismeId || null);
 
   const [principes, setPrincipes] = useState([]);

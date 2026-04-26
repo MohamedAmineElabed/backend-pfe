@@ -76,8 +76,8 @@ const Login = () => {
           setIsLoggedIn(true);
           //sessionStorage.setItem("userData", JSON.stringify(response.data));
           if (loggedInUser.role === "ADMIN") navigate('/dashboardsAdmin');
-          else if (loggedInUser.role === "EVALUATEUR") navigate('/listOrganismesEval');
-          else navigate('/evaluation');
+          else if (loggedInUser.role === "EVALUATEUR") navigate('/dashboardsEval');
+          else navigate('/dashboardsResp');
           toast.success("Connexion réussie !");
         }
       }
