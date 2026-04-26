@@ -24,6 +24,7 @@ import com.example.authentify.service.PrincipeService;
 import com.example.authentify.service.ProfileService;
 import com.example.authentify.service.EvaluationServiceImp;
 
+import java.util.ArrayList;
 //import java.util.Map;
 import java.util.List;
 //import jakarta.validation.Valid;
@@ -97,11 +98,6 @@ public class EvaluationController {
 
 
     @GetMapping("/organisme/{organismeId}")
-    /*public ResponseEntity<List<EvaluationEntity>> getEvaluationsByOrganisme(@PathVariable Long organismeId) {
-        List<EvaluationEntity> evaluations = evaluationService.getEvaluationsByOrganisme(organismeId);
-    return ResponseEntity.ok(evaluations);
-}*/
-
     public ResponseEntity<List<Map<String, Object>>> getEvaluationsByOrganisme(@PathVariable Long organismeId){
         List<EvaluationEntity> evaluations = evaluationService.getEvaluationsByOrganisme(organismeId);
 
@@ -398,6 +394,20 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
         String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
         String dateTermination = ev.getDateTermination() != null ? ev.getDateTermination().toLocalDateTime().toLocalDate().toString() : "";
 
+        // Build commentaires list from responses
+        List<Map<String, Object>> commentaires = new ArrayList<>();
+        if (ev.getReponses() != null) {
+            for (ReponseEntity r : ev.getReponses()) {
+                if (r.getCommentaire() != null && !r.getCommentaire().isBlank()) {
+                    Map<String, Object> c = new java.util.HashMap<>();
+                    c.put("commentaire", r.getCommentaire());
+                    c.put("statut", r.getStatut());
+                    c.put("critereId", r.getCritereId());
+                    commentaires.add(c);
+        }
+    }
+}
+
         // Use HashMap instead of Map.ofEntries
         Map<String, Object> map = new java.util.HashMap<>();
         map.put("id", ev.getId());
@@ -418,6 +428,9 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
         map.put("dateTermination", dateTermination);
         map.put("scoreMax", maxScore);
         map.put("logoUrl", org != null ? org.getLogoUrl() : "_");
+        map.put("commentaires", commentaires);
+
+
 
         return map;
 
@@ -427,9 +440,9 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
 }
 
 
-    @GetMapping("/latest")
-    public ResponseEntity<EvaluationEntity> getLatestEval(@RequestParam Long userId){
-        EvaluationEntity latest=evaluationService.getLatestEvaluation(userId);
+    @GetMapping("/latest/{organismeId}")
+    public ResponseEntity<EvaluationEntity> getLatestEval(@PathVariable Long organismeId){
+        EvaluationEntity latest=evaluationService.getLatestEvaluation(organismeId);
         if (latest == null) {
             return ResponseEntity.ok().body(null);
         }

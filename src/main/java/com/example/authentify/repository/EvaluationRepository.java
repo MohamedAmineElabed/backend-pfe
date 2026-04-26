@@ -21,10 +21,10 @@ public interface EvaluationRepository extends JpaRepository<EvaluationEntity, Lo
 
     // Fetch the latest evaluation for a given user
     @Query(
-      value = "SELECT * FROM evaluations e WHERE e.responsable_id = :userId AND e.statut='terminé' ORDER BY e.date_soumission DESC LIMIT 1",
+      value = "SELECT * FROM evaluations e WHERE e.organisme_id = :organismeId AND e.statut='terminé' ORDER BY e.date_soumission DESC LIMIT 1",
       nativeQuery = true
     )    
-    Optional<EvaluationEntity> findLatestEval(@Param("userId") Long userId);
+    Optional<EvaluationEntity> findLatestEval(@Param("organismeId") Long organismeId);
 
 
     /*@Query("SELECT e FROM EvaluationEntity e " +

@@ -303,8 +303,8 @@ public String getLabel(int score,int maxscore){
     else return "Excellence governance";
 }
 
-public EvaluationEntity getLatestEvaluation(Long userId){
-    return evaluationRepository.findLatestEval(userId).orElse(null);
+public EvaluationEntity getLatestEvaluation(Long organismeId){
+    return evaluationRepository.findLatestEval(organismeId).orElse(null);
 }
 
 public EvaluationEntity updateEvaluation(Long evaluationId,UpdateEvaluationRequest request){
