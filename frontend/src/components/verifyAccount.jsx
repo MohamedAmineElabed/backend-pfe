@@ -4,38 +4,33 @@ import { useNavigate } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { AppContext } from '../context/AppContext.jsx';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const VerifyAccount = () => {
-  const { backendUrl,setUserData,setIsLoggedIn } = useContext(AppContext);
+  const { backendUrl, setUserData, setIsLoggedIn } = useContext(AppContext);
   const navigate = useNavigate();
   const location = useLocation();
-  // Extract email from query param
   const searchParams = new URLSearchParams(location.search);
-  const email = searchParams.get("email"); // <-- this is the email from the link
-  //verifier structure de mot de passe
-    //const [passwordErrors, setPasswordErrors] = useState([]);
-
+  const email = searchParams.get("email");
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailExists, setEmailExists] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  //clears any existing session when page loads
   useEffect(() => {
     setUserData(null);
     setIsLoggedIn(false);
     sessionStorage.removeItem('token');
   }, []);
 
-  //Verifier si l'email existe déja
   useEffect(() => {
     if (!email) return;
     const timeout = setTimeout(async () => {
       try {
-        const res = await axios.get(`${backendUrl}/check-email`, {
-          params: { email }
-        },{ withCredentials: true });
+        const res = await axios.get(`${backendUrl}/check-email`, { params: { email } }, { withCredentials: true });
         if (res.data.exists) {
           toast.error("Un compte avec cet email existe déjà !");
           setEmailExists(true);
@@ -43,115 +38,195 @@ const VerifyAccount = () => {
       } catch (e) {
         console.log("Erreur check email", e);
       }
-    }, 500); // délai pour éviter trop de requêtes
+    }, 500);
     return () => clearTimeout(timeout);
   }, [email]);
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email) {
-      toast.error("Email invalide !");
-    return;
-  }
-    // Check if passwords match
-    if (password !== confirmPassword) {
-      toast.error("Les mots de passe ne correspondent pas !");
-      return;
-    }
-
+    if (!email) { toast.error("Email invalide !"); return; }
+    if (password !== confirmPassword) { toast.error("Les mots de passe ne correspondent pas !"); return; }
     try {
       setLoading(true);
       const cleanEmail = email.trim();
-      //const response = await axios.post(`${backendUrl}/register-from-demande`, { password });
-      const response =await axios.post(`${backendUrl}/register-from-demande/${encodeURIComponent(cleanEmail)}`, 
-      { password },{ withCredentials: true });
-      const user = response.data;
-
-      //localStorage.setItem("userData", JSON.stringify(user));
-      //setUserData(user);
-      //console.log(localStorage.getItem("userData"));
-      toast.success("Votre compte a été cré avec succés!");
-      //navigate("/Login");
+      await axios.post(`${backendUrl}/register-from-demande/${encodeURIComponent(cleanEmail)}`, { password }, { withCredentials: true });
+      toast.success("Votre compte a été créé avec succès !");
       window.location.href = "/Login";
-
     } catch (error) {
       let message = error.response?.data || "Erreur serveur";
-        if (typeof message === "object") {
-          message = Object.values(message)[0]; // take the first message
-      }
-        if (message.toLowerCase().includes("already exists")) {
-          toast.error("Un compte avec cet email existe déjà !");
-        } else if (message.toLowerCase().includes("faible") || message.toLowerCase().includes("weak")) {
-            toast.error("Mot de passe faible");
-              } else {
-                  toast.error(message || "Erreur serveur");
-                }
-    }finally{
-      setLoading(false); //so the button dosen't stuck on "en chargement" after an error 
+      if (typeof message === "object") message = Object.values(message)[0];
+      if (message.toLowerCase().includes("already exists")) toast.error("Un compte avec cet email existe déjà !");
+      else if (message.toLowerCase().includes("faible") || message.toLowerCase().includes("weak")) toast.error("Mot de passe faible");
+      else toast.error(message || "Erreur serveur");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // ── Shared styles (identical to Login) ──────────────────────────
+  const inputStyle = {
+    width: "100%", padding: "10px 40px 10px 14px",
+    fontSize: 13, border: "1px solid #e2e8f0",
+    borderRadius: 10, outline: "none",
+    background: "#f8fafc", color: "#1e293b",
+    fontFamily: "inherit", transition: "border-color 0.2s",
+  };
+  const labelStyle = {
+    fontSize: 11, fontWeight: 700, color: "#64748b",
+    textTransform: "uppercase", letterSpacing: "0.06em",
+    marginBottom: 4, display: "block",
+  };
+
   return (
-    <div className="d-flex justify-content-center align-items-center"
-      style={{ height: "100vh", background: "linear-gradient(135deg,#f4f1ed,#e6dfd6)" }}>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap');
+        * { box-sizing: border-box; }
+        .login-input:focus { border-color: #3b82f6 !important; background: #fff !important; }
+        .login-btn:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+        .login-btn:active { transform: translateY(0); }
+        .switch-link:hover { text-decoration: underline; }
+        .form-section { animation: fadeUp 0.4s ease both; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
 
-      <div className="card border-0 shadow-lg"
-        style={{ width: "100%", maxWidth: "500px", borderRadius: "20px", padding: "30px" }}>
-        <div className="card-body">
-          <h2 className="text-center mb-4">Terminez la création de votre compte</h2>
+      <div style={{
+        minHeight: "100vh",
+        background: "linear-gradient(160deg,#0f2044 0%,#1e3a5f 50%,#2d5282 100%)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "32px 16px",
+        fontFamily: "'DM Sans', sans-serif",
+      }}>
+        <div style={{
+          width: "100%", maxWidth: 420,
+          background: "#fff", borderRadius: 20,
+          boxShadow: "0 24px 80px rgba(0,0,0,0.35)",
+          overflow: "hidden",
+        }}>
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <input
-                className="form-control mb-3"
-                type="password"
-                placeholder="Mot de passe"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={emailExists}
-                required
-              />
-
-              <input
-                className="form-control"
-                type="password"
-                placeholder="Confirmer le mot de passe"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                disabled={emailExists}
-                required
-              />
-              <small className="text-muted d-block mb-3 mt-2">
-                    Le mot de passe doit contenir :
-                    <ul className="mb-0 ms-3">
-                      <li>Au moins 8 caractères</li>
-                      <li>Au moins une lettre majuscule</li>
-                      <li>Au moins une lettre minuscule</li>
-                      <li>Au moins un chiffre</li>
-                      <li>Au moins un caractère spécial</li>
-                    </ul>
-                  </small>
+          {/* ── Header ── */}
+          <div style={{
+            background: "linear-gradient(135deg,#1e3a5f 0%,#2d5282 100%)",
+            padding: "28px 32px",
+            display: "flex", alignItems: "center", gap: 16,
+          }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 12,
+              background: "rgba(255,255,255,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              fontSize: 24, flexShrink: 0,
+            }}>🏛</div>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>
+                Portail de bonne Gouvernance
+              </div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", letterSpacing: "0.06em", marginTop: 2 }}>
+                CRÉATION DE COMPTE
+              </div>
             </div>
-            {!emailExists ?
-            <button
-              type="submit"
-              className="btn btn-primary w-100"
-              disabled={loading}
-            >
-              {loading ? "Chargement..." : "Se connecter"}
-            </button>
-            :<button
-              type="submit"
-              className="btn btn-primary w-100"
-              onClick={() => navigate("/login")}
-            >
-              Retourner à login
-            </button>};
-          </form>
+          </div>
+
+          {/* ── Form body ── */}
+          <div style={{ padding: "28px 32px" }}>
+            <form onSubmit={handleSubmit} className="form-section">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+
+                {/* Password */}
+                <div>
+                  <label style={labelStyle}>Mot de passe</label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      className="login-input" style={inputStyle}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••" value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      disabled={emailExists} required
+                    />
+                    <span onClick={() => setShowPassword(p => !p)} style={{
+                      position: "absolute", right: 10, top: "50%",
+                      transform: "translateY(-50%)", cursor: "pointer",
+                      fontSize: 13, color: "#3b82f6",
+                    }}>
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label style={labelStyle}>Confirmer le mot de passe</label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      className="login-input" style={inputStyle}
+                      type={showConfirm ? "text" : "password"}
+                      placeholder="••••••••" value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      disabled={emailExists} required
+                    />
+                    <span onClick={() => setShowConfirm(p => !p)} style={{
+                      position: "absolute", right: 10, top: "50%",
+                      transform: "translateY(-50%)", cursor: "pointer",
+                      fontSize: 13, color: "#3b82f6",
+                    }}>
+                      {showConfirm ? <FaEyeSlash /> : <FaEye />}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Password hint */}
+                <div style={{
+                  background: "#f0f9ff", border: "1px solid #bae6fd",
+                  borderRadius: 10, padding: "12px 14px",
+                }}>
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, color: "#0369a1",
+                    textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
+                  }}>
+                    Le mot de passe doit contenir :
+                  </div>
+                  <ul style={{ paddingLeft: 16, margin: 0 }}>
+                    {["Au moins 8 caractères", "Au moins une lettre majuscule",
+                      "Au moins une lettre minuscule", "Au moins un chiffre",
+                      "Au moins un caractère spécial"].map(r => (
+                      <li key={r} style={{ fontSize: 12, color: "#0369a1", lineHeight: "1.8" }}>{r}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Submit */}
+              {!emailExists ? (
+                <button type="submit" className="login-btn" disabled={loading} style={{
+                  width: "100%", marginTop: 24, padding: "13px",
+                  background: "linear-gradient(135deg,#1e3a5f,#2d5282)",
+                  color: "#fff", border: "none", borderRadius: 12,
+                  fontSize: 14, fontWeight: 800, cursor: loading ? "not-allowed" : "pointer",
+                  letterSpacing: "0.04em", transition: "all 0.2s", opacity: loading ? 0.7 : 1,
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}>
+                  {loading
+                    ? <><span style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.3)", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin 0.7s linear infinite" }} /> Chargement...</>
+                    : "🔐 Terminer la création"
+                  }
+                </button>
+              ) : (
+                <button type="button" onClick={() => navigate("/login")} className="login-btn" style={{
+                  width: "100%", marginTop: 24, padding: "13px",
+                  background: "linear-gradient(135deg,#1e3a5f,#2d5282)",
+                  color: "#fff", border: "none", borderRadius: 12,
+                  fontSize: 14, fontWeight: 800, cursor: "pointer",
+                  letterSpacing: "0.04em", transition: "all 0.2s",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                }}>
+                  ← Retourner à la connexion
+                </button>
+              )}
+            </form>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
