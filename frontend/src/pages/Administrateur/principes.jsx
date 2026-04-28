@@ -4,927 +4,597 @@ import SiderbarAdmin from "../../components/siderbarAdmin";
 import { AppContext } from "../../context/AppContext.jsx";
 import { toast } from "react-toastify";
 
+/* ── Design tokens (identiques au Login) ─────────────────────── */
+const BLUE_DARK  = "linear-gradient(135deg,#1e3a5f,#2d5282)";
+const BLUE_1     = "#1e3a5f";
+const BLUE_2     = "#2d5282";
+
+const inputStyle = {
+  width: "100%", padding: "9px 13px", fontSize: 13,
+  border: "1px solid #e2e8f0", borderRadius: 10, outline: "none",
+  background: "#f8fafc", color: "#1e293b", fontFamily: "inherit",
+  transition: "border-color 0.2s",
+};
+const labelStyle = {
+  fontSize: 11, fontWeight: 700, color: "#64748b",
+  textTransform: "uppercase", letterSpacing: "0.06em",
+  marginBottom: 4, display: "block",
+};
+const btnPrimary = {
+  padding: "8px 18px", background: BLUE_DARK, color: "#fff",
+  border: "none", borderRadius: 10, fontSize: 13, fontWeight: 700,
+  cursor: "pointer", fontFamily: "inherit", transition: "opacity 0.2s",
+};
+const btnOutline = {
+  padding: "8px 18px", background: "transparent",
+  color: BLUE_1, border: `1px solid ${BLUE_1}`,
+  borderRadius: 10, fontSize: 13, fontWeight: 700,
+  cursor: "pointer", fontFamily: "inherit", transition: "all 0.2s",
+};
+const btnDanger = {
+  padding: "6px 12px", background: "transparent",
+  color: "#dc2626", border: "1px solid #fca5a5",
+  borderRadius: 8, fontSize: 12, cursor: "pointer",
+  fontFamily: "inherit", transition: "all 0.2s",
+};
+const btnEdit = {
+  padding: "6px 12px", background: "transparent",
+  color: BLUE_2, border: `1px solid ${BLUE_2}`,
+  borderRadius: 8, fontSize: 12, cursor: "pointer",
+  fontFamily: "inherit", transition: "all 0.2s",
+};
+const btnSave = {
+  padding: "6px 12px", background: "#16a34a",
+  color: "#fff", border: "none", borderRadius: 8,
+  fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+};
+const btnCancel = {
+  padding: "6px 12px", background: "#f1f5f9",
+  color: "#64748b", border: "1px solid #e2e8f0",
+  borderRadius: 8, fontSize: 12, cursor: "pointer", fontFamily: "inherit",
+};
+
+/* ── Badge count ─────────────────────────────────────────────── */
+const Badge = ({ count, label }) => (
+  <span style={{
+    background: count === 0 ? "#fee2e2" : "#dcfce7",
+    color: count === 0 ? "#dc2626" : "#15803d",
+    borderRadius: 20, padding: "2px 10px",
+    fontSize: "0.68rem", fontWeight: 700,
+  }}>
+    {count} {label}{count > 1 ? "s" : ""}
+  </span>
+);
+
+/* ── Modal réutilisable (même design que Login) ──────────────── */
+function Modal({ title, icon, onClose, children }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(15,32,68,0.7)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      zIndex: 9999, padding: 16,
+    }}>
+      <div style={{
+        background: "#fff", borderRadius: 16, width: "100%", maxWidth: 480,
+        boxShadow: "0 24px 60px rgba(0,0,0,0.3)", overflow: "hidden",
+      }}>
+        {/* Modal header */}
+        <div style={{
+          background: BLUE_DARK, padding: "18px 24px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 18 }}>{icon}</span>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{title}</span>
+          </div>
+          <button onClick={onClose} style={{
+            background: "rgba(255,255,255,0.15)", border: "none",
+            color: "#fff", width: 28, height: 28, borderRadius: "50%",
+            cursor: "pointer", fontSize: 14, fontWeight: 700,
+          }}>✕</button>
+        </div>
+        <div style={{ padding: 24 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
 
 const Principes = () => {
-    const { backendUrl} = useContext(AppContext);
-    const [principes, setPrincipes] = useState([]);
-    const [pratiques, setPratiques] = useState([]);
-    const [criteres, setCriteres] = useState([]);
-    const [openPrincipe, setOpenPrincipe] = useState(null);
-    const [showAddPrincipe, setShowAddPrincipe] = useState(false);
+  const { backendUrl } = useContext(AppContext);
+  const [principes, setPrincipes]   = useState([]);
+  const [pratiques, setPratiques]   = useState([]);
+  const [criteres, setCriteres]     = useState([]);
+  const [openPrincipe, setOpenPrincipe] = useState(null);
+  const [showAddPrincipe, setShowAddPrincipe] = useState(false);
+  const [isEditing, setIsEditing]   = useState(false);
+  const [principeId, setPrincipeId] = useState(null);
+  const [pratiqueId, setPratiqueId] = useState(null);
+  const [critereId, setCritereId]   = useState(null);
+  const [editingPrincipeData, setEditingPrincipeData] = useState({ nom: "", description: "" });
+  const [editingPratiqueData, setEditingPratiqueData] = useState({ nom: "", description: "" });
+  const [editingCritereData, setEditingCritereData]   = useState({ nom: "", description: "" });
+  const [openPratique, setOpenPratique]     = useState(null);
+  const [showAddCritere, setShowAddCritere] = useState(false);
+  const [showAddPratique, setShowAddPratique] = useState(false);
+  const [selectedPrincipeId, setSelectedPrincipeId] = useState(null);
+  const [selectedPratiqueId, setSelectedPratiqueId] = useState(null);
+  const [newPrincipe, setNewPrincipe] = useState({ nom: "", description: "" });
+  const [newPratique, setNewPratique] = useState({ nom: "", description: "" });
+  const [newCritere, setNewCritere]   = useState({ nom: "", description: "" });
 
-    const [isEditing, setIsEditing] = useState(false);
-    const[principeId,setPrincipeId]=useState(null);
-    const[pratiqueId,setPratiqueId]=useState(null);
-    const[critereId,setCritereId]=useState(null);
-    const [editingPrincipeData, setEditingPrincipeData] = useState({ nom: "", description: "" });
-    const [editingPratiqueData, setEditingPratiqueData] = useState({ nom: "", description: "" });
-    const [editingCritereData, setEditingCritereData] = useState({ nom: "", description: "" });
+  useEffect(() => { fetchPrincipes(); fetchPratiques(); fetchCriteres(); }, []);
 
+  const handleChangeNew        = e => setNewPrincipe(p => ({ ...p, [e.target.name]: e.target.value }));
+  const handleChangeNewPratique = e => setNewPratique(p => ({ ...p, [e.target.name]: e.target.value }));
+  const handleChangeNewCritere  = e => setNewCritere(p  => ({ ...p, [e.target.name]: e.target.value }));
 
-    const [openPratique, setOpenPratique] = useState(null);
-    const [showAddCritere, setShowAddCritere] = useState(false);
+  const fetchPrincipes = async () => {
+    try { const r = await axios.get(`${backendUrl}/principes`, { withCredentials: true }); setPrincipes(r.data); }
+    catch (e) { console.error("Erreur chargement principes", e); }
+  };
+  const fetchPratiques = async () => {
+    try { const r = await axios.get(`${backendUrl}/pratiques`, { withCredentials: true }); setPratiques(r.data); }
+    catch (e) { console.error("Erreur chargement pratiques", e); }
+  };
+  const fetchCriteres = async () => {
+    try { const r = await axios.get(`${backendUrl}/criteres`, { withCredentials: true }); setCriteres(r.data); }
+    catch (e) { console.error("Erreur chargement criteres", e); }
+  };
 
-    const [showAddPratique, setShowAddPratique] = useState(false);
-    const [selectedPrincipeId, setSelectedPrincipeId] = useState(null);
-    const [selectedPratiqueId, setSelectedPratiqueId] = useState(null);
-
-    const [newPrincipe, setNewPrincipe] = useState({
-        nom: "",
-        description: "",
-      });
-    const [newPratique, setNewPratique] = useState({
-        nom: "",
-        description: "",
-      });
-    const [newCritere, setNewCritere] = useState({
-        nom: "",
-        description: "",
-      });
-    
-    
-    useEffect(() => {
-        fetchPrincipes();
-        fetchPratiques();
-        fetchCriteres();
-    }, []);
-
-    //pour ajouter des nouveaux principes
-    const handleChangeNew = (e) => {
-    const { name, value } = e.target;
-        setNewPrincipe(prev => ({...prev,[name]: value
-        }));
-    };
-    //pour ajouter des nouveaux pratiques
-    const handleChangeNewPratique = (e) => {
-    const { name, value } = e.target;
-        setNewPratique(prev => ({...prev,[name]: value
-        }));
-    };
-    //pour ajouter des nouveaux criteres
-    const handleChangeNewCritere = (e) => {
-    const { name, value } = e.target;
-        setNewCritere(prev => ({...prev,[name]: value
-        }));
-    };
-
-    const fetchPrincipes = async () => {
-        try {
-            const res = await axios.get(`${backendUrl}/principes`,{withCredentials: true});
-            setPrincipes(res.data);
-            } catch (error) {
-                console.error("Erreur chargement principes", error);
-        }
-    };
-    const fetchPratiques = async () => {
-        try {
-            const res = await axios.get(`${backendUrl}/pratiques`,{withCredentials: true});
-            setPratiques(res.data);
-            } catch (error) {
-                console.error("Erreur chargement pratiques", error);
-        }
-    };
-    const fetchCriteres = async () => {
-        try {
-            const res = await axios.get(`${backendUrl}/criteres`,{withCredentials: true});
-            setCriteres(res.data);
-            } catch (error) {
-                console.error("Erreur chargement criteres", error);
-        }
-    };
-
-    const handleAddPrincipe = async (e) => {
-        e.preventDefault();
-        if (principes.some(p => p.nom.toLowerCase() === newPrincipe.nom.toLowerCase())) {
-            toast.error("Ce principe existe déjà !");
-            return;
-  }
-        try {
-    // Send newPrincipe to backend
-    const response = await axios.post(`${backendUrl}/principes/create`, newPrincipe,{withCredentials: true});
-
-    // Update local state
-    setPrincipes((prev) => [...prev, response.data]);
-    toast.success("Principe ajouté avec succès");
-
-    // Close modal and reset form
-    setShowAddPrincipe(false);
-    setNewPrincipe({
-      nom: "",
-      description: "",
-    });
-
-  } catch (error) {
-    toast.error("Erreur lors de l'ajout de principe");
-    console.error(error.response?.data || error);
-  }
-};
-
-
+  const handleAddPrincipe = async (e) => {
+    e.preventDefault();
+    if (principes.some(p => p.nom.toLowerCase() === newPrincipe.nom.toLowerCase())) { toast.error("Ce principe existe déjà !"); return; }
+    try {
+      const res = await axios.post(`${backendUrl}/principes/create`, newPrincipe, { withCredentials: true });
+      setPrincipes(prev => [...prev, res.data]);
+      toast.success("Principe ajouté avec succès");
+      setShowAddPrincipe(false);
+      setNewPrincipe({ nom: "", description: "" });
+    } catch (e) { toast.error("Erreur lors de l'ajout de principe"); }
+  };
 
   const handleAddPratique = async (e) => {
-        e.preventDefault();
-        if (!selectedPrincipeId) return;
-        /*if (pratiques.some(p => p.nom.toLowerCase() === newPratique.nom.toLowerCase())) {
-            toast.error("Ce pratique existe déjà !");
-            return;
-  }*/
-        const principe = principes.find(p => p.id === selectedPrincipeId);
-        if (principe.pratiques?.some(p => p.nom.toLowerCase() === newPratique.nom.toLowerCase())) {
-          toast.error("Cette pratique existe déjà !");
-          return;
-  }
-
-        try {
-    // Send newPrincipe to backend
-    const response = await axios.post(`${backendUrl}/pratiques/create/${selectedPrincipeId}`,
-         { ...newPratique, principeId: selectedPrincipeId },{withCredentials: true});
-
-    // Update local state
-    setPrincipes(prev =>prev.map(p =>p.id === selectedPrincipeId
-      ? { ...p, pratiques: [...(p.pratiques || []), response.data] }
-      : p
-  )
-);
-
-    toast.success("Pratique ajouté avec succès");
-
-    // Close modal and reset form
-    setShowAddPratique(false);
-    setNewPratique({
-      nom: "",
-      description: "",
-    });
-
-  } catch (error) {
-    toast.error("Erreur lors de l'ajout de pratique");
-    console.error(error.response?.data || error);
-  }
-};
-
+    e.preventDefault();
+    if (!selectedPrincipeId) return;
+    const principe = principes.find(p => p.id === selectedPrincipeId);
+    if (principe.pratiques?.some(p => p.nom.toLowerCase() === newPratique.nom.toLowerCase())) { toast.error("Cette pratique existe déjà !"); return; }
+    try {
+      const res = await axios.post(`${backendUrl}/pratiques/create/${selectedPrincipeId}`, { ...newPratique, principeId: selectedPrincipeId }, { withCredentials: true });
+      setPrincipes(prev => prev.map(p => p.id === selectedPrincipeId ? { ...p, pratiques: [...(p.pratiques || []), res.data] } : p));
+      toast.success("Pratique ajouté avec succès");
+      setShowAddPratique(false);
+      setNewPratique({ nom: "", description: "" });
+    } catch (e) { toast.error("Erreur lors de l'ajout de pratique"); }
+  };
 
   const handleAddCritere = async (e) => {
-        e.preventDefault();
-        if (!selectedPratiqueId) return;
-        /*if (pratiques.some(p => p.nom.toLowerCase() === newPratique.nom.toLowerCase())) {
-            toast.error("Ce pratique existe déjà !");
-            return;
-  }*/
-        const pratique = pratiques.find(p => p.id === selectedPratiqueId);
-        if (pratiques.criteres?.some(p => p.nom.toLowerCase() === newCritere.nom.toLowerCase())) {
-          toast.error("Cette Critere existe déjà !");
-          return;
-  }
-
-        try {
-    // Send newCritere to backend
-    const response = await axios.post(`${backendUrl}/criteres/create/${selectedPratiqueId}`,
-         { ...newCritere, pratiqueId: selectedPratiqueId },{withCredentials: true});
-
-    // Update local state
-    setPrincipes(prev =>prev.map(principe => ({
-        ...principe,
-        pratiques: principe.pratiques?.map(pratique =>pratique.id === selectedPratiqueId
-        ? {
-            ...pratique,
-            criteres: [...(pratique.criteres || []), response.data]
-          }
-        : pratique
-    )
-  }))
-);
-
-
-    toast.success("Critere ajouté avec succès");
-
-    // Close modal and reset form
-    setShowAddCritere(false);
-    setNewCritere({
-      nom: "",
-      description: "",
-    });
-
-  } catch (error) {
-    toast.error("Erreur lors de l'ajout de critere");
-    console.error(error.response?.data || error);
-  }
-};
-
-    //pour supprimer principe
-  const deletePrincipe = async (id) => {
+    e.preventDefault();
+    if (!selectedPratiqueId) return;
     try {
-      await axios.delete(`${backendUrl}/principes/${id}`,{withCredentials: true});
-      setPrincipes((prev) => prev.filter((d) => d.id !== id));
-      toast.success("Principe supprimée");
-    } catch (error) {
-    toast.error("Erreur lors de la suppression");
-  }
-};
+      const res = await axios.post(`${backendUrl}/criteres/create/${selectedPratiqueId}`, { ...newCritere, pratiqueId: selectedPratiqueId }, { withCredentials: true });
+      setPrincipes(prev => prev.map(principe => ({
+        ...principe,
+        pratiques: principe.pratiques?.map(pratique => pratique.id === selectedPratiqueId
+          ? { ...pratique, criteres: [...(pratique.criteres || []), res.data] }
+          : pratique),
+      })));
+      toast.success("Critère ajouté avec succès");
+      setShowAddCritere(false);
+      setNewCritere({ nom: "", description: "" });
+    } catch (e) { toast.error("Erreur lors de l'ajout de critère"); }
+  };
 
-  //pour supprimer pratique
+  const deletePrincipe = async (id) => {
+    try { await axios.delete(`${backendUrl}/principes/${id}`, { withCredentials: true }); setPrincipes(p => p.filter(d => d.id !== id)); toast.success("Principe supprimé"); }
+    catch { toast.error("Erreur lors de la suppression"); }
+  };
   const deletePratique = async (id) => {
     try {
-      await axios.delete(`${backendUrl}/pratiques/${id}`,{withCredentials: true});
-      //setPratiques((prev) => prev.filter((d) => d.id !== id)); 
-      setPrincipes(prev =>prev.map(principe => ({      //so u don't have to refresh to see deleted pratiques
-        ...principe,
-        pratiques: principe.pratiques?.filter(p => p.id !== id)
-      }))
-    );
+      await axios.delete(`${backendUrl}/pratiques/${id}`, { withCredentials: true });
+      setPrincipes(prev => prev.map(p => ({ ...p, pratiques: p.pratiques?.filter(pr => pr.id !== id) })));
       toast.success("Pratique supprimée");
-    } catch (error) {
-    toast.error("Erreur lors de la suppression");
-  }
-};
-
-  //pour supprimer critere
+    } catch { toast.error("Erreur lors de la suppression"); }
+  };
   const deleteCritere = async (id) => {
     try {
-      await axios.delete(`${backendUrl}/criteres/${id}`,{withCredentials: true});
-      setPrincipes(prev =>prev.map(principe => ({
-        ...principe,
-        pratiques: principe.pratiques?.map(pratique => ({
-        ...pratique,
-          criteres: pratique.criteres?.filter(c => c.id !== id)
-        }))
-      }))
-    );
-      //setCriteres((prev) => prev.filter((d) => d.id !== id));
-      toast.success("Critere supprimée");
-    } catch (error) {
-    toast.error("Erreur lors de la suppression");
-  }
-};
+      await axios.delete(`${backendUrl}/criteres/${id}`, { withCredentials: true });
+      setPrincipes(prev => prev.map(p => ({ ...p, pratiques: p.pratiques?.map(pr => ({ ...pr, criteres: pr.criteres?.filter(c => c.id !== id) })) })));
+      toast.success("Critère supprimé");
+    } catch { toast.error("Erreur lors de la suppression"); }
+  };
 
-
-  // Sauvegarder les modifications de critéres
   const handleSave = async () => {
-  try {
     if (!critereId) return toast.error("Critère non sélectionné");
-
-    await axios.put(`${backendUrl}/criteres/update/${critereId}`, {...editingCritereData,id: critereId, },{withCredentials: true});
-    setPrincipes((prev) =>
-      prev.map((principe) => ({
-        ...principe,
-        pratiques: principe.pratiques?.map((pratique) => ({
-          ...pratique,
-          criteres: pratique.criteres?.map((critere) =>
-            critere.id === critereId ? { ...critere, ...editingCritereData } : critere
-          ),
-        })),
-      }))
-    );
-
-    setIsEditing(false);
-    setCritereId(null);
-    toast.success("Critère mis à jour !");
-  } catch (error) {
-    toast.error("Erreur lors de la mise à jour de critére");
-    console.error(error.response?.data || error);
-  }
-};
-
-  // Save principe edits
-const handleSavePrincipe = async () => {
-  if (!principeId) return toast.error("principe non sélectionné");
-  try {
-    await axios.put(`${backendUrl}/principes/update/${principeId}`, {...editingPrincipeData,id: principeId, },{withCredentials: true});
-    setPrincipes(prev =>
-      prev.map(p => p.id === principeId ? { ...p, ...editingPrincipeData } : p)
-    );
-    setIsEditing(false);
-    setPrincipeId(null);
-    toast.success("Principe mis à jour !");
-  } catch (error) {
-    const message=error.response?.data?.message || error.response?.data ;
-    toast.error(message || "Erreur lors de la mise à jour du principe");
-    console.error(error);
-  }
-};
-
-  // Save pratique edits
-const handleSavePratique = async () => {
-  try {
-    await axios.put(`${backendUrl}/pratiques/update/${pratiqueId}`, {...editingPratiqueData,id: pratiqueId, },{withCredentials: true});
-    setPrincipes(prev =>
-      prev.map(principe => ({
-        ...principe,
-        pratiques: principe.pratiques?.map(p =>
-          p.id === pratiqueId ? { ...p, ...editingPratiqueData } : p
-        )
-      }))
-    );
-    setPratiqueId(null);
-    toast.success("Pratique mise à jour !");
-  } catch (error) {
-    const message=error.response?.data?.message || error.response?.data ;
-    toast.error(message || "Erreur lors de la mise à jour du principe");
-    console.error(error);
-  }
-};
-
-
-
-
-  // Annuler les modifications
-    const handleCancel = () => {
-      setIsEditing(false);
-      if (!pratiques.critere) return;
-
-      setFormData({
-        id: pratiques.critere.id || "",
-        nom: pratiques.critere.nom || "",
-        description: pratiques.critere.description || "",
-      });
-    };
+    try {
+      await axios.put(`${backendUrl}/criteres/update/${critereId}`, { ...editingCritereData, id: critereId }, { withCredentials: true });
+      setPrincipes(prev => prev.map(p => ({ ...p, pratiques: p.pratiques?.map(pr => ({ ...pr, criteres: pr.criteres?.map(c => c.id === critereId ? { ...c, ...editingCritereData } : c) })) })));
+      setIsEditing(false); setCritereId(null); toast.success("Critère mis à jour !");
+    } catch { toast.error("Erreur lors de la mise à jour du critère"); }
+  };
+  const handleSavePrincipe = async () => {
+    if (!principeId) return;
+    try {
+      await axios.put(`${backendUrl}/principes/update/${principeId}`, { ...editingPrincipeData, id: principeId }, { withCredentials: true });
+      setPrincipes(prev => prev.map(p => p.id === principeId ? { ...p, ...editingPrincipeData } : p));
+      setIsEditing(false); setPrincipeId(null); toast.success("Principe mis à jour !");
+    } catch (e) { toast.error(e.response?.data?.message || "Erreur lors de la mise à jour du principe"); }
+  };
+  const handleSavePratique = async () => {
+    try {
+      await axios.put(`${backendUrl}/pratiques/update/${pratiqueId}`, { ...editingPratiqueData, id: pratiqueId }, { withCredentials: true });
+      setPrincipes(prev => prev.map(p => ({ ...p, pratiques: p.pratiques?.map(pr => pr.id === pratiqueId ? { ...pr, ...editingPratiqueData } : pr) })));
+      setPratiqueId(null); toast.success("Pratique mise à jour !");
+    } catch (e) { toast.error(e.response?.data?.message || "Erreur lors de la mise à jour"); }
+  };
+  const handleCancel = () => { setIsEditing(false); };
 
   return (
-    <div className="d-flex" style={{ minHeight: "100vh" }}>
-      {/* Sidebar */}
-      <div style={{ width: "250px", minHeight: "100vh" }}>
-        <SiderbarAdmin />
-      </div>
-      
-      {/* Main Content */}
-      <div className="flex-grow-1" style={{ backgroundColor: "#f8f9fa", padding: "20px" }}>
-        {/* Header */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h2 className="text-primary">Liste des Principes</h2>
-          <button className="btn btn-success" onClick={() => setShowAddPrincipe(true)}>
-            <i className="bi bi-plus-lg"></i> Ajouter Principe
-          </button>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800;900&display=swap');
+        * { box-sizing: border-box; }
+        .pp-input:focus { border-color: #3b82f6 !important; background: #fff !important; outline: none; }
+        .pp-btn-edit:hover   { background: #eff6ff !important; }
+        .pp-btn-danger:hover { background: #fef2f2 !important; }
+        .pp-btn-add:hover    { background: #f0fdf4 !important; color: #15803d !important; }
+        .pp-card:hover       { box-shadow: 0 4px 20px rgba(30,58,95,0.10) !important; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+        .pp-fade { animation: fadeUp 0.35s ease both; }
+      `}</style>
+
+      <div style={{ display: "flex", minHeight: "100vh", fontFamily: "'DM Sans', sans-serif", background: "#f0f4f8" }}>
+
+        {/* Sidebar */}
+        <div style={{ width: 250, minHeight: "100vh", flexShrink: 0 }}>
+          <SiderbarAdmin />
         </div>
-        {principes.length === 0 ? (
-          <div className="container mt-4">
-            <div className="alert alert-info text-center">Aucun principe disponible.</div>
-          </div>
-        ) : (
-            
-          <div className="container mt-4">
-            {principes.map((principe) => (
-              <div className="card shadow mb-3" key={principe.id} style={{ width: "85%" }}>
-              <div className="card-body d-flex justify-content-between align-items-start" 
-                style={{ cursor: "pointer", width: "100%" }}
-                onClick={()=>setOpenPrincipe(openPrincipe===principe.id? null : principe.id)}>
-                  <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "1px" }}>
-                  <h5 className="card-title mb-0 me-3">{principe.nom}</h5>
-                    <span style={{
-                      background: (principe.pratiques?.length || 0) === 0 ? "#fee2e2" : "#dcfce7",
-                      color: (principe.pratiques?.length || 0) === 0 ? "0 #dc2626" : "#0e8c52",
-                      borderRadius: 20,padding: "3px 10px",fontSize: "0.68rem",fontWeight: 700
-                    }}>
-                    {principe.pratiques?.length} pratique{principe.pratiques?.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                  
-                 
-                  <p className="card-text text-muted">{principe.description}</p>
-                  </div>
-                  {/*<button
-                    className="btn btn-outline-primary btn-sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsEditing(true);
-                      setPrincipeId(principe.id);
-                      setEditingPrincipeData({ nom: principe.nom, description: principe.description });
-                      }}>
-                      <i className="bi bi-pencil"></i>
-                  </button>
-                  <button
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={(e) => {e.stopPropagation();deletePrincipe(principe.id);}}>
-                    <i className="bi bi-trash"></i>
-                  </button>*/}
-      {!isEditing || principeId !== principe.id  ? (
-      <>
-        {/* RIGHT : buttons */}
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(true);
-              setPrincipeId(principe.id);
-              setEditingPrincipeData({ nom: principe.nom, description: principe.description });
-            }}>
-            <i className="bi bi-pencil"></i>
-          </button>
 
-          <button
-                    className="btn btn-outline-danger btn-sm"
-                    onClick={(e) => {e.stopPropagation();deletePrincipe(principe.id);}}>
-                    <i className="bi bi-trash"></i>
-                  </button>
-        </div>
-      </>
-    ) : (
-      <>
-      <div
-    style={{
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    width: "100%",
-    background: "#f8fafc",
-    padding: "15px",
-    borderRadius: "10px",
-    border: "1px solid #e2e8f0"
-  }}
-  >
-    <input
-      type="text"
-      value={editingPrincipeData.nom}
-      onChange={(e) =>
-        setEditingPrincipeData(prev => ({
-          ...prev,
-          nom: e.target.value
-        }))
-      }
-      className="form-control form-control-sm"
-      placeholder="Nom"
-    />
+        {/* Main */}
+        <div style={{ flex: 1, padding: "28px 32px" }}>
 
-    <textarea
-      value={editingPrincipeData.description}
-      onChange={(e) =>
-        setEditingPrincipeData(prev => ({
-          ...prev,
-          description: e.target.value
-        }))
-      }
-      className="form-control form-control-sm"
-      placeholder="Description"
-      rows={2}
-      style={{ resize: "none",width: "100%" }}
-    />
-
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "flex-end",
-        gap: "6px"
-      }}
-    >
-      <button
-        className="btn btn-success btn-sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          handleSavePrincipe();
-          setIsEditing(false);
-        }}
-      >
-        Enregistrer
-      </button>
-
-      <button
-        className="btn btn-outline-secondary btn-sm"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsEditing(false);
-          setPrincipeId(null);
-        }}
-      >
-        Cancel
-      </button>
-    </div>
-  </div>
-      </>
-    )}
-                  
+          {/* ── Page header ── */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 28,
+            background: BLUE_DARK, borderRadius: 16,
+            padding: "20px 28px",
+            boxShadow: "0 8px 32px rgba(30,58,95,0.18)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{
+                width: 44, height: 44, borderRadius: 12,
+                background: "rgba(255,255,255,0.15)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22,
+              }}>📋</div>
+              <div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.01em" }}>
+                  Liste des Principes
+                </div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", letterSpacing: "0.06em", marginTop: 2 }}>
+                  GESTION · GOUVERNANCE
+                </div>
               </div>
-
-                  {/* PRATIQUES */}
-<div className="mt-2">
-  <button
-    className="btn btn-outline-primary btn-sm mb-2 ms-2"
-    onClick={() => setOpenPrincipe(openPrincipe === principe.id ? null : principe.id)}
-  >
-    {openPrincipe === principe.id ? "Masquer les pratiques" : "Voir les pratiques"}
-    <i className={`bi ms-1 bi-chevron-${openPrincipe === principe.id ? "up" : "down"}`}></i>
-  </button>
-
-  <div
-    className={`collapse ${openPrincipe === principe.id ? "show" : ""}`}
-    style={{ marginTop: "5px" }}
-  >
-    {principe.pratiques?.length > 0 ? (
-      <div style={{ padding: "10px", backgroundColor: "#f8f9fa", borderRadius: "4px" }}>
-        
-        {principe.pratiques.map((pratique) => (
-          <div key={pratique.id} 
-            style={{ borderBottom: "1px solid #dee2e6", paddingBottom: "15px", marginBottom: "15px", position: "relative" }}>
-            <div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-              
-              <span style={{ fontWeight: "bold"}}>{pratique.nom}</span>
-              
-              {pratique.criteres && (<>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",marginLeft: "8px"}}>
-                    <span style={{
-                      background: (pratique.criteres?.length || 0) === 0 ? "#fee2e2" : "#dcfce7",
-                      color: (pratique.criteres?.length || 0) === 0 ? "#dc2626" : "#0e8c52",
-                      borderRadius: 20,padding: "3px 10px",fontSize: "0.68rem",fontWeight: 700
-                    }}>
-                    {pratique.criteres?.length} critere{pratique.criteres?.length > 1 ? 's' : ''}
-                    </span>
-                    {/*<button className="btn btn-outline-danger btn-sm"
-                      onClick={(e) => {e.stopPropagation();deletePratique(pratique.id);}}>
-                      <i className="bi bi-trash"></i>
-                    </button>*/}
-      {!isEditing || pratiqueId !== pratique.id  ? (
-      <>
-
-        {/* RIGHT : buttons */}
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(true);
-              setPratiqueId(pratique.id);
-              setEditingPratiqueData({ nom: pratique.nom, description: pratique.description });
-            }}>
-            <i className="bi bi-pencil"></i>
-          </button>
-
-          <button className="btn btn-outline-danger btn-sm"
-                      onClick={(e) => {e.stopPropagation();deletePratique(pratique.id);}}>
-                      <i className="bi bi-trash"></i>
-                    </button>
-        </div>
-      </>
-    ) : (
-      <>
-        <input
-          type="text"
-          value={editingPratiqueData.nom}
-          onChange={(e) => setEditingPratiqueData(prev => ({ ...prev, nom: e.target.value }))}
-          className="form-control form-control-sm me-2"
-          style={{ maxWidth: "200px" }}
-        />
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSavePratique();
-              setIsEditing(false);
-            }}
-          >
-            enregistrer
-          </button>
-
-          <button
-            className="btn btn-outline-danger btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(false);
-              setPratiqueId(null);
-            }}
-          >
-            annuler
-          </button>
-        </div>
-      </>
-    )}
-                  </div>
-              </>)}
-
             </div>
-            
-            
-            {/* Inside your map over critere */}
-{pratique.criteres?.map((critere) => (
-  <div
-    key={critere.id}
-    style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      padding: "8px 12px",
-      border: "1px solid #dee2e6",
-      borderRadius: "6px",
-      marginBottom: "6px",
-      backgroundColor: "#ffffff",
-    }}
-  >
-    {!isEditing || critereId !== critere.id  ? (
-      <>
-        {/* LEFT : critere name */}
-        <span style={{ fontSize: "0.9rem", color: "#495057" }}>{critere.nom}</span>
-
-        {/* RIGHT : buttons */}
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(true);
-              setCritereId(critere.id);
-              setEditingCritereData({ nom: critere.nom, description: critere.description });
-            }}
-          >
-            <i className="bi bi-pencil"></i>
-          </button>
-
-          <button
-            className="btn btn-outline-danger btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              deleteCritere(critere.id);
-            }}
-          >
-            <i className="bi bi-trash"></i>
-          </button>
-        </div>
-      </>
-    ) : (
-      <>
-        <input
-          type="text"
-          value={editingCritereData.nom}
-          onChange={(e) => setEditingCritereData(prev => ({ ...prev, nom: e.target.value }))}
-          className="form-control form-control-sm me-2"
-          style={{ Width: "80%px" }}
-        />
-        <div style={{ display: "flex", gap: "6px" }}>
-          <button
-            className="btn btn-outline-primary btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSave();
-              setIsEditing(false);
-            }}
-          >
-            enregistrer
-          </button>
-
-          <button
-            className="btn btn-outline-danger btn-sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsEditing(false);
-              setCritereId(null);
-            }}
-          >
-            annuler
-          </button>
-        </div>
-      </>
-    )}
-  </div>
-))}
-
-            
-            <button className="btn btn-link btn-sm p-0"
-              style={{ color: "#28a745", textDecoration: "none",fontSize: "0.9rem",
-                border: "none",background: "none",cursor: "pointer",marginTop: "4px"}}
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowAddCritere(true);
-                setSelectedPratiqueId(pratique.id);
-                console.log("Ajouter critère pour:", pratique.nom);
-              }}
+            <button
+              onClick={() => setShowAddPrincipe(true)}
+              style={{ ...btnPrimary, background: "rgba(255,255,255,0.18)", border: "1px solid rgba(255,255,255,0.35)", fontSize: 14 }}
             >
-              <i className="bi bi-plus"></i> Ajouter un critère
+              + Ajouter Principe
             </button>
           </div>
-        ))}
-        
-        <button
-          className="btn btn-outline-success btn-sm"
-          style={{ marginTop: "10px" }}
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowAddPratique(true);
-            setSelectedPrincipeId(principe.id);
-          }}
-        >
-          <i className="bi bi-plus"></i> Ajouter une pratique
-        </button>
-      </div>
-    ) : (
-      <div style={{ 
-        display: "flex", 
-        justifyContent: "space-between", 
-        alignItems: "center", 
-        padding: "8px", 
-        border: "1px solid #dee2e6", 
-        borderRadius: "4px" 
-      }}>
-        <span style={{ color: "#6c757d" }}>Aucune pratique existe</span>
-        <button
-          className="btn btn-outline-success btn-sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowAddPratique(true);
-            setSelectedPrincipeId(principe.id);
-          }}
-        >
-          <i className="bi bi-plus"></i>
-        </button>
-      </div>
-    )}
-  </div>
-</div>
 
+          {/* ── Empty state ── */}
+          {principes.length === 0 ? (
+            <div style={{
+              background: "#fff", borderRadius: 14, padding: "40px",
+              textAlign: "center", color: "#64748b", fontSize: 14,
+              border: "1px solid #e2e8f0",
+            }}>
+              Aucun principe disponible.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {principes.map((principe) => (
+                <div
+                  key={principe.id} className="pp-card pp-fade"
+                  style={{
+                    background: "#fff", borderRadius: 14,
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 2px 8px rgba(30,58,95,0.06)",
+                    overflow: "hidden", transition: "box-shadow 0.2s",
+                  }}
+                >
+                  {/* ── Principe header row ── */}
+                  <div
+                    style={{ padding: "18px 22px", cursor: "pointer", display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}
+                    onClick={() => setOpenPrincipe(openPrincipe === principe.id ? null : principe.id)}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
+                        <span style={{ fontSize: 15, fontWeight: 800, color: BLUE_1 }}>{principe.nom}</span>
+                        <Badge count={principe.pratiques?.length || 0} label="pratique" />
+                      </div>
+                      <p style={{ margin: 0, fontSize: 13, color: "#64748b", lineHeight: 1.6 }}>{principe.description}</p>
+                    </div>
+
+                    {/* ── Principe edit/delete or inline edit form ── */}
+                    {!isEditing || principeId !== principe.id ? (
+                      <div style={{ display: "flex", gap: 6, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                        <button className="pp-btn-edit" style={btnEdit}
+                          onClick={(e) => { e.stopPropagation(); setIsEditing(true); setPrincipeId(principe.id); setEditingPrincipeData({ nom: principe.nom, description: principe.description }); }}>
+                          ✏️
+                        </button>
+                        <button className="pp-btn-danger" style={btnDanger}
+                          onClick={(e) => { e.stopPropagation(); deletePrincipe(principe.id); }}>
+                          🗑
+                        </button>
+                      </div>
+                    ) : (
+                      /* ── ENLARGED Principe edit panel ── */
+                      <div
+                        style={{
+                          display: "flex", flexDirection: "column", gap: 12,
+                          width: "100%", maxWidth: 520,
+                          background: "#f8fafc", padding: "18px 20px",
+                          borderRadius: 12, border: "1px solid #cbd5e1",
+                          boxShadow: "0 2px 12px rgba(30,58,95,0.08)",
+                        }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <div>
+                          <label style={labelStyle}>Nom du principe</label>
+                          <input
+                            className="pp-input"
+                            style={{ ...inputStyle, fontSize: 14, padding: "10px 14px" }}
+                            type="text"
+                            value={editingPrincipeData.nom}
+                            onChange={e => setEditingPrincipeData(p => ({ ...p, nom: e.target.value }))}
+                            placeholder="Nom du principe"
+                          />
+                        </div>
+                        <div>
+                          <label style={labelStyle}>Description</label>
+                          <textarea
+                            className="pp-input"
+                            style={{ ...inputStyle, fontSize: 13, padding: "10px 14px", resize: "vertical", minHeight: 100 }}
+                            rows={4}
+                            value={editingPrincipeData.description}
+                            onChange={e => setEditingPrincipeData(p => ({ ...p, description: e.target.value }))}
+                            placeholder="Description du principe"
+                          />
+                        </div>
+                        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                          <button style={{ ...btnSave, padding: "9px 20px", fontSize: 13 }}
+                            onClick={(e) => { e.stopPropagation(); handleSavePrincipe(); setIsEditing(false); }}>
+                            Enregistrer
+                          </button>
+                          <button style={{ ...btnCancel, padding: "9px 20px", fontSize: 13 }}
+                            onClick={(e) => { e.stopPropagation(); setIsEditing(false); setPrincipeId(null); }}>
+                            Annuler
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ── Toggle pratiques ── */}
+                  <div style={{ borderTop: "1px solid #f1f5f9", padding: "10px 22px 0" }}>
+                    <button
+                      style={{ ...btnOutline, fontSize: 12, marginBottom: 10, padding: "6px 14px" }}
+                      onClick={() => setOpenPrincipe(openPrincipe === principe.id ? null : principe.id)}
+                    >
+                      {openPrincipe === principe.id ? "▲ Masquer les pratiques" : "▼ Voir les pratiques"}
+                    </button>
+
+                    {openPrincipe === principe.id && (
+                      <div style={{ paddingBottom: 16 }}>
+                        {principe.pratiques?.length > 0 ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                            {principe.pratiques.map((pratique) => (
+                              <div key={pratique.id} style={{ background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", padding: "12px 16px" }}>
+
+                                {/* Pratique header */}
+                                <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+                                  {!isEditing || pratiqueId !== pratique.id ? (
+                                    <>
+                                      <span style={{ fontWeight: 700, color: BLUE_1, fontSize: 13, marginTop: 2 }}>{pratique.nom}</span>
+                                      {pratique.criteres && <Badge count={pratique.criteres?.length || 0} label="critère" />}
+                                      <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+                                        <button className="pp-btn-edit" style={{ ...btnEdit, fontSize: 11, padding: "4px 10px" }}
+                                          onClick={(e) => { e.stopPropagation(); setIsEditing(true); setPratiqueId(pratique.id); setEditingPratiqueData({ nom: pratique.nom, description: pratique.description }); }}>✏️</button>
+                                        <button className="pp-btn-danger" style={{ ...btnDanger, fontSize: 11, padding: "4px 10px" }}
+                                          onClick={(e) => { e.stopPropagation(); deletePratique(pratique.id); }}>🗑</button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    /* ── ENLARGED Pratique edit panel ── */
+                                    <div
+                                      style={{
+                                        display: "flex", flexDirection: "column", gap: 10,
+                                        width: "100%",
+                                        background: "#fff", padding: "16px 18px",
+                                        borderRadius: 10, border: "1px solid #cbd5e1",
+                                        boxShadow: "0 2px 8px rgba(30,58,95,0.07)",
+                                      }}
+                                      onClick={e => e.stopPropagation()}
+                                    >
+                                      <div>
+                                        <label style={labelStyle}>Nom de la pratique</label>
+                                        <input
+                                          className="pp-input"
+                                          style={{ ...inputStyle, fontSize: 14, padding: "10px 14px" }}
+                                          value={editingPratiqueData.nom}
+                                          onChange={e => setEditingPratiqueData(p => ({ ...p, nom: e.target.value }))}
+                                          placeholder="Nom de la pratique"
+                                        />
+                                      </div>
+                                      {/*<div>
+                                        <label style={labelStyle}>Description</label>
+                                        <textarea
+                                          className="pp-input"
+                                          style={{ ...inputStyle, fontSize: 13, padding: "10px 14px", resize: "vertical", minHeight: 80 }}
+                                          rows={3}
+                                          value={editingPratiqueData.description}
+                                          onChange={e => setEditingPratiqueData(p => ({ ...p, description: e.target.value }))}
+                                          placeholder="Description de la pratique"
+                                        />
+                                      </div>*/}
+                                      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                                        <button style={{ ...btnSave, padding: "8px 18px", fontSize: 13 }}
+                                          onClick={(e) => { e.stopPropagation(); handleSavePratique(); setIsEditing(false); }}>
+                                          Enregistrer
+                                        </button>
+                                        <button style={{ ...btnCancel, padding: "8px 18px", fontSize: 13 }}
+                                          onClick={(e) => { e.stopPropagation(); setIsEditing(false); setPratiqueId(null); }}>
+                                          Annuler
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Critères list — only show when not editing this pratique */}
+                                {(!isEditing || pratiqueId !== pratique.id) && (
+                                  <>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                                      {pratique.criteres?.map((critere) => (
+                                        <div key={critere.id} style={{
+                                          display: "flex", alignItems: "center", justifyContent: "space-between",
+                                          padding: "7px 12px", background: "#fff",
+                                          border: "1px solid #e2e8f0", borderRadius: 8,
+                                        }}>
+                                          {!isEditing || critereId !== critere.id ? (
+                                            <>
+                                              <span style={{ fontSize: 13, color: "#334155" }}>{critere.nom}</span>
+                                              <div style={{ display: "flex", gap: 6 }}>
+                                                <button className="pp-btn-edit" style={{ ...btnEdit, fontSize: 11, padding: "4px 10px" }}
+                                                  onClick={(e) => { e.stopPropagation(); setIsEditing(true); setCritereId(critere.id); setEditingCritereData({ nom: critere.nom, description: critere.description }); }}>✏️</button>
+                                                <button className="pp-btn-danger" style={{ ...btnDanger, fontSize: 11, padding: "4px 10px" }}
+                                                  onClick={(e) => { e.stopPropagation(); deleteCritere(critere.id); }}>🗑</button>
+                                              </div>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <input className="pp-input" style={{ ...inputStyle, flex: 1, marginRight: 8, padding: "6px 10px" }}
+                                                value={editingCritereData.nom}
+                                                onChange={e => setEditingCritereData(p => ({ ...p, nom: e.target.value }))} />
+                                              <div style={{ display: "flex", gap: 6 }}>
+                                                <button style={btnSave} onClick={(e) => { e.stopPropagation(); handleSave(); setIsEditing(false); }}>Enregistrer</button>
+                                                <button style={btnCancel} onClick={(e) => { e.stopPropagation(); setIsEditing(false); setCritereId(null); }}>Annuler</button>
+                                              </div>
+                                            </>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+
+                                    {/* Add critère link */}
+                                    <button className="pp-btn-add" style={{
+                                      marginTop: 8, background: "none", border: "none",
+                                      color: "#16a34a", fontSize: 12, fontWeight: 700,
+                                      cursor: "pointer", fontFamily: "inherit", padding: "4px 0",
+                                      transition: "color 0.2s",
+                                    }}
+                                      onClick={(e) => { e.stopPropagation(); setShowAddCritere(true); setSelectedPratiqueId(pratique.id); }}>
+                                      + Ajouter un critère
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            padding: "10px 14px", background: "#f8fafc",
+                            border: "1px solid #e2e8f0", borderRadius: 10,
+                          }}>
+                            <span style={{ color: "#94a3b8", fontSize: 13 }}>Aucune pratique existe</span>
+                            <button style={{ ...btnOutline, fontSize: 12, padding: "5px 12px" }}
+                              onClick={(e) => { e.stopPropagation(); setShowAddPratique(true); setSelectedPrincipeId(principe.id); }}>
+                              +
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Add pratique button */}
+                        {principe.pratiques?.length > 0 && (
+                          <button style={{ ...btnOutline, marginTop: 12, fontSize: 12, padding: "6px 14px" }}
+                            onClick={(e) => { e.stopPropagation(); setShowAddPratique(true); setSelectedPrincipeId(principe.id); }}>
+                            + Ajouter une pratique
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-            ))}
-          </div>
-          
-        )}
-        
-
-        {showAddPrincipe && (
-  <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-    <div className="modal-dialog modal-lg modal-dialog-centered">
-      <div className="modal-content p-4">
-        <h5 className="mb-4 text-center">Ajouter un principe</h5>
-
-        <div className="row">
-      
-      <form onSubmit={handleAddPrincipe} >
-
-  <input
-    type="text"
-    placeholder="Nom de principe"
-    name="nom"
-    value={newPrincipe.nom}
-    onChange={handleChangeNew}
-    className="form-control mb-2"
-    required
-  />
-
-  <textarea
-    name="description"
-    placeholder="description bréve de principe"
-    value={newPrincipe.description}
-    onChange={handleChangeNew}
-    className="form-control mb-2"
-    required
-  />
-
-  
-
-  <div className="d-flex justify-content-end mt-3">
-    <button type="submit" className="btn btn-primary me-2">
-      Sauvegarder
-    </button>
-
-    <button type="button" className="btn btn-secondary" onClick={() => setShowAddPrincipe(false)}>
-      Annuler
-    </button>
-  </div>
-
-</form>
-
-
-     {/* <div className="d-flex justify-content-end mt-3">
-          <button className="btn btn-primary me-2" onClick={handleAddOrganisme}>
-            Sauvegarder
-          </button>
-
-          <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
-            Annuler
-          </button>
-        </div>*/}
-      
+              ))}
+            </div>
+          )}
         </div>
-
       </div>
 
+      {/* ── Modal Ajouter Principe ── */}
+      {showAddPrincipe && (
+        <Modal title="Ajouter un principe" icon="📋" onClose={() => setShowAddPrincipe(false)}>
+          <form onSubmit={handleAddPrincipe} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={labelStyle}>Nom du principe</label>
+              <input className="pp-input" style={inputStyle} type="text"
+                name="nom" placeholder="Nom de principe"
+                value={newPrincipe.nom} onChange={handleChangeNew} required />
+            </div>
+            <div>
+              <label style={labelStyle}>Description</label>
+              <textarea className="pp-input" style={{ ...inputStyle, resize: "none" }} rows={3}
+                name="description" placeholder="Description brève du principe"
+                value={newPrincipe.description} onChange={handleChangeNew} required />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+              <button type="button" style={{ ...btnCancel, padding: "10px 20px" }} onClick={() => setShowAddPrincipe(false)}>Annuler</button>
+              <button type="submit" style={{ ...btnPrimary, padding: "10px 20px" }}>Sauvegarder</button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
-      
+      {/* ── Modal Ajouter Pratique ── */}
+      {showAddPratique && (
+        <Modal title="Ajouter une pratique" icon="🗂" onClose={() => setShowAddPratique(false)}>
+          <form onSubmit={handleAddPratique} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={labelStyle}>Nom de la pratique</label>
+              <input className="pp-input" style={inputStyle} type="text"
+                name="nom" placeholder="Nom de pratique"
+                value={newPratique.nom} onChange={handleChangeNewPratique} required />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+              <button type="button" style={{ ...btnCancel, padding: "10px 20px" }} onClick={() => setShowAddPratique(false)}>Annuler</button>
+              <button type="submit" style={{ ...btnPrimary, padding: "10px 20px" }}>Sauvegarder</button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
-    </div>
-  </div>
-)}    
-
-{showAddPratique && (
-  <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-    <div className="modal-dialog modal-lg modal-dialog-centered">
-      <div className="modal-content p-4">
-        <h5 className="mb-4 text-center">Ajouter un Pratique</h5>
-
-        <div className="row">
-      
-      <form onSubmit={handleAddPratique} >
-
-  <input
-    type="text"
-    placeholder="Nom de pratique"
-    name="nom"
-    value={newPratique.nom}
-    onChange={handleChangeNewPratique}
-    className="form-control mb-2"
-    required
-  />
-
-  {/*<textarea
-    name="description"
-    placeholder="description bréve de pratique"
-    value={newPratique.description}
-    onChange={handleChangeNewPratique}
-    className="form-control mb-2"
-    //required
-  />*/}
-
-  
-
-  <div className="d-flex justify-content-end mt-3">
-    <button type="submit" className="btn btn-primary me-2">
-      Sauvegarder
-    </button>
-
-    <button type="button" className="btn btn-secondary" onClick={() => setShowAddPratique(false)}>
-      Annuler
-    </button>
-  </div>
-
-</form>
-
-
-     {/* <div className="d-flex justify-content-end mt-3">
-          <button className="btn btn-primary me-2" onClick={handleAddOrganisme}>
-            Sauvegarder
-          </button>
-
-          <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
-            Annuler
-          </button>
-        </div>*/}
-      
-        </div>
-
-      </div>
-
-
-      
-
-    </div>
-  </div>
-)}    
-
-
-
+      {/* ── Modal Ajouter Critère ── */}
       {showAddCritere && (
-  <div className="modal show d-block" style={{ background: "rgba(0,0,0,0.5)" }}>
-    <div className="modal-dialog modal-lg modal-dialog-centered">
-      <div className="modal-content p-4">
-        <h5 className="mb-4 text-center">Ajouter un Critere</h5>
-
-        <div className="row">
-      
-      <form onSubmit={handleAddCritere} >
-
-  <input
-    type="text"
-    placeholder="Nom de critere"
-    name="nom"
-    value={newCritere.nom}
-    onChange={handleChangeNewCritere}
-    className="form-control mb-2"
-    required
-  />
-
-  {/*<textarea
-    name="description"
-    placeholder="description bréve de critere"
-    value={newCritere.description}
-    onChange={handleChangeNewCritere}
-    className="form-control mb-2"
-    //required
-  />*/}
-
-  
-
-  <div className="d-flex justify-content-end mt-3">
-    <button type="submit" className="btn btn-primary me-2">
-      Sauvegarder
-    </button>
-
-    <button type="button" className="btn btn-secondary" onClick={() => setShowAddCritere(false)}>
-      Annuler
-    </button>
-  </div>
-
-</form>
-        </div>
-
-      </div>
-
-
-      
-
-    </div>
-  </div>
-)}
-      </div>
-    </div>
-
-    
-);
+        <Modal title="Ajouter un critère" icon="✅" onClose={() => setShowAddCritere(false)}>
+          <form onSubmit={handleAddCritere} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div>
+              <label style={labelStyle}>Nom du critère</label>
+              <input className="pp-input" style={inputStyle} type="text"
+                name="nom" placeholder="Nom de critère"
+                value={newCritere.nom} onChange={handleChangeNewCritere} required />
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 4 }}>
+              <button type="button" style={{ ...btnCancel, padding: "10px 20px" }} onClick={() => setShowAddCritere(false)}>Annuler</button>
+              <button type="submit" style={{ ...btnPrimary, padding: "10px 20px" }}>Sauvegarder</button>
+            </div>
+          </form>
+        </Modal>
+      )}
+    </>
+  );
 };
 
 export default Principes;
-

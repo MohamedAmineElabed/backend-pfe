@@ -787,7 +787,7 @@ const EvaluationDetails = () => {
           <div style={styles.headerTop}>
             <div>
               <p style={styles.headerLabel}>Évaluation #{id}</p>
-              <OrgLogo url={evaluation.logoUrl}/>
+              {/*<OrgLogo url={evaluation.logoUrl}/>*/}
               <h1 style={styles.headerTitle}>{evaluation.organismeName}</h1>
             </div>
           </div>

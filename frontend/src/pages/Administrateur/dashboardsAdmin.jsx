@@ -601,38 +601,46 @@ export default function DashboardsEval() {
     if (!selectedOrgId) return [];
     return rawScores
       .filter(s => s.organismeId === selectedOrgId)
-      .map(s => ({
-        principe: principesMap[s.principeId] || `P${s.principeId}`,
-        score:    s.scoreMax ? +((s.score / s.scoreMax) * 100).toFixed(1) : 0,
-        fullMark: 100,
-      }));
+      .map(s => {
+        const principeNom = principesMap[s.principeId];
+
+        //skip deleted principes
+        if (!principeNom) return null;
+
+        return {
+          principe: principeNom,
+          score: s.scoreMax? +((s.score / s.scoreMax) * 100).toFixed(1): 0,
+          fullMark: 100,
+        };
+      })
   }, [selectedOrgId, rawScores, principesMap]);
 
+  
+
   /*const orgRadarData = useMemo(() => {
-  if (!selectedOrgId) return [];
+    if (!selectedOrgId) return [];
+    const grouped = {};
 
-  const grouped = {};
+    rawScores
+      .filter(s => s.organismeId === selectedOrgId)
+      .forEach(s => {
+        const pid = s.principeId;
 
-  rawScores
-    .filter(s => s.organismeId === selectedOrgId)
-    .forEach(s => {
-      const pid = s.principeId;
+        if (!grouped[pid]) {
+          grouped[pid] = { total: 0, count: 0 };
+        }
 
-      if (!grouped[pid]) {
-        grouped[pid] = { total: 0, count: 0 };
-      }
+        const pct = s.scoreMax ? (s.score / s.scoreMax) * 100 : 0;
+        grouped[pid].total += pct;
+        grouped[pid].count++;
+      });
 
-      const pct = s.scoreMax ? (s.score / s.scoreMax) * 100 : 0;
-      grouped[pid].total += pct;
-      grouped[pid].count++;
-    });
-
-  return Object.entries(grouped).map(([pid, d]) => ({
-    principe: principesMap[pid] || `P${pid}`,
-    score: +(d.total / d.count).toFixed(1),
-    fullMark: 100,
-  }));
-}, [selectedOrgId, rawScores, principesMap]);*/
+    return Object.entries(grouped).map(([pid, d]) => ({
+      principe: principesMap[pid] || `P${pid}`,
+      score: +(d.total / d.count).toFixed(1),
+      fullMark: 100,
+    }));
+  }, [selectedOrgId, rawScores, principesMap]);*/
 
   const orgRefusedCriteres = useMemo(() => {
     if (!selectedOrgId) return [];
@@ -1162,7 +1170,7 @@ export default function DashboardsEval() {
                 </ChartCard>
 
                 {/* Refused criteria */}
-                <ChartCard title="🚫 Critères refusés" subtitle="Sur toutes les évaluations de cet organisme">
+                <ChartCard title="🚫 Critères refusés" subtitle="Sur la derniére evaluation de cet organisme">
                   <OrgRefusedList rows={orgRefusedCriteres} />
                 </ChartCard>
               </>

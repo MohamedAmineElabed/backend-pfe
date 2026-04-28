@@ -2,6 +2,7 @@
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell,
+  LineChart,Line
 } from "recharts";
 import Siderbar from "../components/siderbar";
 import axios from "axios";
@@ -12,6 +13,39 @@ import { useNavigate } from "react-router-dom";
 // Add to your imports at the top
 import { MessageSquare } from "lucide-react";
 // Add to your imports at the top
+
+function ChartCard({ title, subtitle, children, style = {} }) {
+  return (
+    <div style={{ background:"#fff", padding:"20px", borderRadius:"12px", boxShadow:"0 1px 3px rgba(0,0,0,0.1)",marginBottom: "30px", ...style }}>
+      <h3 style={{ marginBottom: subtitle ? "4px" : "20px", color:"#374151", fontSize:"15px", fontWeight:600 }}>{title}</h3>
+      {subtitle && <p style={{ marginBottom:"16px", color:"#9ca3af", fontSize:"12px" }}>{subtitle}</p>}
+      {children}
+    </div>
+  );
+}
+
+function EmptyState({ label = "Aucune donnée disponible" }) {
+  return (
+    <div style={{ height:200, display:"flex", alignItems:"center", justifyContent:"center", color:"#9ca3af", fontSize:"14px" }}>
+      {label}
+    </div>
+  );
+}
+
+// ─── Drill-down refused list ──────────────────────────────────────────────────
+function OrgRefusedList({ rows }) {
+  if (!rows.length) return <EmptyState label="Aucun critère refusé pour cet organisme" />;
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:"8px" }}>
+      {rows.map((r, i) => (
+        <div key={i} style={{ padding:"12px 14px", background:"#fef2f2", borderRadius:"8px", borderLeft:"3px solid #ef4444" }}>
+          <div style={{ fontWeight:600, color:"#374151", fontSize:"13px", marginBottom:"4px" }}>{r.critere}</div>
+          {r.commentaire !== "—" && <div style={{ color:"#6b7280", fontSize:"12px", fontStyle:"italic" }}>💬 {r.commentaire}</div>}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
 const PRINCIPLE_COLORS = [
@@ -298,6 +332,7 @@ export default function DashboardResp() {
 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [dernierEval,setDernierEval]= useState(null); //latest evaluation mais forme de db
   const [evaluations, setEvaluations] = useState([]);   // all evals for this organisme
   const [latestEval,setLatestEval]= useState(null);  //latest evalution pour ce organisme
   const [rawScores, setRawScores] = useState([]);    // scoreParPrincipe entries
@@ -312,6 +347,38 @@ export default function DashboardResp() {
       navigate("/evaluationForm", { state: { userData } });
     }
 
+  const EvolutionData = useMemo(() =>
+    [...evaluations]
+      .sort((a, b) => (a.dateCreation || "").localeCompare(b.dateCreation || ""))
+      .map((ev, i) => ({
+        index: `Eval ${i + 1}`,
+        date:  ev.dateTermination || ev.dateCreation || "",
+        score: ev.score && ev.scoreMax ? +((ev.score / ev.scoreMax) * 100).toFixed(1) : 0,
+        label: ev.label,
+      })),
+  [evaluations]);
+
+  const findCritereName = (id) => {
+  for (const p of principes) {
+    for (const pr of (p.pratiques || [])) {
+      const found = (pr.criteres || []).find(c => c.id === id);
+      if (found) return found.nom;
+    }
+  }
+  return `Critère ${id}`;
+};
+
+  const orgRefusedCriteres = useMemo(() => {
+    if (!dernierEval || !dernierEval.reponses) return [];
+    return dernierEval?.reponses
+      .filter(r=> r.statut?.toLowerCase()==="refusé")
+      .map(r => ({
+        critere:findCritereName(r.critereId),
+        commentaire: r.commentaire || "",
+        valeur:r.valeur,
+      }));
+  },[dernierEval, principes]);
+
   // ── Fetch user profile ────────────────────────────────────────────────────
   useEffect(() => {
     if (!userData?.id) return;
@@ -321,14 +388,17 @@ export default function DashboardResp() {
   }, [backendUrl, userData?.id]);
 
   // ── Fetch evaluations for organisme ──────────────────────────────────────
-  /*useEffect(() => {
+
+  //latests evaluation mais forme de db
+  useEffect(() => {
     if (!organismeId) return;
-    axios.get(`${backendUrl}/evaluation/organisme/${organismeId}`, { withCredentials:true })
-      .then(r => setEvaluations(Array.isArray(r.data) ? r.data : []))
+    axios.get(`${backendUrl}/evaluation/latest/${organismeId}`, { withCredentials:true })
+      .then(r => setDernierEval(Array.isArray(r.data) ? r.data[0] : r.data))
       .catch(() => toast.error("Erreur chargement évaluations"))
       .finally(() => setLoading(false));
-  }, [backendUrl, organismeId]);*/
+  }, [backendUrl, organismeId]);
 
+  // all evaluations
   useEffect(() => {
   if (!organismeId) return;
   const fetchData = async () => {
@@ -349,6 +419,7 @@ export default function DashboardResp() {
   fetchData();
 }, [backendUrl, organismeId]);
 
+  //latest evaluation
   useEffect(() => {
   if (!organismeId) return;
   const fetchLatest = async () => {
@@ -392,12 +463,23 @@ export default function DashboardResp() {
       return principes.map(p => ({ principe: p.nom, score: 0 }));
     }
     const map = {};
-    rawScores.forEach(item => {
+    /*rawScores.forEach(item => {
       const nom = principes.find(p => p.id === item.principeId)?.nom || `Principe ${item.principeId}`;
       const pct = item.scoreMax ? Math.round((item.score / item.scoreMax) * 100) : 0;
       if (!map[nom]) map[nom] = { total: pct, count: 1 };
       else { map[nom].total += pct; map[nom].count++; }
-    });
+    });*/
+      rawScores.forEach(item=>{
+        const principeObj=principes.find(p=>p.id===item.principeId);
+        if (!principeObj) return;
+        const nom = principeObj.nom;
+        const pct = item.scoreMax ? Math.round((item.score / item.scoreMax) * 100) : 0;
+        if (!map[nom]) map[nom] = { total: pct, count: 1 };
+        else {
+          map[nom].total += pct;
+          map[nom].count++;
+    }
+      })
     return Object.entries(map).map(([principe, { total, count }]) => ({
       principe, score: Math.round(total / count)
     }));
@@ -639,6 +721,29 @@ export default function DashboardResp() {
                 </div>
               )}
 
+              {/* Score evolution */}
+              <ChartCard title="📈 Évolution du score" subtitle="Toutes les évaluations de cet organisme">
+                {EvolutionData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={260}>
+                  <LineChart data={EvolutionData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="index" />
+                      <YAxis domain={[0,100]} tickFormatter={v=>`${v}%`} />
+                      <Tooltip
+                        formatter={(v, _, props) => [`${v}%`, `Score — ${props.payload.label || ""}`]}
+                        labelFormatter={l => l} />
+                        <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2.5}
+                        dot={{ fill:"#3b82f6", r:5 }} activeDot={{ r:7 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+                ) : <EmptyState label="Pas d'historique disponible" />}
+              </ChartCard>
+
+              {/* Refused criteria */}
+                <ChartCard title="🚫 Critères refusés" subtitle="Sur la derniére evaluation de cet organisme">
+                  <OrgRefusedList rows={orgRefusedCriteres} />
+                </ChartCard>
+
               {/* ── Evaluations history ───────────────────────────────── */}
               <div style={{
                 background:"#fff", borderRadius:"16px", padding:"24px",
@@ -675,7 +780,7 @@ export default function DashboardResp() {
                       Commencez votre première auto-évaluation de gouvernance.
                     </div>
                     <button
-                      onClick={() => navigate("/evaluation/new")}
+                      onClick={() => navigate("/evaluationForm")}
                       style={{
                         padding:"10px 20px", borderRadius:"10px", border:"none", cursor:"pointer",
                         background:"#6366f1", color:"#fff", fontSize:"13px", fontWeight:"700"
@@ -685,41 +790,39 @@ export default function DashboardResp() {
                   </div>
                 ) : (
                   <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
-  {[...evaluations]
-    .sort((a, b) =>
-      (b.dateTermination || b.dateCreation || "")
-        .localeCompare(a.dateTermination || a.dateCreation || "")
-    )
-    .map((ev, i) => {
-      return (
-        <div key={ev.id} style={{ position: "relative" }}>
-          <EvalCard
-            ev={ev}
-            index={i}
-            onClick={() => {
-              if (!seenEvals.includes(ev.id)) {
-                const updated = [...seenEvals, ev.id];
-                localStorage.setItem("seenEvals", JSON.stringify(updated));
-                setSeenEvals(updated);
-              }
-              navigate("/EvalEdit", { state: { evaluation: ev } });
-            }}/>
+                  {[...evaluations].sort((a, b) =>
+                    (b.dateTermination || b.dateCreation || "")
+                    .localeCompare(b.dateTermination ||b.dateCreation || "")
+                  )
+                    .map((ev, i) => {
+                  return (
+                    <div key={ev.id} style={{ position: "relative" }}>
+                      <EvalCard
+                        ev={ev}
+                        index={i}
+                        onClick={() => {
+                          if (!seenEvals.includes(ev.id)) {
+                            const updated = [...seenEvals, ev.id];
+                            localStorage.setItem("seenEvals", JSON.stringify(updated));
+                            setSeenEvals(updated);
+                      }
+                        navigate("/EvalEdit", { state: { evaluation: ev } });
+                    }}/>
 
-          {/*Tooltip per evaluation */}
-          {ev.commentaires?.length > 0 && !seenEvals.includes(ev.id) && (
-              <div style={{
-                position: "absolute",
-                top: "-10px",        // ← floats above the card
-                right: "16px",       // ← aligned to right edge
-              }}>
-                <CommentTooltip commentaires={ev.commentaires} />
+                    {/*Tooltip per evaluation */}
+                    {ev.commentaires?.length > 0 && !seenEvals.includes(ev.id) && (
+                      <div style={{
+                        position: "absolute",
+                        top: "-10px",        // ← floats above the card
+                        right: "16px",       // ← aligned to right edge
+                    }}>
+                      <CommentTooltip commentaires={ev.commentaires} />
+                    </div>
+                  )}
+                  </div>
+                  );
+                })}
               </div>
-            )}
-        </div>
-      );
-    })}
-</div>
-                  
                 )}
               </div>
             </>

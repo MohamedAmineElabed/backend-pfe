@@ -587,7 +587,7 @@ const EvaluationForm = () => {
                 marginBottom: 16,
               }}
             >
-              Submit All Answers
+              Enregistrer
             </button>
           </div>
         </div>

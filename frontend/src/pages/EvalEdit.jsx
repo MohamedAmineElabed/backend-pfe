@@ -5,6 +5,8 @@ import axios from "axios";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import RecommendationEngine from "../components/recommendationEngine.jsx";
+import { Sparkles } from "lucide-react";
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -376,6 +378,8 @@ export default function EvalEdit() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("treated"); // "treated" | "untreated"
   const [saving, setSaving] = useState(false);
+
+  const [showReco, setShowReco] = useState(false);
 
   //const isTreated = (r) => r?.statut === "validé" || r?.statut === "refusé";
   const isTreated = (critereId) => {
@@ -782,22 +786,48 @@ const handleRemovePreuve = async (critereId, preuveIndex) => {
 
             {/* AI Recommendations */}
             {evId && (
-              <div style={{
-                marginTop: 24,
-                background: "#fff",
-                border: "1px solid #e5e7eb",
-                borderRadius: 16,
-                padding: "22px 24px",
-              }}>
-                <h2 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 16px" }}>
-                  Recommandations personnalisées
-                </h2>
-                <RecommendationEngine
-                  evaluationId={evId}
-                  organismeNom={evaluation?.organismeName}
-                />
-              </div>
-            )}
+  <div style={{ marginTop: 24 }}>
+    
+    {/* Button */}
+    <button
+      onClick={() => setShowReco(prev => !prev)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        background: "#111827",
+        color: "#fff",
+        border: "none",
+        borderRadius: 999,
+        padding: "8px 14px",
+        fontSize: 13,
+        fontWeight: 600,
+        cursor: "pointer",
+      }}
+    >
+      <Sparkles size={16} />
+      {showReco ? "Masquer recommandations" : "Recommandations IA"}
+    </button>
+
+    {/* Section (appears on click) */}
+    {showReco && (
+      <div
+        style={{
+          marginTop: 16,
+          background: "#fff",
+          border: "1px solid #e5e7eb",
+          borderRadius: 16,
+          padding: "22px 24px",
+        }}
+      >
+        <RecommendationEngine
+          evaluationId={evId}
+          organismeNom={evaluation?.organismeName}
+        />
+      </div>
+    )}
+  </div>
+)}
           </div>
         </div>
       </div>
