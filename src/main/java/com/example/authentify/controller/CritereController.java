@@ -75,18 +75,22 @@ public class CritereController {
         response.setNom(critere.getNom());
         response.setDescription(critere.getDescription());
 
+        principeService.syncAllEvaluationsScoreMax();
+
     return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteCritere(@PathVariable Long id) {
         principeService.deleteCritere(id);
+        principeService.syncAllEvaluationsScoreMax();
     return ResponseEntity.ok("Critere supprimée avec succès");
 }
 
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateCritere(@RequestBody CritereEntity critere) {
         principeService.updateCritere(critere);
+        principeService.syncAllEvaluationsScoreMax();
         return ResponseEntity.ok("Updated");
 }
 

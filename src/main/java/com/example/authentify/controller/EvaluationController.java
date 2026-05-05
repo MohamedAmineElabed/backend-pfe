@@ -125,8 +125,10 @@ public class EvaluationController {
             String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
             //String organisme = "Organisme #" + ev.getId();
             Integer score=ev.getScore();
-            Integer scoreMax=ev.getScoreMax();
-            String label=ev.getLabel();
+            //Integer scoreMax=ev.getScoreMax();
+            int scoreMax = evaluationService.calculerMaxScore();
+            String label=evaluationService.getLabel(score != null ? score : 0, scoreMax);
+            ev.setLabel(label); // update label in the entity (optional, if you want to save it back to DB later)
 
             // Fetch organisme
             OrganismeEntity org = organismeService.getOrganismeById(ev.getOrganisme().getId());
@@ -330,31 +332,56 @@ public class EvaluationController {
     }
 }
 
-    @PutMapping("/{evaluationId}/score")
+    /*@PutMapping("/{evaluationId}/score")
 public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId,@RequestBody Map<String, Object> body) {
     Integer score = null;
-    //Integer maxScore = null;
+    Integer maxScore = null;
 
     Object scoreObj = body.get("score");
-    //Object maxScoreObj = body.get("maxScore");
+    Object maxScoreObj = body.get("maxScore");
 
-    if (scoreObj != null) {
+    /*if (scoreObj != null) {
         if (scoreObj instanceof Number) {
             score = ((Number) scoreObj).intValue();
         } else {
             score = Integer.parseInt(scoreObj.toString());
         }
     }
-    /*if (maxScoreObj != null) {
+    if (maxScoreObj != null) {
         if (maxScoreObj instanceof Number) {
             maxScore = ((Number) maxScoreObj).intValue();
         } else {
             maxScore = Integer.parseInt(maxScoreObj.toString());
         }
     }*/
-    if (score == null) {
+    /*if (scoreObj instanceof Number) score = ((Number) scoreObj).intValue();
+    if (maxScoreObj instanceof Number) maxScore = ((Number) maxScoreObj).intValue();
+
+    if (score == null || maxScore == null) {
         return ResponseEntity.badRequest().body("Score and maxScore are required");
     }
+    evaluationService.setScoreForEvaluation(evaluationId, score,maxScore);
+
+    return ResponseEntity.ok("Score set successfully for evaluation " + evaluationId);
+}*/
+    @PutMapping("/{evaluationId}/score")
+public ResponseEntity<String> setEvaluationScore(
+        @PathVariable Long evaluationId,
+        @RequestBody Map<String, Object> body) {
+
+    Integer score = null;
+    //Integer scoreMax = null;
+
+    Object scoreObj = body.get("score");
+    //Object scoreMaxObj = body.get("scoreMax");
+
+    if (scoreObj instanceof Number) score = ((Number) scoreObj).intValue();
+    //if (scoreMaxObj instanceof Number) scoreMax = ((Number) scoreMaxObj).intValue(); // ← and this
+
+    if (score == null) {
+        return ResponseEntity.badRequest().body("Score is required");
+    }
+
     evaluationService.setScoreForEvaluation(evaluationId, score);
 
     return ResponseEntity.ok("Score set successfully for evaluation " + evaluationId);
@@ -381,14 +408,18 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
         OrganismeEntity org = organismeService.getOrganismeById(ev.getOrganisme().getId());
         
 
-        int totalScore = 0;
+        /*int totalScore = 0;
         if (ev.getReponses() != null) {
             totalScore = ev.getReponses().stream()
                 .filter(r -> "validé".equalsIgnoreCase(r.getStatut()))
                 .mapToInt(r -> r.getValeur() != null ? r.getValeur() : 0)
                 .sum();
         }
-        int maxScore=ev.getScoreMax();
+        int maxScore = evaluationService.calculerMaxScore();*/
+        int maxScore = evaluationService.calculerMaxScore();
+        int totalScore = ev.getScore() != null ? ev.getScore() : 0;
+
+        //int maxScore=ev.getScoreMax();
         //int maxScore = ev.getReponses() != null ? ev.getReponses().size() * 3 : 0;
         String label = evaluationService.getLabel(totalScore, maxScore);
         String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
@@ -422,7 +453,7 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
         map.put("totalCriteria", totalCriteria);
         map.put("treatedCriteria", treated);
         map.put("score", totalScore);
-        map.put("maxScore", maxScore);
+        //map.put("maxScore", maxScore);
         map.put("label", label);
         map.put("dateCreation", dateCreation);
         map.put("dateTermination", dateTermination);
@@ -480,14 +511,18 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
         OrganismeEntity org = organismeService.getOrganismeById(ev.getOrganisme().getId());
         
 
-        int totalScore = 0;
+        /*int totalScore = 0;
         if (ev.getReponses() != null) {
             totalScore = ev.getReponses().stream()
                 .filter(r -> "validé".equalsIgnoreCase(r.getStatut()))
                 .mapToInt(r -> r.getValeur() != null ? r.getValeur() : 0)
                 .sum();
         }
-        int maxScore=ev.getScoreMax();
+        int maxScore = evaluationService.calculerMaxScore();*/
+        int maxScore = evaluationService.calculerMaxScore();
+        int totalScore = ev.getScore() != null ? ev.getScore() : 0;
+
+        //int maxScore=ev.getScoreMax();
         //int maxScore = ev.getReponses() != null ? ev.getReponses().size() * 3 : 0;
         String label = evaluationService.getLabel(totalScore, maxScore);
         String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
@@ -507,7 +542,7 @@ public ResponseEntity<String> setEvaluationScore(@PathVariable Long evaluationId
         map.put("totalCriteria", totalCriteria);
         map.put("treatedCriteria", treated);
         map.put("score", totalScore);
-        map.put("maxScore", maxScore);
+       // map.put("maxScore", maxScore);
         map.put("label", label);
         map.put("dateCreation", dateCreation);
         map.put("dateTermination", dateTermination);

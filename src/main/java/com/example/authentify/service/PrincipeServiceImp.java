@@ -10,6 +10,7 @@ import com.example.authentify.entity.PrincipeEntity;
 //import com.example.authentify.entity.UserEntity;
 import com.example.authentify.entity.PratiqueEntity;
 import com.example.authentify.entity.CritereEntity;
+import com.example.authentify.entity.EvaluationEntity;
 //import com.example.authentify.entity.OrganismeEntity;
 import com.example.authentify.io.PrincipeRequest;
 import com.example.authentify.io.PrincipeResponse;
@@ -23,7 +24,7 @@ import com.example.authentify.io.PrincipeResponse;
 import com.example.authentify.repository.PrincipeRepository;
 import com.example.authentify.repository.PratiqueRepository;
 import com.example.authentify.repository.CritereRepository;
-//import com.example.authentify.repository.OrganismeRepository;
+import com.example.authentify.repository.EvaluationRepository;
 //import java.lang.Long;
 //import java.util.concurrent.ThreadLocalRandom;
 
@@ -35,6 +36,9 @@ public class PrincipeServiceImp implements PrincipeService {
     private final PrincipeRepository principeRepository;
     private final PratiqueRepository pratiqueRepository;
     private final CritereRepository  critereRepository;
+    private final EvaluationRepository  evaluationRepository;
+    private final EvaluationServiceImp evaluationService;
+
 
 //////////////////Principe/////////////////////////////////////////
     @Override
@@ -262,6 +266,20 @@ public class PrincipeServiceImp implements PrincipeService {
 
     public PrincipeEntity getCritereById(Long id) {
         return principeRepository.findById(id).orElse(null);
+}
+///////////////////////////////////////////////////////////////////////////////
+
+// Synchronize all evaluations' scoreMax when criteria are updated
+    public void syncAllEvaluationsScoreMax() {
+    int newMax = critereRepository.findAll().size() * 3;
+    List<EvaluationEntity> all = evaluationRepository.findAll();
+    for (EvaluationEntity ev : all) {
+        ev.setScoreMax(newMax);
+        // Recalculate label with new max
+        int score = ev.getScore() != null ? ev.getScore() : 0;
+        ev.setLabel(evaluationService.getLabel(score, newMax));
+        evaluationRepository.save(ev);
+    }
 }
 
 

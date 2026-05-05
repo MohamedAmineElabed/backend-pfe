@@ -55,18 +55,21 @@ public class PrincipeController {
     @PostMapping("/create")
     public ResponseEntity<PrincipeResponse> createPrincipe(@RequestBody PrincipeRequest request) {
         PrincipeResponse response = principeService.createPrincipe(request);
+        principeService.syncAllEvaluationsScoreMax();
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deletePrincipe(@PathVariable Long id) {
         principeService.deletePrincipe(id);
+        principeService.syncAllEvaluationsScoreMax();
     return ResponseEntity.ok("Principe supprimée avec succès");
 }
 
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updatePrincipe(@RequestBody PrincipeEntity principe) {
         principeService.updatePrincipe(principe);
+        principeService.syncAllEvaluationsScoreMax();
         return ResponseEntity.ok("Updated");
 }
 }

@@ -63,9 +63,9 @@ public class EvaluationServiceImp {
     private final CritereRepository critereRepository;
 
 
-    private int calculerMaxScore() {
-    List<CritereEntity> allCriteres = critereRepository.findAll();
-    return allCriteres.size() * 3;
+    public int calculerMaxScore() {
+        List<CritereEntity> allCriteres = critereRepository.findAll();
+        return allCriteres.size() * 3;
 }
     public EvaluationEntity createEvaluation(EvaluationRequest request) {
         // Create evaluation
@@ -280,6 +280,7 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
             .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
 
     evaluation.setScore(score); // set total score here
+    //evaluation.setScoreMax(maxScore);
 
      // Calculate max score (sum of all criteria max values)
     //int maxScore = evaluation.getReponses() != null ? evaluation.getReponses().size() * 3 : 0;

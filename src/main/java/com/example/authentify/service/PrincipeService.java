@@ -29,6 +29,9 @@ public interface PrincipeService {
     void deleteCritere(Long id);
     CritereEntity updateCritere(CritereEntity critere);
 
+    //Autres
+    void syncAllEvaluationsScoreMax();
+
 
 
 }
