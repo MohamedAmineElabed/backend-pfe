@@ -41,6 +41,9 @@ function Profilepage() {
     if (userData?.id) fetchInfo();
   }, [backendUrl, userData]);
 
+  const visibleTabs = TABS.filter(tab =>tab.key !== "infoOrganisme" || user?.role === "RESPONSABLE"
+);
+
   const SidebarComponent =
     user?.role === "ADMIN"      ? SiderbarAdmin :
     user?.role === "EVALUATEUR" ? SiderbarEval  : Siderbar;
@@ -68,7 +71,7 @@ function Profilepage() {
 
         {/* Tab bar */}
         <div style={s.tabBar}>
-          {TABS.map(tab => (
+          {visibleTabs.map(tab => (
             <button
               key={tab.key}
               style={{
@@ -89,7 +92,7 @@ function Profilepage() {
             <ProfileInfoTab user={user} />
           )}
 
-          {activeTab === "infoOrganisme" && (
+          {activeTab === "infoOrganisme" && user?.role === "RESPONSABLE" && (
             user?.organisme
               ? <OrganismeInfoTab org={user.organisme} />
               : (

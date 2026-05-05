@@ -185,10 +185,17 @@ const Principes = () => {
   };
 
   const deletePrincipe = async (id) => {
-    try { await axios.delete(`${backendUrl}/principes/${id}`, { withCredentials: true }); setPrincipes(p => p.filter(d => d.id !== id)); toast.success("Principe supprimé"); }
+    const confirmed = window.confirm("Voulez-vous vraiment supprimer ce principe ?");
+    if (!confirmed) return;
+    try { await axios.delete(`${backendUrl}/principes/${id}`, { withCredentials: true }); 
+    //setPrincipes(p => p.filter(d => d.id !== id)); toast.success("Principe supprimé"); 
+    await fetchPrincipes();
+  }
     catch { toast.error("Erreur lors de la suppression"); }
   };
   const deletePratique = async (id) => {
+    const confirmed = window.confirm("Voulez-vous vraiment supprimer ce pratique ?");
+    if (!confirmed) return;
     try {
       await axios.delete(`${backendUrl}/pratiques/${id}`, { withCredentials: true });
       setPrincipes(prev => prev.map(p => ({ ...p, pratiques: p.pratiques?.filter(pr => pr.id !== id) })));
@@ -196,6 +203,8 @@ const Principes = () => {
     } catch { toast.error("Erreur lors de la suppression"); }
   };
   const deleteCritere = async (id) => {
+    const confirmed = window.confirm("Voulez-vous vraiment supprimer ce critère ?");
+    if (!confirmed) return;
     try {
       await axios.delete(`${backendUrl}/criteres/${id}`, { withCredentials: true });
       setPrincipes(prev => prev.map(p => ({ ...p, pratiques: p.pratiques?.map(pr => ({ ...pr, criteres: pr.criteres?.filter(c => c.id !== id) })) })));
@@ -324,9 +333,10 @@ const Principes = () => {
                           onClick={(e) => { e.stopPropagation(); setIsEditing(true); setPrincipeId(principe.id); setEditingPrincipeData({ nom: principe.nom, description: principe.description }); }}>
                           ✏️
                         </button>
-                        <button className="pp-btn-danger" style={btnDanger}
-                          onClick={(e) => { e.stopPropagation(); deletePrincipe(principe.id); }}>
-                          🗑
+                        <button onClick={e => { e.stopPropagation(); deletePrincipe(principe.id); }} title="Supprimer" style={{ ...btnDanger, padding: "6px 10px", fontSize: 11 }}>
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                          </svg>
                         </button>
                       </div>
                     ) : (
@@ -402,8 +412,11 @@ const Principes = () => {
                                       <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
                                         <button className="pp-btn-edit" style={{ ...btnEdit, fontSize: 11, padding: "4px 10px" }}
                                           onClick={(e) => { e.stopPropagation(); setIsEditing(true); setPratiqueId(pratique.id); setEditingPratiqueData({ nom: pratique.nom, description: pratique.description }); }}>✏️</button>
-                                        <button className="pp-btn-danger" style={{ ...btnDanger, fontSize: 11, padding: "4px 10px" }}
-                                          onClick={(e) => { e.stopPropagation(); deletePratique(pratique.id); }}>🗑</button>
+                                        <button onClick={e => { e.stopPropagation(); deletePratique(pratique.id); }} title="Supprimer" style={{ ...btnDanger, padding: "6px 10px", fontSize: 11 }}>
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                                          </svg>
+                                        </button>
                                       </div>
                                     </>
                                   ) : (
@@ -469,8 +482,11 @@ const Principes = () => {
                                               <div style={{ display: "flex", gap: 6 }}>
                                                 <button className="pp-btn-edit" style={{ ...btnEdit, fontSize: 11, padding: "4px 10px" }}
                                                   onClick={(e) => { e.stopPropagation(); setIsEditing(true); setCritereId(critere.id); setEditingCritereData({ nom: critere.nom, description: critere.description }); }}>✏️</button>
-                                                <button className="pp-btn-danger" style={{ ...btnDanger, fontSize: 11, padding: "4px 10px" }}
-                                                  onClick={(e) => { e.stopPropagation(); deleteCritere(critere.id); }}>🗑</button>
+                                                <button onClick={e => { e.stopPropagation(); deleteCritere(critere.id); }} title="Supprimer" style={{ ...btnDanger, padding: "6px 10px", fontSize: 11 }}>
+                                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" />
+                                                  </svg>
+                                                </button>
                                               </div>
                                             </>
                                           ) : (

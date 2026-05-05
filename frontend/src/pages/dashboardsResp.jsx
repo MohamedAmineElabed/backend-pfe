@@ -40,7 +40,7 @@ function OrgRefusedList({ rows }) {
       {rows.map((r, i) => (
         <div key={i} style={{ padding:"12px 14px", background:"#fef2f2", borderRadius:"8px", borderLeft:"3px solid #ef4444" }}>
           <div style={{ fontWeight:600, color:"#374151", fontSize:"13px", marginBottom:"4px" }}>{r.critere}</div>
-          {r.commentaire !== "—" && <div style={{ color:"#6b7280", fontSize:"12px", fontStyle:"italic" }}>💬 {r.commentaire}</div>}
+          {r.commentaire !== "" && <div style={{ color:"#6b7280", fontSize:"12px", fontStyle:"italic" }}>💬 {r.commentaire}</div>}
         </div>
       ))}
     </div>
@@ -54,13 +54,69 @@ const PRINCIPLE_COLORS = [
   "#3b82f6","#22c55e","#eab308","#a855f7"
 ];
 
+const ICONS = {
+  "Excellence governance": (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"/>
+      <path d="M5 20h14"/>
+    </svg>
+  ),
+  "Or": (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+      <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>
+    </svg>
+  ),
+  "Argent": (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+    </svg>
+  ),
+  "Bronze": (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <circle cx="12" cy="12" r="5"/>
+    </svg>
+  ),
+  "Non conforme": (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+  ),
+  "Non évalué": (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="8" y1="12" x2="16" y2="12"/>
+    </svg>
+  ),
+};
+
+// In your badge component:
+function LabelBadge({ label }) {
+  const cfg = LABEL_CONFIG[label];
+  if (!cfg) return null;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "5px 11px", borderRadius: 20,
+      fontSize: 12, fontWeight: 500,
+      background: cfg.bg, color: cfg.color,
+      border: `1px solid ${cfg.border}`,
+    }}>
+      {ICONS[label]}
+      {label}
+    </span>
+  );
+}
+
 const LABEL_CONFIG = {
-  "Excellence governance": { color:"#7c3aed", bg:"#f5f3ff", icon:"🏆", rank:5 },
-  "Or":                    { color:"#d97706", bg:"#fffbeb", icon:"🥇", rank:4 },
-  "Argent":                { color:"#475569", bg:"#f8fafc", icon:"🥈", rank:3 },
-  "Bronze":                { color:"#92400e", bg:"#fef3c7", icon:"🥉", rank:2 },
-  "Non conforme":          { color:"#dc2626", bg:"#fef2f2", icon:"⚠️", rank:1 },
-  "Non évalué":            { color:"#9ca3af", bg:"#f9fafb", icon:"○",  rank:0 },
+  "Excellence governance": { color:"#7c3aed", bg:"#f5f3ff", rank:5 },
+  "Or":                    { color:"#d97706", bg:"#fffbeb", rank:4 },
+  "Argent":                { color:"#475569", bg:"#f8fafc", rank:3 },
+  "Bronze":                { color:"#92400e", bg:"#fef3c7", rank:2 },
+  "Non conforme":          { color:"#dc2626", bg:"#fef2f2", rank:1 },
+  "Non évalué":            { color:"#9ca3af", bg:"#f9fafb", rank:0 },
 };
 
 const STATUS_CONFIG = {
@@ -116,11 +172,10 @@ function ProgressRing({ pct, size = 80, stroke = 7, color = "#6366f1" }) {
   );
 }
 
-function EvalCard({ ev, index, onClick}) {
+function EvalCard({ ev, index, onClick, onDelete}) {
   const sc = getStatusConfig(ev.statut || ev.status);
   const lc = getLabelConfig(ev.label);
-  const scorePct = ev.score && ev.scoreMax
-    ? Math.round((ev.score / ev.scoreMax) * 100) : null;
+  const scorePct = ev.score && ev.scoreMax ? Math.round((ev.score / ev.scoreMax) * 100) : null;
 
   return (
     <div 
@@ -182,14 +237,21 @@ function EvalCard({ ev, index, onClick}) {
 
       {/* Score */}
       <div style={{ textAlign:"right", flexShrink:0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
         {scorePct != null ? (
           <>
-            <div style={{ fontSize:"22px", fontWeight:"800", color:"#0f172a" }}>{scorePct}%</div>
             <div style={{ fontSize:"11px", color:"#94a3b8" }}>Score global</div>
+            <div style={{ fontSize:"22px", fontWeight:"800", color:"#0f172a" }}>{scorePct}%</div>
           </>
         ) : (
           <div style={{ fontSize:"13px", color:"#cbd5e1" }}>—</div>
         )}
+        <button
+            className="btn btn-outline-danger btn-sm"
+            onClick={(e) => {e.stopPropagation();onDelete(ev.id);}}>
+            <i className="bi bi-trash"></i>
+        </button>
+        </div>
       </div>
     </div>
   );
@@ -379,6 +441,21 @@ export default function DashboardResp() {
       }));
   },[dernierEval, principes]);
 
+  //pour supprimer les evaluations
+  const deleteEval = async (evaluationId) => {
+    const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette évaluation ?");
+    if (!confirmDelete) return;
+    try {
+      await axios.delete(`${backendUrl}/evaluation/${evaluationId}`,{withCredentials: true});
+      setEvaluations((prev) => {
+        const updated=prev.filter((e) => e.id !== evaluationId);
+        return updated;});
+      toast.success("Evaluation supprimée");
+    } catch (error) {
+    toast.error("Erreur lors de la suppression");
+  }
+};
+
   // ── Fetch user profile ────────────────────────────────────────────────────
   useEffect(() => {
     if (!userData?.id) return;
@@ -563,7 +640,7 @@ export default function DashboardResp() {
                 background:labelCfg.bg, borderRadius:"14px", padding:"14px 22px", textAlign:"center",
                 border:`2px solid ${labelCfg.color}30`
               }}>
-                <div style={{ fontSize:"26px", marginBottom:"4px" }}>{labelCfg.icon}</div>
+                <div style={{ fontSize:"26px", marginBottom:"4px" }}>{ICONS[currentLabel]}</div>
                 <div style={{ fontSize:"11px", fontWeight:"700", color:labelCfg.color, textTransform:"uppercase", letterSpacing:"0.06em" }}>
                   {currentLabel}
                 </div>
@@ -592,7 +669,8 @@ export default function DashboardResp() {
                 }}
                 onMouseEnter={e => { e.target.style.background="#4f46e5"; e.target.style.transform="translateY(-1px)"; }}
                 onMouseLeave={e => { e.target.style.background="#6366f1"; e.target.style.transform="none"; }}>
-                {activeEval ? "▶ Continuer" : "+ Nouvelle évaluation"}
+                {/*{activeEval ? "▶ Continuer" : "+ Nouvelle évaluation"}*/}
+                Nouvelle évaluation
               </button>
             </div>
           </div>
@@ -617,10 +695,10 @@ export default function DashboardResp() {
                   value={enCours}
                   sub={enCours ? "Évaluations actives" : "Aucune en cours"}
                   delay={160} />
-                <KpiCard icon="🏷️" label="Label actuel" accent={labelCfg.color}
-                  value={labelCfg.icon}
+                {/*<KpiCard icon="🏷️" label="Label actuel" accent={labelCfg.color}
+                  value={ICONS[currentLabel]}
                   sub={currentLabel}
-                  delay={240} />
+                  delay={240} />*/}
                 <KpiCard icon="📐" label="Principes" accent="#8b5cf6"
                   value={principes.length}
                   sub={`${principes.reduce((s,p)=>s+(p.pratiques?.length||0),0)} pratiques`}
@@ -800,6 +878,7 @@ export default function DashboardResp() {
                       <EvalCard
                         ev={ev}
                         index={i}
+                        onDelete={deleteEval}
                         onClick={() => {
                           if (!seenEvals.includes(ev.id)) {
                             const updated = [...seenEvals, ev.id];

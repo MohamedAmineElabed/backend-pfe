@@ -30,8 +30,8 @@ const OrgLogo = ({ url, nom, size = 35 }) => {
 
 
 // ─── Score Panel ──────────────────────────────────────────────────────────────
-const ScorePanel = ({ totalScore, maxScore, evaluatedCount, totalCount, scorePerPrincipe, isComplete }) => {
-  const pct = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+const ScorePanel = ({ totalScore, scoreMax, evaluatedCount, totalCount, scorePerPrincipe, isComplete }) => {
+  const pct = scoreMax > 0 ? Math.round((totalScore / scoreMax) * 100) : 0;
   const progressPct = totalCount > 0 ? Math.round((evaluatedCount / totalCount) * 100) : 0;
   const scoreColor  = pct < 40 ? "#dc2626" : pct < 70 ? "#d97706" : "#16a34a";
   const scoreBg     = pct < 40 ? "#fef2f2" : pct < 70 ? "#fffbeb" : "#f0fdf4";
@@ -61,7 +61,7 @@ const ScorePanel = ({ totalScore, maxScore, evaluatedCount, totalCount, scorePer
             </p>
             <p style={{ fontSize: 22, fontWeight: 800, color: "#0f172a", margin: "3px 0 0 0" }}>
               {totalScore}
-              <span style={{ fontSize: 14, color: "#64748b", fontWeight: 500 }}> / {maxScore} pts</span>
+              <span style={{ fontSize: 14, color: "#64748b", fontWeight: 500 }}> / {scoreMax} pts</span>
             </p>
           </div>
         </div>
@@ -586,6 +586,21 @@ const EvaluationDetails = () => {
     fetch();
   }, [backendUrl]);
 
+  useEffect(() => {
+  const onFocus = () => {
+    axios.get(`${backendUrl}/principes`, { withCredentials: true })
+      .then(res => setPrincipes(res.data.map(p => ({
+        ...p, label: p.nom,
+        pratiques: (p.pratiques || []).map(pr => ({
+          ...pr, label: pr.nom,
+          criteres: (pr.criteres || []).map(c => ({ ...c, label: c.nom })),
+        })),
+      }))));
+  };
+  window.addEventListener("focus", onFocus);
+  return () => window.removeEventListener("focus", onFocus);
+}, [backendUrl]);
+
   // ── Auto-update status ──
   useEffect(() => {
     if (!evaluation?.reponses || evaluation.statut === "terminé") return;
@@ -602,8 +617,16 @@ const EvaluationDetails = () => {
     }
   }, [evaluation?.reponses]);
 
+  const validCritereIds = useMemo(() => {
+  return principes.flatMap(p =>
+    (p.pratiques || []).flatMap(pr =>
+      (pr.criteres || []).map(c => c.id)
+    )
+  );
+}, [principes]);
+
   // ── Scores ──
-  const totalScore = useMemo(() => {
+  /*const totalScore = useMemo(() => {
     if (!evaluation?.reponses) return 0;
     //return evaluation.reponses.filter(r => r.statut !== "refusé").reduce((s, r) => s + (r.valeur || 0), 0);
     return evaluation.reponses.reduce((sum, r) => {
@@ -611,21 +634,40 @@ const EvaluationDetails = () => {
       if (r.statut === "refusé") return sum + 0;
       return sum;
     }, 0);
-  }, [evaluation]);
+  }, [evaluation]);*/
+  const totalScore = useMemo(() => {
+  if (!evaluation?.reponses) return 0;
 
+  return evaluation.reponses
+    .filter(r => validCritereIds.includes(r.critereId)) 
+    .reduce((sum, r) => {
+      if (r.statut === "validé") return sum + (r.valeur || 0);
+      return sum;
+    }, 0);
+}, [evaluation, validCritereIds]);
+  //const maxScore=evaluation.scoreMax;
   //const maxScore = useMemo(() => (evaluation?.reponses?.length ?? 0) * 3, [evaluation]);
-  const maxScore = useMemo(() => {
-    if (!principes?.length) return 0;
+  /*const maxScore = useMemo(() => {
+  if (!principes?.length || !evaluation?.reponses) return 0;
+  // Only count critères that actually have a response in this evaluation
+  const respondedCritereIds = new Set(evaluation.reponses.map(r => r.critereId));
+  return principes.reduce((total, principe) => {
+    return total + (principe.pratiques || []).reduce((acc, pr) => {
+      const validCriteres = (pr.criteres || []).filter(c => respondedCritereIds.has(c.id));
+      return acc + validCriteres.length;
+    }, 0);
+  }, 0) * 3;
+}, [principes, evaluation?.reponses]);*/
 
-    return principes.reduce((total, principe) => {
-      return (
-        total +
-        (principe.pratiques?.reduce((acc, pr) => {
-          return acc + (pr.criteres?.length || 0);
-        }, 0) || 0)
-      );    
-    }, 0) * 3;
-  }, [principes]);
+  //always correct — derived from actual principes structure
+const maxScore = useMemo(() => {
+  if (!principes?.length) return 0;
+  return principes.reduce((total, p) =>
+    total + (p.pratiques || []).reduce((acc, pr) =>
+      acc + (pr.criteres?.length || 0), 0), 0) * 3;
+}, [principes]);
+console.log("scoreMax: ", maxScore);
+
 
   const evaluatedCount = useMemo(() =>
     (evaluation?.reponses || []).filter(r => r.statut === "validé" || r.statut === "refusé").length,
@@ -712,7 +754,7 @@ const EvaluationDetails = () => {
       }
     };saveScore();
 
-  },[evaluation?.reponses]);
+  },[totalScore,maxScore]);
 
   // ── Valider ──
   const handleValiderCritere = async (responseId, comment) => {
@@ -816,7 +858,7 @@ const EvaluationDetails = () => {
         {/* ── Score Panel ── */}
         <ScorePanel
           totalScore={totalScore}
-          maxScore={maxScore}
+          scoreMax={maxScore}
           evaluatedCount={evaluatedCount}
           totalCount={evaluation.reponses?.length ?? 0}
           scorePerPrincipe={scorePerPrincipe}

@@ -44,8 +44,8 @@ const styles = {
   newBtn: { display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" },
   tableSection: { background: "#fff", borderRadius: 16, border: "1px solid #e8eaf0", overflow: "hidden" },
   tableWrap: { overflowX: "auto" },
-  thead: { display: "grid", gridTemplateColumns: "44px 0.5fr 0.5fr 0.3fr 1fr 0.3fr 100px 100px 70px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
-  row: { display: "grid", gridTemplateColumns: "44px 0.5fr 0.5fr 0.3fr 1fr 0.3fr 100px 100px 70px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
+  thead: { display: "grid", gridTemplateColumns: "44px 1fr 1fr 0.5fr 1.5fr 1fr 100px 10px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
+  row: { display: "grid", gridTemplateColumns: "44px 1fr 1fr 0.5fr 1.5fr 1fr 100px 10px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
   orgName: { fontSize: 13, fontWeight: 600, color: "#1e293b" },
   orgRole: {fontSize: 12,color: '#888',fontStyle: 'italic',marginTop: 2,display: 'block',},
   dateCell: { fontSize: 12, color: "#94a3b8", fontFamily: "monospace" },
@@ -127,6 +127,7 @@ const handleStatusChange = (ev, newStatus) => {
 });
 
       setEvaluations(evalsWithProgress);
+      console.log("Évaluations par organisme:", evalsWithProgress);
     } catch (err) {
       console.error("Erreur fetching evaluations:", err);
     }
@@ -151,9 +152,9 @@ const handleStatusChange = (ev, newStatus) => {
 ];
 
   //pour supprimer les evaluations
-  const deleteEval = async (evaluationId) => {
-    /*const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette demande ?");
-    if (!confirmDelete) return;*/
+  /*const deleteEval = async (evaluationId) => {
+    const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette évaluation ?");
+    if (!confirmDelete) return;
     try {
       await axios.delete(`${backendUrl}/evaluation/${evaluationId}`,{withCredentials: true});
       setEvaluations((prev) => {
@@ -163,23 +164,50 @@ const handleStatusChange = (ev, newStatus) => {
     } catch (error) {
     toast.error("Erreur lors de la suppression");
   }
-};
+};*/
 
   return (
     <>
       <SiderbarEval />
       <div style={{ ...styles.page, marginLeft: "200px" }}>
         {/* Header */}
-        <div style={styles.header}>
-          <div style={{ display: "column", alignItems: "center", gap: 14 }}>
-            <OrgLogo url={org.logoUrl}/>
-            <span style={styles.orgName}>{org?.nomOrganisme}</span>
-            <div>
-              <h1 style={styles.headerTitle}>Évaluations</h1>
-              <p style={styles.headerSub}>Gérer et valider les évaluations soumises</p>
-            </div>
-          </div>
+        <div style={{background: "#fff",border: "0.5px solid #e2e8f0",borderRadius: 12,padding: "20px 24px",display: "flex",
+          alignItems: "center",justifyContent: "space-between",gap: 16,marginBottom: 20,}}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <OrgLogo url={org?.logoUrl} nom={org?.nomOrganisme} size={70} />
+        <div>
+          <p style={{ fontSize: 11, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 2px 0", 
+            fontWeight: 600 }}>
+            Évaluation
+          </p>
+          <h1 style={{ fontSize: 18, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: 1.2 }}>
+            {org?.nomOrganisme}
+          </h1>
+          <p style={{ fontSize: 12, color: "#64748b", margin: "3px 0 0 0" }}>
+            Gérer et valider les évaluations soumises
+          </p>
         </div>
+      </div>
+      {/* Right —profile */}
+  {/*<div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+    <div style={{ textAlign: "right" }}>
+      <p style={{ fontSize: 13, fontWeight: 600, color: "#1e293b", margin: 0 }}>
+        {userData?.nom || "Utilisateur"}
+      </p>
+      <p style={{ fontSize: 11, color: "#94a3b8", margin: "2px 0 0 0" }}>
+        {userData?.role || "—"}
+      </p>
+    </div>
+    <div style={{
+      width: 40, height: 40, borderRadius: "50%",
+      background: "#eff6ff", border: "1.5px solid #bfdbfe",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: 15, fontWeight: 700, color: "#3b82f6", flexShrink: 0,
+    }}>
+      {(userData?.nom?.[0] ?? "U").toUpperCase()}
+    </div>
+  </div>*/}
+    </div>
 
         {/* Filters */}
         <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
@@ -195,7 +223,7 @@ const handleStatusChange = (ev, newStatus) => {
         <motion.section {...stagger(3)} style={styles.tableSection}>
           <div style={styles.tableWrap}>
             <div style={styles.thead}>
-              {["Index","Date création", "Responsable", "Statut", "Progression", "Score", "Labelisation", ""].map((col, i) => <span key={i}>{col}</span>)}
+              {["Index","Date création", "Responsable", "Statut", "Progression", "Score", "Labelisation"].map((col, i) => <span key={i}>{col}</span>)}
             </div>
 
             {evaluations.map((ev, idx) => {
@@ -226,11 +254,11 @@ const handleStatusChange = (ev, newStatus) => {
                   <span style={{ fontSize: 16, fontWeight: 700, color }}>{ev.score || 0}/{ev.scoreMax || 0}</span>
                   <span style={styles.orgName}>{ev.label || "Non labellisé"}</span>
                   
-                  <button
-                          className="btn btn-outline-danger btn-sm"
-                          onClick={(e) => {e.stopPropagation();deleteEval(ev.id);}}>
-                            <i className="bi bi-trash"></i>
-                            </button>
+                  {/*<button
+                    className="btn btn-outline-danger btn-sm"
+                    onClick={(e) => {e.stopPropagation();deleteEval(ev.id);}}>
+                    <i className="bi bi-trash"></i>
+                  </button>*/}
                   {/*<span style={{ textAlign: "center" }}>{ev.preuves}</span>
                   <Link to={`/evaluateur/evaluations/${ev.id}`}><div style={styles.arrowBtn}><ArrowUpRight size={14} strokeWidth={2} /></div></Link>*/}
                 </motion.div>

@@ -25,7 +25,7 @@ const navItems = [
   },*/
   {
     to: "/listOrganismesEval",
-    label: "liste Organismes",
+    label: "liste évaluations",
     icon: (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <line x1="3" y1="22" x2="21" y2="22"/>
@@ -40,7 +40,7 @@ const navItems = [
 
   {
     to: "/labelisation",
-    label: "Labelisation",
+    label: "Labelisation & Classement",
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
@@ -49,7 +49,7 @@ const navItems = [
     ),
   },
   
-  {
+  /*{
     to: "/classement",
     label: "Classement",
     icon: (
@@ -58,7 +58,7 @@ const navItems = [
         <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
       </svg>
     ),
-  },
+  },*/
   
   {
     to: "/dashboardsEval",

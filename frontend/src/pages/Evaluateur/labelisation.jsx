@@ -1,4 +1,4 @@
-import { Award, FileText, Table2 } from "lucide-react";
+import { Award, FileText, Table2, Trophy } from "lucide-react";
 import SiderbarEval from "../../components/siderbarEval.jsx";
 import SiderbarAdmin from "../../components/siderbarAdmin.jsx";
 import React from "react";
@@ -8,6 +8,50 @@ import axios from "axios";
 import { AppContext } from "../../context/AppContext.jsx";
 import { toast } from "react-toastify";
 import { useMemo } from "react";
+
+const styles = {
+  page: { minHeight: "100vh", background: "#f8f9fc", fontFamily: "'DM Sans', system-ui, -apple-system, sans-serif", padding: "36px 40px", maxWidth: 1200 },
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
+  headerTitle: { fontSize: 28, fontWeight: 800, color: "#1e293b" },
+  headerSub: { fontSize: 13, color: "#64748b" },
+  newBtn: { display: "flex", alignItems: "center", gap: 7, padding: "10px 20px", background: "#6366f1", color: "#fff", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: "pointer" },
+  tableSection: { background: "#fff", borderRadius: 16, border: "1px solid #e8eaf0", overflow: "hidden" },
+  tableWrap: { overflowX: "auto" },
+  thead: { display: "grid", gridTemplateColumns: "60px 120px 120px 140px 140px 100px",columnGap: "30px", padding: "10px 24px", background: "#f8fafc", borderBottom: "1px solid #f1f5f9", fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.07em" },
+  row: { display: "grid", gridTemplateColumns: "60px 120px 120px 140px 140px 100px",columnGap: "30px", padding: "14px 24px", borderBottom: "1px solid #f8fafc", alignItems: "center", cursor: "default" },
+  orgName: { fontSize: 13, fontWeight: 600, color: "#1e293b" },
+  dateCell: { fontSize: 12, color: "#94a3b8", fontFamily: "monospace" },
+  badge: { display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, letterSpacing: "0.01em" },
+  badgeDot: { width: 6, height: 6, borderRadius: "50%", flexShrink: 0 },
+  progressTrack: { flex: 1, height: 6, background: "#f1f5f9", borderRadius: 99, overflow: "hidden" },
+  progressFill: { height: "100%", borderRadius: 99 },
+  progressPct: { fontSize: 11, fontWeight: 700, fontFamily: "monospace", minWidth: 32, textAlign: "right" },
+  arrowBtn: { width: 28, height: 28, borderRadius: 8, background: "#f8fafc", border: "1px solid #e8eaf0", display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", cursor: "pointer" },
+  tableStyle : {width: "100%",borderCollapse: "collapse",fontSize: 14,color: "#374151"},
+  thStyle : {textAlign: "left",padding: "12px 16px",background: "#f3f4f6",color: "#6b7280",textTransform: "uppercase",fontSize: 12,letterSpacing: "0.02em"},
+  tdStyle : {padding: "12px 16px",borderBottom: "1px solid #e5e7eb"},
+  inputStyle :{
+  fontSize: 13,
+  padding: "8px 14px", // slightly larger padding
+  border: "1px solid #D1D5DB",
+  borderRadius: "8px",
+  background: "#F9FAFB",
+  color: "#111827",
+  outline: "none",
+  transition: "border 0.2s, box-shadow 0.2s",
+},
+
+  filterBar: {
+  display: "flex",
+  alignItems: "center",
+  gap: 12,           // spacing between filters
+  flexWrap: "wrap",
+  padding: "16px 24px",
+  background: "#f8fafc",
+  borderBottom: "1px solid #e5e7eb",
+  borderRadius: "16px 16px 0 0", // rounded top corners matching table
+},
+};
 
 
 const labels = [
@@ -89,6 +133,8 @@ const Labellisation = () => {
     const [evaluations, setEvaluations] = useState([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("tous");
+    const [sortBy, setSortBy] = useState("score");
+    const [isEmpty, setIsEmpty] = useState(false);
 
     const SidebarComponent =
         userData?.role === "ADMIN"
@@ -119,12 +165,101 @@ const Labellisation = () => {
   fetchData();
 }, [backendUrl]);
 
+  const rankedEvaluations = useMemo(() => {
+  return [...evaluations]
+    .sort((a, b) => (b.score || 0) - (a.score || 0))
+    .map((org, index) => ({ ...org, rank: index + 1 })); // rank assigned globally
+}, [evaluations]);
+
   // Filtered list
-  const filteredEvaluations = evaluations.filter(e => {
+  const filteredEvaluations = rankedEvaluations.filter(e => {
     const matchSearch = e.organismeName.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === "tous" || e.organismeType?.toLowerCase() === filter.toLowerCase();
     return matchSearch && matchFilter;
   });
+
+  // Medal icon for top ranks
+  const getMedalIcon = (rank) => {
+    if (rank === 1) return <span className="text-2xl">🥇</span>;
+    if (rank === 2) return <span className="text-2xl">🥈</span>;
+    if (rank === 3) return <span className="text-2xl">🥉</span>;
+    return <span className="text-lg font-bold text-muted-foreground">{rank}</span>;
+  };
+
+  // Badge for score label
+  const getLabelBadge = (label) => {
+   /* let label = "Non évalué";
+    let colorClass = "bg-gray-100 text-gray-600 border-gray-300";
+
+    if (pct < 40) {
+    label = "Non conforme";
+    colorClass = "bg-red-100 text-red-700 border-red-300";  // light red style
+  } else if (pct >= 40 && pct <= 59) {
+    label = "Bronze";
+    colorClass = "bg-yellow-100 text-yellow-800 border-yellow-300"; // bronze-ish
+  } else if (pct >= 60 && pct <= 79) {
+    label = "Argent";
+    colorClass = "bg-gray-200 text-gray-800 border-gray-300"; // silver-ish
+  } else if (pct >= 80 && pct <= 89) {
+    label = "Or";
+    colorClass = "bg-yellow-200 text-yellow-800 border-yellow-300"; // gold-ish
+  } else { // pct >= 90
+    label = "Excellence governance";
+    colorClass = "bg-green-100 text-green-800 border-green-300"; // top label
+  }
+
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${colorClass}`}
+      style={{
+  display: "inline-block",
+  padding: "4px 10px",         // smaller padding
+  borderRadius: 12,
+  fontSize: 15,                 // slightly smaller
+  fontWeight: 600,
+  color: pct < 40? "#b91c1c"      
+    : pct <= 59
+    ? "#78350f"       
+    : pct <= 79
+    ? "#374151"       
+    : pct <= 89
+    ? "#78350f"      
+    : "#065f46",     
+  background: pct < 40
+    ? "#fee2e2"   
+    : pct <= 59
+    ? "#fef3c7"     
+    : pct <= 79
+    ? "#e5e7eb"     
+    : pct <= 89
+    ? "#fde68a"     
+    : "#d1fae5",    
+  boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+  letterSpacing: "0.5px",
+  transition: "all 0.2s ease",
+}}
+      >
+        {label}
+      </span>
+    );*/
+    const styles = {
+    "Excellence governance": { color: "#065f46", background: "#d1fae5" },
+    "Or":                    { color: "#78350f", background: "#fde68a" },
+    "Argent":                { color: "#374151", background: "#e5e7eb" },
+    "Bronze":                { color: "#78350f", background: "#fef3c7" },
+    "Non conforme":          { color: "#b91c1c", background: "#fee2e2" },
+  };
+  const s = styles[label] || { color: "#374151", background: "#f3f4f6" };
+  return (
+    <span style={{
+      display: "inline-block", padding: "4px 10px",
+      borderRadius: 12, fontSize: 13, fontWeight: 600,
+      boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+      ...s,
+    }}>
+      {label || "Non évalué"}
+    </span>
+  );
+  };
 
   const filters = [
   { value: "tous", label: "Tous" },
@@ -202,112 +337,223 @@ const Labellisation = () => {
         </div>
       </div>
 
+      {/* ── Podium ── */}
+{rankedEvaluations.length >= 1 && (
+  <div style={card}>
+    <div style={sectionTitle}>
+      <Trophy style={{ width: 13, height: 13 }} />
+      Podium
+    </div>
+
+    <div style={{
+      display: "flex",
+      alignItems: "flex-end",
+      justifyContent: "center",
+      gap: 10,
+      padding: "0 8px",
+    }}>
+      {[1, 0, 2].map((rank) => {
+        const org = rankedEvaluations[rank];
+        if (!org) return <div key={rank} style={{ flex: 1 }} />;
+
+        const pct = org.score && org.scoreMax
+          ? Math.round((org.score / org.scoreMax) * 100)
+          : 0;
+
+        const configs = {
+          0: {
+            medal: "🥇", blockHeight: 120, num: "1",
+            blockBg: "#FEF3C7", blockNumColor: "#B45309",
+            scoreColor: "#B8860B", cardBorderColor: "#D4A017",
+          },
+          1: {
+            medal: "🥈", blockHeight: 88, num: "2",
+            blockBg: "#F1F5F9", blockNumColor: "#94A3B8",
+            scoreColor: "#64748B", cardBorderColor: "#E2E8F0",
+          },
+          2: {
+            medal: "🥉", blockHeight: 60, num: "3",
+            blockBg: "#F1F5F9", blockNumColor: "#94A3B8",
+            scoreColor: "#8B5E3C", cardBorderColor: "#E2E8F0",
+            blockOpacity: 0.8,
+          },
+        };
+        const cfg = configs[rank];
+
+        return (
+          <div key={rank} style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            flex: 1,
+            maxWidth: 140,
+          }}>
+            {/* Medal */}
+            <span style={{ fontSize: 18, marginBottom: 5, lineHeight: 1 }}>
+              {cfg.medal}
+            </span>
+
+            {/* Card */}
+            <div style={{
+              background: "#fff",
+              border: `1px solid ${cfg.cardBorderColor}`,
+              borderRadius: 12,
+              padding: "12px 10px 10px",
+              textAlign: "center",
+              width: "100%",
+              boxSizing: "border-box",
+              marginBottom: 8,
+            }}>
+              <img
+                src={org.logoUrl}
+                alt={org.organismeName}
+                style={{
+                  width: 36, height: 36,
+                  objectFit: "contain",
+                  borderRadius: 8,
+                  border: "0.5px solid #E2E8F0",
+                  background: "#F8FAFC",
+                  padding: 3,
+                  marginBottom: 8,
+                  display: "block",
+                  margin: "0 auto 8px",
+                }}
+              />
+              <div style={{
+                fontSize: 11, fontWeight: 500, color: "#1e293b",
+                marginBottom: 2, lineHeight: 1.3,
+                overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+              }}>
+                {org.organismeName}
+              </div>
+              <div style={{ fontSize: 10, color: "#94a3b8", marginBottom: 6 }}>
+                {org.organismeType || "—"}
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: cfg.scoreColor }}>
+                {pct}%
+              </div>
+            </div>
+
+            {/* Podium block */}
+            <div style={{
+              width: "100%",
+              height: cfg.blockHeight,
+              background: cfg.blockBg,
+              borderRadius: "6px 6px 0 0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              opacity: cfg.blockOpacity ?? 1,
+            }}>
+              <span style={{ fontSize: 20, fontWeight: 500, color: cfg.blockNumColor }}>
+                {cfg.num}
+              </span>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {/* Floor */}
+    <div style={{
+      height: 6,
+      background: "#F1F5F9",
+      borderRadius: "0 0 8px 8px",
+    }} />
+  </div>
+)}
+
+
       {/* ── Table ── */}
       <div style={card}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: "1rem" }}>
-          <div style={sectionTitle}>
-            <Table2 style={{ width: 15, height: 15 }} />
-            Détail par organisme
-          </div>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            <input
-              type="text"
-              placeholder="Rechercher un organisme…"
-              style={inputStyle}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <select style={inputStyle} value={filter} onChange={(e) => setFilter(e.target.value)}>
-              <option value="tous">Tous les types</option>
-              <option value="publique">Publique</option>
-              <option value="prive">Privé</option>
-              <option value="societe civile">Société civile</option>
-            </select>
-          </div>
+  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: "1rem" }}>
+    <div style={sectionTitle}>
+      <Trophy style={{ width: 15, height: 15 }} />
+      Classement des organismes
+    </div>
+    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <input
+        type="text"
+        placeholder="Rechercher un organisme…"
+        style={inputStyle}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+      <select style={inputStyle} value={filter} onChange={(e) => setFilter(e.target.value)}>
+        <option value="tous">Tous les types</option>
+        <option value="publique">Publique</option>
+        <option value="prive">Privé</option>
+        <option value="societe civile">Société civile</option>
+      </select>
+    </div>
+  </div>
+
+  <div style={{ overflowX: "auto" }}>
+    {/* Header row */}
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "60px 1fr 120px 160px 80px 120px 50px",
+      columnGap: 16,
+      padding: "10px 16px",
+      background: "#F9FAFB",
+      borderBottom: "1px solid #E5E7EB",
+      fontSize: 11,
+      fontWeight: 700,
+      color: "#94a3b8",
+      textTransform: "uppercase",
+      letterSpacing: "0.07em",
+    }}>
+      <span>Rang</span>
+      <span>Organisme</span>
+      <span>Type</span>
+      <span>Date soumission</span>
+      <span>Score</span>
+      <span>Label</span>
+    </div>
+
+    {/* Data rows */}
+    {filteredEvaluations.map((org, i) => {
+      const pct = org.score && org.scoreMax
+        ? Math.round((org.score / org.scoreMax) * 100)
+        : 0;
+
+      return (
+        <div
+          key={org.id ?? i}
+          style={{
+            display: "grid",
+            gridTemplateColumns: "60px 1fr 120px 160px 80px 130px 50px",
+            columnGap: 16,
+            padding: "14px 16px",
+            borderBottom: "1px solid #F1F5F9",
+            alignItems: "center",
+            background: i % 2 === 0 ? "#fff" : "#F9FAFB",
+            transition: "background 0.2s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "#EEF2FF"}
+          onMouseLeave={e => e.currentTarget.style.background = i % 2 === 0 ? "#fff" : "#F9FAFB"}
+        >
+          <span>{getMedalIcon(org.rank)}</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{org.organismeName}</span>
+          <span style={{ fontSize: 12, color: "#64748b" }}>{org.organismeType || "—"}</span>
+          <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "monospace" }}>{org.dateCreation || "—"}</span>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>{pct}%</span>
+          {getLabelBadge(org.label)}
         </div>
+      );
+    })}
 
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
-            <thead>
-              <tr style={{
-    background: "#F9FAFB",
-    borderBottom: "1px solid #E5E7EB",
-    position: "sticky",
-    fontFamily: "'Inter', 'SF Pro Display', 'Segoe UI', sans-serif",
-    top: 0,
-    zIndex: 5
-  }}>
-                {["Organisme", "Type", "Score global", "Label attribué"].map((h) => (
-                  <th key={h} style={{ textAlign: "left", padding: "8px 12px", fontSize: 12, fontWeight: 500, color: "var(--color-text-secondary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-  {filteredEvaluations.map((org, i) => {
-    const labelStyle = getLabelStyle(org.label);
-
-    return (
-      <tr
-        key={i}
-        style={{
-          background: i % 2 === 0 ? "#FFFFFF" : "#F9FAFB",
-          transition: "all 0.2s"
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#EEF2FF";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background =
-            i % 2 === 0 ? "#FFFFFF" : "#F9FAFB";
-        }}
-      >
-        <td style={tdStyle}>{org.organismeName}</td>
-
-        <td style={tdStyle}>
-          <span style={{
-            padding: "4px 10px",
-            borderRadius: 999,
-            fontSize: 12,
-            background: "#F3F4F6"
-          }}>
-            {org.organismeType}
-          </span>
-        </td>
-
-        <td style={tdStyle}>
-          <strong>
-            {org.score != null
-              ? `${org.score}/${org.maxScore}`
-              : "—"}
-          </strong>
-        </td>
-
-        <td style={tdStyle}>
-          <span
-            style={{
-              padding: "5px 12px",
-              borderRadius: 999,
-              fontSize: 12,
-              fontWeight: 600,
-              ...labelStyle
-            }}
-          >
-            {org.label ?? "—"}
-          </span>
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
-          </table>
-        </div>
-
-        <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "0.5px solid var(--color-border-tertiary)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: 13, color: "var(--color-text-secondary)" }}>{evaluations.length} organisme(s) au total</span>
-        </div>
+    {filteredEvaluations.length === 0 && (
+      <div style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>
+        Aucun organisme trouvé.
       </div>
+    )}
+  </div>
+
+  <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "0.5px solid #E5E7EB", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+    <span style={{ fontSize: 13, color: "#6B7280" }}>{filteredEvaluations.length} organisme(s) affiché(s)</span>
+  </div>
+</div>
 
     </div>
     </div>
