@@ -1,6 +1,7 @@
 package com.example.authentify.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 //import org.springframework.web.bind.annotation.PathVariable;
 //import java.util.Optional;
 import java.util.List;
@@ -38,6 +39,7 @@ public class PrincipeServiceImp implements PrincipeService {
     private final CritereRepository  critereRepository;
     private final EvaluationRepository  evaluationRepository;
     private final EvaluationServiceImp evaluationService;
+    
 
 
 //////////////////Principe/////////////////////////////////////////
@@ -270,6 +272,7 @@ public class PrincipeServiceImp implements PrincipeService {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Synchronize all evaluations' scoreMax when criteria are updated
+    @Transactional
     public void syncAllEvaluationsScoreMax() {
     int newMax = critereRepository.findAll().size() * 3;
     List<EvaluationEntity> all = evaluationRepository.findAll();

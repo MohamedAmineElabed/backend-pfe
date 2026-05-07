@@ -44,6 +44,7 @@ import com.example.authentify.repository.OrganismeRepository;
 import com.example.authentify.repository.ReponseRepository;
 import com.example.authentify.repository.PreuveRepository;
 import com.example.authentify.repository.CritereRepository;
+import com.example.authentify.repository.ScoreParPrincipeRepository;
 
 
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,7 @@ public class EvaluationServiceImp {
     private final PreuveRepository preuveRepository;
     private final OrganismeRepository organismeRepository;  
     private final CritereRepository critereRepository;
+    private final ScoreParPrincipeRepository scoreParPrincipeRepository;
 
 
     public int calculerMaxScore() {
@@ -275,10 +277,10 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
     evaluationRepository.delete(evaluation);
 }
 
-    public EvaluationEntity setScoreForEvaluation(Long evaluationId, Integer score) {
+    /*public EvaluationEntity setScoreForEvaluation(Long evaluationId, Integer score) {
     EvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
             .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
-
+    int maxScore=calculerMaxScore();
     evaluation.setScore(score); // set total score here
     //evaluation.setScoreMax(maxScore);
 
@@ -286,11 +288,32 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
     //int maxScore = evaluation.getReponses() != null ? evaluation.getReponses().size() * 3 : 0;
 
      // calculate maxScore for all criteres
-    int maxScore=evaluation.getScoreMax();
-
-    //evaluation.setScoreMax(maxScore);
+    //int maxScore=evaluation.getScoreMax();
+    
+    evaluation.setScoreMax(maxScore);
     String label = getLabel(score, maxScore);
     evaluation.setLabel(label);
+    return evaluationRepository.save(evaluation);
+}*/
+
+public EvaluationEntity setScoreForEvaluation(Long evaluationId, Integer score) {
+    EvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
+            .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
+
+    int maxScore = scoreParPrincipeRepository.findByEvaluationId(evaluationId)
+            .stream()
+            .mapToInt(sp -> sp.getScoreMax() != null ? sp.getScoreMax() : 0)
+            .sum();
+
+    // Fallback for legacy rows that have no scoreParPrincipe yet
+    if (maxScore == 0) maxScore = calculerMaxScore();
+
+    evaluation.setScore(score);
+    evaluation.setScoreMax(maxScore);
+
+    String label = getLabel(score, maxScore);
+    evaluation.setLabel(label);
+
     return evaluationRepository.save(evaluation);
 }
 

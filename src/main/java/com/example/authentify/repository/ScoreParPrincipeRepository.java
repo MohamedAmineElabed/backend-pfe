@@ -12,5 +12,6 @@ public interface ScoreParPrincipeRepository extends JpaRepository<ScoreParPrinci
     Optional<ScoreParPrincipeEntity> findByEvaluationIdAndPrincipeId(Long evaluationId, Long principeId);
     List<ScoreParPrincipeEntity> findByEvaluationId(Long evaluationId);
     List<ScoreParPrincipeEntity> findByOrganismeId(Long organismeId);
+    List<ScoreParPrincipeEntity> findByPrincipeId(Long principeId);
 
 }

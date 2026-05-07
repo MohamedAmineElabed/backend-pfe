@@ -35,7 +35,7 @@ import org.springframework.http.ResponseEntity;
 //import org.springframework.web.bind.annotation.ResponseStatus;
 //import static java.util.Map.entry;
 import org.springframework.web.bind.annotation.PostMapping;
-//import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
 //import org.springframework.web.bind.annotation.RequestParam;
@@ -62,8 +62,8 @@ public class ScoreParPrincipeController {
                 input.getResponsableId(),
                 input.getOrganismeId(),
                 input.getPrincipeId(),
-                input.getScore(),
-                input.getScoreMax()
+                input.getScore()
+                //input.getScoreMax()
         );
         return ResponseEntity.ok(savedScore);
     }
@@ -75,7 +75,7 @@ public class ScoreParPrincipeController {
         private Long organismeId;
         private Long principeId;
         private Integer score;
-        private Integer scoreMax;
+        //private Integer scoreMax;
     }
 
     @GetMapping("/scores")
@@ -93,5 +93,11 @@ public class ScoreParPrincipeController {
         if (organismeId == null) return List.of();
         return scoreParPrincipeService.getScoresByOrganismeId(organismeId);
     }
+
+    @PutMapping("/refresh/{evaluationId}")
+    public ResponseEntity<Void> refreshScoreMax(@PathVariable Long evaluationId) {
+        scoreParPrincipeService.refreshScoreMaxParPrincipe(evaluationId);
+        return ResponseEntity.ok().build();
+}
     
 }

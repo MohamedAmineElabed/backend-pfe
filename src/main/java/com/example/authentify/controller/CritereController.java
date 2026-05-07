@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 //import com.example.authentify.entity.OrganismeEntity;
 
 import com.example.authentify.entity.PratiqueEntity;
+import com.example.authentify.entity.ScoreParPrincipeEntity;
 //import com.example.authentify.entity.UserEntity;
 import com.example.authentify.entity.CritereEntity;
 import com.example.authentify.io.PrincipeRequest;
@@ -14,8 +15,11 @@ import com.example.authentify.io.PrincipeResponse;
 //import com.example.authentify.repository.DemandeRepository;
 //import com.example.authentify.service.EmailService;
 import com.example.authentify.repository.PratiqueRepository;
+import com.example.authentify.repository.ScoreParPrincipeRepository;
 import com.example.authentify.repository.CritereRepository;
 import com.example.authentify.service.PrincipeService;
+import com.example.authentify.service.ScoreParPrincipeService;
+
 //import java.util.Map;
 import java.util.List;
 //import jakarta.validation.Valid;
@@ -41,6 +45,9 @@ public class CritereController {
     //private final PrincipeRepository principeRepository;
     private final CritereRepository critereRepository;
     private final PrincipeService principeService;
+    private final ScoreParPrincipeService scoreParPrincipeService;
+    private final ScoreParPrincipeRepository scoreParPrincipeRepository;
+
 
     @GetMapping("/{id}")
     public CritereEntity getCriteresById(@PathVariable Long id) {
@@ -69,6 +76,12 @@ public class CritereController {
         //save new critere
         critereRepository.save(critere);
 
+        // Refresh scoreMax for all evaluations of the affected principe
+        Long principeId = critere.getPratique().getPrincipe().getId();
+        List<ScoreParPrincipeEntity> affected = scoreParPrincipeRepository.findByPrincipeId(principeId); 
+        affected.forEach(s ->scoreParPrincipeService.refreshScoreMaxParPrincipe(s.getEvaluation().getId()));
+
+
         // Prepare response
         PrincipeResponse response = new PrincipeResponse();
         response.setId(critere.getId());
@@ -77,13 +90,23 @@ public class CritereController {
 
         principeService.syncAllEvaluationsScoreMax();
 
+        
     return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteCritere(@PathVariable Long id) {
+        CritereEntity critere = critereRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Critere not found"));
+        Long principeId = critere.getPratique().getPrincipe().getId();
+
         principeService.deleteCritere(id);
         principeService.syncAllEvaluationsScoreMax();
+
+        // Refresh scoreMax for all evaluations of the affected principe
+        List<ScoreParPrincipeEntity> affected = scoreParPrincipeRepository.findByPrincipeId(principeId); 
+        affected.forEach(s ->scoreParPrincipeService.refreshScoreMaxParPrincipe(s.getEvaluation().getId()));
+
     return ResponseEntity.ok("Critere supprimée avec succès");
 }
 
