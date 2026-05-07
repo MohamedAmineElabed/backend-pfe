@@ -603,18 +603,22 @@ export default function DashboardsEval() {
       .filter(s => s.organismeId === selectedOrgId)
       .map(s => {
         const principeNom = principesMap[s.principeId];
-
-        //skip deleted principes
         if (!principeNom) return null;
-
         return {
           principe: principeNom,
-          score: s.scoreMax? +((s.score / s.scoreMax) * 100).toFixed(1): 0,
+          score: s.scoreMax ? +((s.score / s.scoreMax) * 100).toFixed(1) : 0,
           fullMark: 100,
         };
       })
-  }, [selectedOrgId, rawScores, principesMap]);
-
+    .filter(Boolean); // ← remove nulls before they reach radarDisplayData
+}, [selectedOrgId, rawScores, principesMap]);
+  // Replace 0 scores with a small minimum just for display
+  const radarDisplayData = useMemo(() =>
+  orgRadarData.map(d => ({
+      ...d,
+      score: d.score === 0 ? 1 : d.score,
+    })),
+  [orgRadarData]);
   
 
   /*const orgRadarData = useMemo(() => {
@@ -1133,13 +1137,27 @@ export default function DashboardsEval() {
                   <ChartCard title="🕸️ Profil par principe" subtitle="Score de la dernière évaluation">
                     {orgRadarData.length ? (
                       <ResponsiveContainer width="100%" height={260}>
-                        <RadarChart data={orgRadarData}>
-                          <PolarGrid />
-                          <PolarAngleAxis dataKey="principe" tick={{ fontSize:10 }} />
-                          <PolarRadiusAxis domain={[0,100]} tick={{ fontSize:9 }} />
-                          <Radar name="Score" dataKey="score" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.25} />
-                          <Tooltip formatter={v=>`${v}%`} />
-                        </RadarChart>
+                        <RadarChart data={radarDisplayData} margin={{ top:10, right:30, bottom:10, left:30 }}>
+  <PolarGrid stroke="#e2e8f0" strokeDasharray="4 4" />
+  <PolarAngleAxis dataKey="principe" tick={{ fontSize:10, fill:"#475569" }} />
+  <PolarRadiusAxis 
+    domain={[0, 110]}
+    tick={false}
+    axisLine={false}
+    tickCount={5}
+  />
+  <Radar 
+    name="Score" 
+    dataKey="score" 
+    stroke="#3b82f6" 
+    fill="#3b82f6" 
+    fillOpacity={0.25}
+    strokeWidth={2}
+    dot={{ r:3, fill:"#3b82f6", strokeWidth:0 }}
+    // ← baseValue removed
+  />
+  <Tooltip formatter={v => [`${v}%`, "Score"]} />
+</RadarChart>
                       </ResponsiveContainer>
                     ) : <EmptyState label="Scores par principe non disponibles" />}
                   </ChartCard>

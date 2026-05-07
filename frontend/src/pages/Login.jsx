@@ -32,7 +32,7 @@ const Login = () => {
   const [showCodeModal, setShowCodeModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { backendUrl, setIsLoggedIn, setUserData } = useContext(AppContext);
+  const { backendUrl, setIsLoggedIn, setUserData, loadUser } = useContext(AppContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -73,6 +73,7 @@ const Login = () => {
           const loggedInUser = response.data;
           setUserData(response.data);
           //sessionStorage.setItem("userData", JSON.stringify(response.data));
+          await loadUser(); // Ensure user data is loaded before navigating
           setIsLoggedIn(true);
           //sessionStorage.setItem("userData", JSON.stringify(response.data));
           if (loggedInUser.role === "ADMIN") navigate('/dashboardsAdmin');

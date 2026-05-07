@@ -55,7 +55,8 @@ export const AppContextProvider = (props) => {
         backendUrl,
         isLoggedIn,setIsLoggedIn,
         userData, setUserData,
-        loadingUser
+        loadingUser,
+        loadUser,
     };
     return (
         <AppContext.Provider value={contextValue}>

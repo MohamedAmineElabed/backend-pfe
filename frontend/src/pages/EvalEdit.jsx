@@ -226,11 +226,14 @@ function CritereCard({ critere, evaluateur, reponse, isEditing, onChange, onAddP
                 </div>
               </div>
             ) : (
-              <div style={{
-                background: "#f9fafb", borderRadius: 8, padding: "12px 14px",
-                fontSize: 13, color: "#374151", lineHeight: 1.65,
+              <div style={{background: "#f9fafb", borderRadius: 8, padding: "12px 14px",
+                fontSize: 13, lineHeight: 1.65,
+                color: reponse === undefined || reponse === null ? "#9ca3af" : "#374151",
+                fontStyle: reponse === undefined || reponse === null ? "italic" : "normal",
               }}>
-                {valeurLabels[reponse?.valeur ?? 0]}
+                {reponse === undefined || reponse === null
+                ? "Aucune réponse"
+                : valeurLabels[reponse.valeur ?? 0]}
               </div>
             )}
           </div>

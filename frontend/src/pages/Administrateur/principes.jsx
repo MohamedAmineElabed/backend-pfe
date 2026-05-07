@@ -124,7 +124,7 @@ const Principes = () => {
 
   useEffect(() => { fetchPrincipes(); fetchPratiques(); fetchCriteres(); }, []);
 
-  const handleChangeNew        = e => setNewPrincipe(p => ({ ...p, [e.target.name]: e.target.value }));
+  const handleChangeNew = e => setNewPrincipe(p => ({ ...p, [e.target.name]: e.target.value }));
   const handleChangeNewPratique = e => setNewPratique(p => ({ ...p, [e.target.name]: e.target.value }));
   const handleChangeNewCritere  = e => setNewCritere(p  => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -171,7 +171,10 @@ const Principes = () => {
     e.preventDefault();
     if (!selectedPratiqueId) return;
     try {
-      const res = await axios.post(`${backendUrl}/criteres/create/${selectedPratiqueId}`, { ...newCritere, pratiqueId: selectedPratiqueId }, { withCredentials: true });
+      const res = await axios.post(`${backendUrl}/criteres/create/${selectedPratiqueId}`, 
+        { ...newCritere, pratiqueId: selectedPratiqueId },{ withCredentials: true });
+      //fire a signal so any listening component knows to refetch
+      window.dispatchEvent(new CustomEvent("critere-changed"));
       setPrincipes(prev => prev.map(principe => ({
         ...principe,
         pratiques: principe.pratiques?.map(pratique => pratique.id === selectedPratiqueId
@@ -211,6 +214,8 @@ const Principes = () => {
       toast.success("Critère supprimé");
     } catch { toast.error("Erreur lors de la suppression"); }
   };
+  const handleCritereDeleted = () => setSyncTrigger(t => t + 1);
+
 
   const handleSave = async () => {
     if (!critereId) return toast.error("Critère non sélectionné");
@@ -236,6 +241,7 @@ const Principes = () => {
     } catch (e) { toast.error(e.response?.data?.message || "Erreur lors de la mise à jour"); }
   };
   const handleCancel = () => { setIsEditing(false); };
+  
 
   return (
     <>

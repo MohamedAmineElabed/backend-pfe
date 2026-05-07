@@ -10,9 +10,9 @@ import { AppContext } from "../context/AppContext.jsx";
 import { toast } from "react-toastify";
 import { useEffect, useState, useContext, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-// Add to your imports at the top
 import { MessageSquare } from "lucide-react";
-// Add to your imports at the top
+import CertificatDownload from "../components/certificatDownload.jsx";
+
 
 function ChartCard({ title, subtitle, children, style = {} }) {
   return (
@@ -399,6 +399,7 @@ export default function DashboardResp() {
   const [latestEval,setLatestEval]= useState(null);  //latest evalution pour ce organisme
   const [rawScores, setRawScores] = useState([]);    // scoreParPrincipe entries
   const [principes, setPrincipes] = useState([]);    // full principes list
+  const [certificatVisible, setCertificatVisible] = useState(false);
 
   const organismeId = userData?.organisme?.id;
 
@@ -476,9 +477,7 @@ export default function DashboardResp() {
   }, [backendUrl, organismeId]);
 
   // all evaluations
-  useEffect(() => {
-  if (!organismeId) return;
-  const fetchData = async () => {
+  const fetchEvaluations = async () => {
     try {
       //const latestRes = await axios.get(`${backendUrl}/evaluation/latest/${userData?.organisme?.id}`,{withCredentials: true}
       const res = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
@@ -493,12 +492,8 @@ export default function DashboardResp() {
       setLoading(false);
     }
   };
-  fetchData();
-}, [backendUrl, organismeId]);
 
   //latest evaluation
-  useEffect(() => {
-  if (!organismeId) return;
   const fetchLatest = async () => {
     try {
       //const latestRes = await axios.get(`${backendUrl}/evaluation/latest/${userData?.organisme?.id}`,{withCredentials: true}
@@ -514,8 +509,6 @@ export default function DashboardResp() {
       setLoading(false);
     }
   };
-  fetchLatest();
-}, [backendUrl, organismeId]);
 
   // ── Fetch principes ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -525,12 +518,121 @@ export default function DashboardResp() {
   }, [backendUrl]);
 
   // ── Fetch scores par principe ─────────────────────────────────────────────
-  useEffect(() => {
+  const fetchScores = async () => {
     if (!organismeId) return;
-    axios.get(`${backendUrl}/scoreParPrincipe/organisme/${organismeId}`, { withCredentials:true })
-      .then(r => setRawScores(r.data))
-      .catch(() => {});
-  }, [backendUrl, organismeId]);
+    try {
+    const res = await axios.get(`${backendUrl}/scoreParPrincipe/organisme/${organismeId}`, { withCredentials: true });
+    setRawScores(res.data);
+  } catch {}
+  };
+  //use effects
+  useEffect(() => { fetchEvaluations(); }, [backendUrl, organismeId]);
+  useEffect(() => { fetchLatest(); },     [backendUrl, organismeId]);
+  useEffect(() => { fetchScores(); },     [backendUrl, organismeId]);
+
+  /*useEffect(() => {
+    const refreshScoreMax = async (evaluationId) => {
+      try {
+        await axios.put(`${backendUrl}/scoreParPrincipe/refresh/${evaluationId}`,
+          {},
+          { withCredentials: true }
+        );
+        console.log("Score max refreshed");
+      } catch (error) {
+        console.error("Erreur refresh score max", error);
+      }
+    };
+  }, [latestEval, seenEvals]);*/
+  // ── Sync scores, scoreMax, scoreParPrincipe and label when dashboard loads ──
+useEffect(() => {
+  if (!dernierEval?.id || !principes.length) return;
+  if (dernierEval.statut !== "terminé") return;
+
+  const syncScores = async () => {
+    try {
+      // 1. Fetch full reponses for the latest evaluation
+      const res = await axios.get(
+        `${backendUrl}/evaluation/${dernierEval.id}/reponses`,
+        { withCredentials: true }
+      );
+      const reponses = res.data.reponses || [];
+
+      // 2. Collect all valid critère IDs from principes structure
+      const validCritereIds = new Set(
+        principes.flatMap(p =>
+          (p.pratiques || []).flatMap(pr =>
+            (pr.criteres || []).map(c => c.id)
+          )
+        )
+      );
+
+      // 3. Compute total score (validated responses only, from known critères)
+      const totalScore = reponses
+        .filter(r => validCritereIds.has(r.critereId) && r.statut === "validé")
+        .reduce((sum, r) => sum + (r.valeur || 0), 0);
+
+      // 4. Compute score per principe
+      const scorePerPrincipe = principes.map(principe => {
+        let score = 0, max = 0;
+        (principe.pratiques || []).forEach(pr =>
+          (pr.criteres || []).forEach(c => {
+            const r = reponses.find(
+              r => r.critereId === c.id && r.statut === "validé"
+            );
+            if (r) score += r.valeur || 0;
+            max += 3;
+          })
+        );
+        return {
+          principeId: principe.id,
+          score,
+          maxScore: max,
+        };
+      });
+
+      // 5. Persist score per principe
+      await Promise.all(
+        scorePerPrincipe.map(sp =>
+          axios.post(
+            `${backendUrl}/scoreParPrincipe/enregistrer`,
+            {
+              evaluationId: dernierEval.id,
+              responsableId: dernierEval.responsableId,
+              organismeId,
+              principeId: sp.principeId,
+              score: sp.score,
+              
+            },
+            { withCredentials: true }
+          )
+        )
+      );
+
+      // 6. Persist total score
+      await axios.put(
+        `${backendUrl}/evaluation/${dernierEval.id}/score`,
+        { score: totalScore},
+        { withCredentials: true }
+      );
+
+      // 7. Update label
+      await axios.put(
+        `${backendUrl}/evaluation/updateLabel/${dernierEval.id}`,
+        {},
+        { withCredentials: true }
+      );
+
+      // 8. Refresh local data so the dashboard reflects the updated values
+      fetchScores();
+      fetchLatest();
+
+    } catch (err) {
+      console.error("Erreur sync scores", err);
+    }
+  };
+
+  syncScores();
+}, [dernierEval?.id, principes]);
 
   // ── Computed: score moyen par principe ────────────────────────────────────
   const scoresMoyen = useMemo(() => {
@@ -904,6 +1006,35 @@ export default function DashboardResp() {
               </div>
                 )}
               </div>
+
+              <button
+                onClick={() => setCertificatVisible(!certificatVisible)}
+                style={{
+                  padding:"12px 22px", borderRadius:"12px", border:"none", cursor:"pointer",marginTop:"30px",
+                  background:"#6366f1", color:"#fff", fontSize:"13px", fontWeight:"700",
+                  boxShadow:"0 4px 16px rgba(99,102,241,0.35)",
+                  transition:"all 0.2s",
+                  whiteSpace:"nowrap"
+                }}
+                onMouseEnter={e => { e.target.style.background="#4f46e5"; e.target.style.transform="translateY(-1px)"; }}
+                onMouseLeave={e => { e.target.style.background="#6366f1"; e.target.style.transform="none"; }}>
+                {certificatVisible ? "Cacher le certificat" : "Afficher le certificat"}
+              </button>
+              {/* ── Certificat de conformité ─────────────────────────────────────────── */}
+
+
+              {latestEval && certificatVisible && (
+                <div style={{background: "#fff",borderRadius: 16,padding: "28px 32px",marginBottom: 28,
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",}}>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, color: "#374151", marginBottom: 20 }}>Certificat de conformité</h3>
+
+                  <CertificatDownload
+                    organisme={userData?.organisme}
+                    responsable={userData}          /* userData has nom + prenom */
+                    evaluation={latestEval}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
