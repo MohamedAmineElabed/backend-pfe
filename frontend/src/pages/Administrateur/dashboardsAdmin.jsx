@@ -590,7 +590,7 @@ export default function DashboardsEval() {
     [...orgAllEvals]
       .sort((a, b) => (a.dateCreation || "").localeCompare(b.dateCreation || ""))
       .map((ev, i) => ({
-        index: `Eval ${i + 1}`,
+        index: `Eval ${i + 1}(${ev.dateUpdate || ev.dateCreation || ""})`,
         date:  ev.dateTermination || ev.dateCreation || "",
         score: ev.score && ev.scoreMax ? +((ev.score / ev.scoreMax) * 100).toFixed(1) : 0,
         label: ev.label,
@@ -599,26 +599,29 @@ export default function DashboardsEval() {
 
   const orgRadarData = useMemo(() => {
     if (!selectedOrgId) return [];
-    return rawScores
+    const grouped = {};
+
+    rawScores
       .filter(s => s.organismeId === selectedOrgId)
-      .map(s => {
+      .forEach(s => {
         const principeNom = principesMap[s.principeId];
         if (!principeNom) return null;
-        return {
-          principe: principeNom,
-          score: s.scoreMax ? +((s.score / s.scoreMax) * 100).toFixed(1) : 0,
+        const pct = s.scoreMax ? (s.score / s.scoreMax) * 100 : 0;
+        if (!grouped[principeNom]) grouped[principeNom] = { total: 0, count: 0 };
+        grouped[principeNom].total += pct;
+        grouped[principeNom].count++;
+      });
+        return Object.entries(grouped).map(([principe, d]) => ({
+          principe,
+          score: +(d.total / d.count).toFixed(1),
           fullMark: 100,
-        };
-      })
-    .filter(Boolean); // ← remove nulls before they reach radarDisplayData
+        }));
 }, [selectedOrgId, rawScores, principesMap]);
+
   // Replace 0 scores with a small minimum just for display
   const radarDisplayData = useMemo(() =>
-  orgRadarData.map(d => ({
-      ...d,
-      score: d.score === 0 ? 1 : d.score,
-    })),
-  [orgRadarData]);
+  orgRadarData.map(d => ({ ...d, score: d.score === 0 ? 1 : d.score })),
+[orgRadarData]);
   
 
   /*const orgRadarData = useMemo(() => {

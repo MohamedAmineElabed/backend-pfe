@@ -61,7 +61,7 @@ function ProgressRing({ pct, size = 80, stroke = 7, color = "#6366f1" }) {
 }
 
 
-export default function CertificatDownload({ organisme, responsable, evaluation }) {
+export default function CertificatDownload({ organisme, responsable, evaluation, rang }) {
   const certRef = useRef();
   const [exporting, setExporting] = useState(false);
 
@@ -72,7 +72,9 @@ export default function CertificatDownload({ organisme, responsable, evaluation 
     : "—";
   const secteur=organisme?.secteur || "—";
   const label=evaluation?.label  || "—";
-  const description=evaluation?.recommandations?.trim() || label;
+  //const description=evaluation?.recommandations?.trim() || label;
+  const dateSoumission=evaluation?.dateUpdate || "—";
+  const rangValue = rang?.rang || "—";
 
   const scoreDisplay=evaluation?.score && evaluation?.scoreMax
     ? `${evaluation.score} / ${evaluation.scoreMax}`
@@ -80,7 +82,8 @@ export default function CertificatDownload({ organisme, responsable, evaluation 
   const pct =evaluation?.score && evaluation?.scoreMax
     ? (evaluation.score / evaluation.scoreMax)* 100
     : 0;
-  
+  console.log(evaluation);
+console.log(evaluation?.dateUpdate);
 
   const downloadPDF = async () => {
     setExporting(true);
@@ -153,6 +156,14 @@ const labelStyle = LABEL_STYLES[label] ?? { color: "#0d1b4b", description: label
           {labelStyle.description}
         </div>
 
+        {/* Date mis à jour */}
+        <div style={{...txt,top: "83%",left: "26%",maxWidth: "50%",fontFamily: "'Poppins', sans-serif",
+          fontSize: "clamp(10px, 1.1vw, 14px)",fontWeight: 500,color: "#334155",letterSpacing: "0.3px",
+          background: "rgba(255,255,255,0.55)",padding: "4px 10px",borderRadius: "8px",
+          whiteSpace: "nowrap",lineHeight: 1.2,}}>
+          Date de création: {dateSoumission}
+        </div>
+
         <div
   style={{
     ...txt,
@@ -190,6 +201,14 @@ const labelStyle = LABEL_STYLES[label] ?? { color: "#0d1b4b", description: label
           {pct.toFixed(0)}%
         </span>
       </div>
+
+      {/* Rang */}
+        <div style={{...txt,top: "-280%",left: "26%",width: "100%",fontFamily: "'Poppins', sans-serif",
+          fontSize: "clamp(30px, 1.8vw, 22px)",fontWeight: 500,color: "#334155",letterSpacing: "0.3px",
+          background: "rgba(255,255,255,0.55)",padding: "4px 10px",borderRadius: "8px",
+          whiteSpace: "nowrap",lineHeight: 1.2,}}>
+          🏆#{rangValue}
+        </div>
     </div>
   )}
 </div>

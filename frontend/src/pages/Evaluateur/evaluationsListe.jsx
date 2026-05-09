@@ -72,6 +72,9 @@ const EvaluationsListe = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
+  const [anneeSelectionnee, setAnneeSelectionnee] = useState(new Date().getFullYear());
+  const [anneesDisponibles, setAnneesDisponibles] = useState([]);
+
   const updateEvaluation = (id, newData) => {
   setEvaluations(prev =>
     prev.map(ev => ev.id === id ? { ...ev, ...newData } : ev)
@@ -101,10 +104,10 @@ const handleStatusChange = (ev, newStatus) => {
   if (!backendUrl || !userData?.id) return;
   if (!org?.id) return;
 
-  const fetchEvaluations = async () => {
+  const fetchEvaluations = async (annee=anneeSelectionnee) => {
     try {
       // Fetch evaluations with treated progression
-      const resEval = await axios.get(`${backendUrl}/evaluation/organisme/${org.id}`,{withCredentials: true});
+      const resEval = await axios.get(`${backendUrl}/evaluation/organisme/${org.id}`,{params: { annee: annee }, withCredentials: true});
       console.log("liste evaluations :",resEval.data);
       // Map the response directly; no need to recalc progression in frontend
       const evalsWithProgress = resEval.data.map(ev => {
@@ -134,7 +137,35 @@ const handleStatusChange = (ev, newStatus) => {
   };
 
   fetchEvaluations();
-}, [backendUrl, userData, org?.id]);
+}, [backendUrl, userData, org?.id, anneeSelectionnee]);
+
+
+  //fetch annee disponible
+useEffect(() => {
+  const fetchAnnees = async () => {
+    try {
+      const res = await axios.get(
+        `${backendUrl}/annee/disponibles`,
+        { withCredentials: true }
+      );
+      const currentYear = new Date().getFullYear();
+      const years = [...new Set([...res.data, currentYear])].sort((a, b) => b - a);
+      setAnneesDisponibles(years);
+      
+      // Set default year ONLY once
+      setAnneeSelectionnee(prev => prev || currentYear);
+      // set default selected year (latest)
+      /*if (res.data.length > 0) {
+        setAnneeSelectionnee(res.data[0]);
+      }*/
+    } catch (error) {
+      toast.error("Erreur chargement des années");
+      console.error(error);
+    }
+  };
+
+  fetchAnnees();
+}, [backendUrl,[]]);
 
 
   // Filtered list
@@ -166,6 +197,18 @@ const handleStatusChange = (ev, newStatus) => {
   }
 };*/
 
+  const filtered = evaluations.filter((e) => {
+    const matchSearch =
+      (e.responsableName || "")
+        .toLowerCase()
+        .includes(search.toLowerCase());
+
+    const matchFilter =
+      filter === "tous" || e.statut === filter;
+
+    return matchSearch && matchFilter;
+  });
+
   return (
     <>
       <SiderbarEval />
@@ -183,9 +226,13 @@ const handleStatusChange = (ev, newStatus) => {
           <h1 style={{ fontSize: 18, fontWeight: 600, color: "#0f172a", margin: 0, lineHeight: 1.2 }}>
             {org?.nomOrganisme}
           </h1>
-          <p style={{ fontSize: 12, color: "#64748b", margin: "3px 0 0 0" }}>
+          <span style={{ fontSize: 12, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            {org?.responsable?.nom || ""} {org?.responsable?.prenom || "—"}
+          </span>
+          <span style={styles.orgRole}>{org?.responsable?.jobRole || "—"}</span>
+          {/*<p style={{ fontSize: 12, color: "#64748b", margin: "3px 0 0 0" }}>
             Gérer et valider les évaluations soumises
-          </p>
+          </p>*/}
         </div>
       </div>
       {/* Right —profile */}
@@ -218,15 +265,38 @@ const handleStatusChange = (ev, newStatus) => {
             </button>
           ))}
         </div>
+        {/* Year selector */}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Année
+              </label>
+              <select
+                value={anneeSelectionnee}
+                onChange={e => setAnneeSelectionnee(Number(e.target.value))}
+                style={{padding: "7px 32px 7px 12px",borderRadius: 10,border: "1px solid #e2e8f0",background: "#fff",color: "#0f172a",fontSize: 13,
+                  fontWeight: 600,cursor: "pointer",outline: "none",appearance: "none",
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 10px center",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                }}
+                onFocus={e => { e.target.style.borderColor = "#6366f1"; e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.15)"; }}
+                onBlur={e =>  { e.target.style.borderColor = "#e2e8f0"; e.target.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"; }}
+              >
+                {anneesDisponibles.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              </div>
 
         {/* Table */}
         <motion.section {...stagger(3)} style={styles.tableSection}>
           <div style={styles.tableWrap}>
             <div style={styles.thead}>
-              {["Index","Date création", "Responsable", "Statut", "Progression", "Score", "Labelisation"].map((col, i) => <span key={i}>{col}</span>)}
+              {["Index","Date création", "Dernière mise à jour", "Statut", "Progression", "Score", "Labelisation"].map((col, i) => <span key={i}>{col}</span>)}
             </div>
 
-            {evaluations.map((ev, idx) => {
+            {filtered.map((ev, idx) => {
               const cfg = STATUS[ev.statut] || { label: "Inconnu", dot: "#cbd5e1", text: "#475569", bg: "rgba(203,213,225,0.12)", border: "rgba(203,213,225,0.3)" };
               const color = progressColor(ev.progress || 0);
               return (
@@ -235,9 +305,7 @@ const handleStatusChange = (ev, newStatus) => {
                   onClick={() => navigate(`/evaluateur/evaluations/${ev.id}`, { state: { evaluation: ev } })}>
                   <span style={styles.orgName}>{idx+1}</span>
                   <span style={styles.dateCell}>{new Date(ev.dateCreation).toLocaleDateString("fr-FR")}</span>
-                  <span style={styles.orgName}>{ev.responsableName}
-                    <span style={styles.orgRole}>{ev.responsableRole}</span>
-                  </span>
+                  <span style={styles.dateCell}>{new Date(ev.dateUpdate).toLocaleDateString("fr-FR")}</span>
                   <span style={{ ...styles.badge, color: cfg.text, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
                     <span style={{ ...styles.badgeDot, background: cfg.dot }} /> {cfg.label}</span>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -265,7 +333,7 @@ const handleStatusChange = (ev, newStatus) => {
               );
             })}
 
-            {evaluations.length === 0 && <div style={{ padding: 20, textAlign: "center" }}>Aucune évaluation trouvée.</div>}
+            {filtered.length === 0 && <div style={{ padding: 20, textAlign: "center" }}>Aucune évaluation trouvée.</div>}
           </div>
         </motion.section>
       </div>

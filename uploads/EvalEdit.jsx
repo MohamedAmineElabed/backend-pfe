@@ -1,13 +1,10 @@
-import { useState, useEffect, useContext, useMemo, use } from "react";
+import { useState, useEffect, useContext, useMemo } from "react";
 import { AppContext } from "../context/AppContext.jsx";
 import Siderbar from "../components/siderbar.jsx";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import RecommendationEngine from "../components/recommendationEngine.jsx";
-import { Sparkles } from "lucide-react";
-
-
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -72,7 +69,7 @@ function CommentBubble({ comment, evaluateur }) {
   );
 }
 
-function CritereCard({ critere, evaluateur, reponse, isEditing, onChange, onAddPreuve, onRemovePreuve }) {
+function CritereCard({ critere, evaluateur, reponse, isEditing, onChange }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -154,87 +151,25 @@ function CritereCard({ critere, evaluateur, reponse, isEditing, onChange, onAddP
                     <option key={v} value={v}>{v} — {label}</option>
                   ))}
                 </select>
-                {/*Existing preuves with remove button */}
-                {reponse?.preuves?.length > 0 && (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <div style={{
-                      fontSize: 11, fontWeight: 700, color: "#6b7280",
-                      textTransform: "uppercase", letterSpacing: "0.08em"
-                    }}>
-                      Preuves actuelles
-                    </div>
-                    {reponse.preuves.map((p, index) => (
-                      <div key={index} style={{
-                        display: "flex", alignItems: "center", justifyContent: "space-between",
-                        background: "#f8fafc", border: "1px solid #e2e8f0",
-                        borderRadius: 8, padding: "8px 12px",
-                      }}>
-                        <a href={p.fileUrl} target="_blank" rel="noopener noreferrer"
-                          style={{ fontSize: 12, color: "#3b82f6", textDecoration: "underline" }}>
-                          📎 {p.fileName}
-                        </a>
-                        {/*Remove preuve button */}
-                        <button
-                          onClick={() => onRemovePreuve?.(critere.id, index)}
-                          style={{
-                            background: "#fee2e2", color: "#b91c1c",
-                            border: "none", borderRadius: 6,
-                            padding: "4px 8px", fontSize: 11,
-                            fontWeight: 700, cursor: "pointer",
-                          }}
-                        >
-                          ✕ Supprimer
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/*Add new preuve */}
-                <div>
-                  <div style={{
-                    fontSize: 11, fontWeight: 700, color: "#6b7280",
-                    textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6
-                  }}>
-                    Ajouter une preuve
-                  </div>
-                  <label style={{
-                    display: "flex", alignItems: "center", gap: 10,
-                    border: "2px dashed #cbd5e1", borderRadius: 10,
-                    padding: "12px 16px", cursor: "pointer",
-                    background: "#f8fafc",
-                  }}>
-                    <span style={{ fontSize: 20 }}>📎</span>
-                    <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: "#374151" }}>
-                        Cliquez pour ajouter un fichier
-                      </div>
-                      <div style={{ fontSize: 11, color: "#9ca3af" }}>PDF, PNG, JPG acceptés</div>
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      //accept=".pdf,.png,.jpg,.jpeg"
-                      style={{ display: "none" }}
-                      onChange={(e) => {
-                        if (e.target.files[0]) {
-                          onAddPreuve?.(critere.id, e.target.files[0]);
-                          e.target.value = ""; // reset input
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
+                <textarea
+                  placeholder="Ajouter un commentaire (optionnel)…"
+                  value={reponse?.commentaire ?? ""}
+                  onChange={(e) => onChange?.("commentaire", e.target.value)}
+                  rows={3}
+                  style={{
+                    width: "100%", padding: "10px 12px",
+                    border: "1px solid #d1d5db", borderRadius: 8,
+                    fontSize: 13, color: "#374151", resize: "vertical",
+                    fontFamily: "inherit",
+                  }}
+                />
               </div>
             ) : (
-              <div style={{background: "#f9fafb", borderRadius: 8, padding: "12px 14px",
-                fontSize: 13, lineHeight: 1.65,
-                color: reponse === undefined || reponse === null ? "#9ca3af" : "#374151",
-                fontStyle: reponse === undefined || reponse === null ? "italic" : "normal",
+              <div style={{
+                background: "#f9fafb", borderRadius: 8, padding: "12px 14px",
+                fontSize: 13, color: "#374151", lineHeight: 1.65,
               }}>
-                {reponse === undefined || reponse === null
-                ? "Aucune réponse"
-                : valeurLabels[reponse.valeur ?? 0]}
+                {valeurLabels[reponse?.valeur ?? 0]}
               </div>
             )}
           </div>
@@ -261,13 +196,11 @@ function PrincipesAccordion({
   isEditing,
   onChangeReponse,
   emptyMessage,
-  onAddPreuve,
-  onRemovePreuve
 }) {
   const [expandedPrincipes, setExpandedPrincipes] = useState({});
   const [expandedPratiques, setExpandedPratiques] = useState({});
-  
-  const togglePrincipe = (id) => setExpandedPrincipes((p) => ({ ...p, [id]: !p[id] })); 
+
+  const togglePrincipe = (id) => setExpandedPrincipes((p) => ({ ...p, [id]: !p[id] }));
   const togglePratique = (id) => setExpandedPratiques((p) => ({ ...p, [id]: !p[id] }));
 
   if (!principes.length) {
@@ -352,8 +285,6 @@ function PrincipesAccordion({
                           reponse={reponsesByCritere.get(critere.id)}
                           isEditing={isEditing}
                           onChange={(field, value) => onChangeReponse(critere.id, field, value)}
-                          onAddPreuve={onAddPreuve}   
-                          onRemovePreuve={onRemovePreuve}
                         />
                       ))}
                     </div>
@@ -370,7 +301,7 @@ function PrincipesAccordion({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function EvalEdit() {
-  const { backendUrl, userData } = useContext(AppContext);
+  const { backendUrl } = useContext(AppContext);
   const location = useLocation();
   const evId = location.state?.evaluation?.id;
 
@@ -383,16 +314,7 @@ export default function EvalEdit() {
   const [activeTab, setActiveTab] = useState("treated"); // "treated" | "untreated"
   const [saving, setSaving] = useState(false);
 
-  const [latestEval, setLatestEval] = useState(null);
-
-
-  const [showReco, setShowReco] = useState(false);
-
-  //const isTreated = (r) => r?.statut === "validé" || r?.statut === "refusé";
-  const isTreated = (critereId) => {
-  const response = reponsesByCritere.get(critereId);
-  return !!response; // treated if a response exists
-};
+  const isTreated = (r) => r?.statut === "validé" || r?.statut === "refusé";
 
   // Fetch evaluation
   useEffect(() => {
@@ -427,7 +349,6 @@ export default function EvalEdit() {
     };
     if (evId) fetchEvaluation();
   }, [backendUrl, evId]);
-  console.log("evaluation:", evaluation);
 
   // Fetch principes
   useEffect(() => {
@@ -451,21 +372,6 @@ export default function EvalEdit() {
     fetchPrincipes();
   }, [backendUrl]);
 
-  //latest evaluation
-  useEffect(() => {
-  const fetchLatest = async () => {
-    try {
-      const latestRes = await axios.get(`${backendUrl}/evaluation/latest/${userData?.organisme?.id}`,{withCredentials: true});
-      console.log("latestRes:", latestRes.data);
-      setLatestEval(latestRes.data);
-    } catch (error) {
-      //toast.error(error?.response?.data?.message || error.message);
-      console.error("Erreur fetching latest evaluation:", error);
-    } 
-  };
-  fetchLatest();
-},[backendUrl, userData?.organisme?.id]);
-
   // Source of truth for the cards (draft while editing, evaluation otherwise)
   const reponsesByCritere = useMemo(() => {
     const map = new Map();
@@ -476,18 +382,15 @@ export default function EvalEdit() {
 
   // Split principes into treated / untreated
   const { treated, untreated } = useMemo(() => {
-  const t = [], u = [];
-
-  principes.forEach((principe) => {
-    const hasTreated = (principe.pratiques || []).some((pr) =>
-      (pr.criteres || []).some((c) => isTreated(c.id))
-    );
-
-    (hasTreated ? t : u).push(principe);
-  });
-
-  return { treated: t, untreated: u };
-}, [principes, reponsesByCritere]);
+    const t = [], u = [];
+    principes.forEach((principe) => {
+      const hasTreated = (principe.pratiques || []).some((pr) =>
+        (pr.criteres || []).some((c) => isTreated(reponsesByCritere.get(c.id)))
+      );
+      (hasTreated ? t : u).push(principe);
+    });
+    return { treated: t, untreated: u };
+  }, [principes, reponsesByCritere]);
 
   const allCriteres = principes.flatMap((principe) =>
     (principe.pratiques || []).flatMap((pratique) => pratique.criteres || [])
@@ -513,7 +416,7 @@ export default function EvalEdit() {
       setSaving(true);
       // TODO: adapt this endpoint to your backend
       await axios.put(
-        `${backendUrl}/evaluation/update/${evId}`,
+        `${backendUrl}/evaluation/${evId}/reponses`,
         { reponses: draft },
         { withCredentials: true }
       );
@@ -540,71 +443,6 @@ export default function EvalEdit() {
       ];
     });
   };
-
-  //Add preuve to a critere
-const handleAddPreuve = async (critereId, file) => {
-    try {
-        const formData = new FormData();
-        formData.append("critereId", Number(critereId));
-        formData.append("valeur", reponsesByCritere.get(critereId)?.valeur ?? 0); // keep existing valeur
-        formData.append("files", file);
-
-        const res = await axios.post(
-            `${backendUrl}/evaluation/reponses/reponse/save/${evId}`,
-            formData,
-            { withCredentials: true, headers: { "Content-Type": "multipart/form-data" } }
-        );
-
-        //Update draft with new preuve
-        setDraft(prev => prev.map(r => {
-            if (r.critereId === critereId) {
-                return {
-                    ...r,
-                    preuves: [...(r.preuves || []), {
-                        fileName: file.name,
-                        fileUrl: res.data?.preuves?.slice(-1)[0]?.cheminFichier 
-                            ? `${backendUrl}/uploads/${res.data.preuves.slice(-1)[0].cheminFichier}`
-                            : URL.createObjectURL(file) // fallback for display
-                    }]
-                };
-            }
-            return r;
-        }));
-        toast.success("Preuve ajoutée !");
-    } catch (err) {
-        console.error(err);
-        toast.error("Erreur lors de l'ajout de la preuve");
-    }
-};
-
-//Remove preuve from a critere
-const handleRemovePreuve = async (critereId, preuveIndex) => {
-    try {
-        const reponse = draft.find(r => r.critereId === critereId);
-        const preuve = reponse?.preuves?.[preuveIndex];
-        
-        if (preuve?.id) {
-            await axios.delete(
-                `${backendUrl}/evaluation/${evId}/reponses/${critereId}/preuves/${preuve.id}`,
-                { withCredentials: true }
-            );
-        }
-
-        //Update draft
-        setDraft(prev => prev.map(r => {
-            if (r.critereId === critereId) {
-                return {
-                    ...r,
-                    preuves: r.preuves.filter((_, i) => i !== preuveIndex)
-                };
-            }
-            return r;
-        }));
-        toast.success("Preuve supprimée !");
-    } catch (err) {
-        toast.error("Erreur lors de la suppression");
-    }
-};
 
   const evaluateur = { name: evaluation?.responsableName };
   const tabPrincipes = activeTab === "treated" ? treated : untreated;
@@ -671,10 +509,8 @@ const handleRemovePreuve = async (critereId, preuveIndex) => {
                 </div>
 
                 {/* Edit / Save / Cancel */}
-                
                 <div style={{ display: "flex", gap: 8 }}>
-                  {evaluation?.id === latestEval?.id && (
-                  isEditing ? (
+                  {isEditing ? (
                     <>
                       <button
                         onClick={handleCancel}
@@ -712,7 +548,6 @@ const handleRemovePreuve = async (critereId, preuveIndex) => {
                     >
                       ✎ Modifier les réponses
                     </button>
-                  )
                   )}
                 </div>
               </div>
@@ -804,56 +639,28 @@ const handleRemovePreuve = async (critereId, preuveIndex) => {
                       ? "Aucun principe traité pour le moment."
                       : "Tous les principes ont été traités. Bravo !"
                   }
-                  onAddPreuve={handleAddPreuve}    
-                  onRemovePreuve={handleRemovePreuve} 
                 />
               </>
             )}
 
             {/* AI Recommendations */}
             {evId && (
-  <div style={{ marginTop: 24 }}>
-    
-    {/* Button */}
-    <button
-      onClick={() => setShowReco(prev => !prev)}
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        background: "#111827",
-        color: "#fff",
-        border: "none",
-        borderRadius: 999,
-        padding: "8px 14px",
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: "pointer",
-      }}
-    >
-      <Sparkles size={16} />
-      {showReco ? "Masquer recommandations" : "Recommandations IA"}
-    </button>
-
-    {/* Section (appears on click) */}
-    {showReco && (
-      <div
-        style={{
-          marginTop: 16,
-          background: "#fff",
-          border: "1px solid #e5e7eb",
-          borderRadius: 16,
-          padding: "22px 24px",
-        }}
-      >
-        <RecommendationEngine
-          evaluationId={evId}
-          organismeNom={evaluation?.organismeName}
-        />
-      </div>
-    )}
-  </div>
-)}
+              <div style={{
+                marginTop: 24,
+                background: "#fff",
+                border: "1px solid #e5e7eb",
+                borderRadius: 16,
+                padding: "22px 24px",
+              }}>
+                <h2 style={{ fontSize: 16, fontWeight: 800, color: "#111827", margin: "0 0 16px" }}>
+                  Recommandations personnalisées
+                </h2>
+                <RecommendationEngine
+                  evaluationId={evId}
+                  organismeNom={evaluation?.organismeName}
+                />
+              </div>
+            )}
           </div>
         </div>
       </div>

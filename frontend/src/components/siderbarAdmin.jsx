@@ -16,6 +16,20 @@ const navItems = [
     ),
   },
   {
+    to: "/listOrganismes",
+    label: "Liste Organismes",
+    icon: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="22" x2="21" y2="22"/>
+      <rect x="5" y="10" width="14" height="12"/>
+      <path d="M9 22V16h6v6"/>
+      <path d="M5 10l7-7 7 7"/>
+      <line x1="8" y1="14" x2="8" y2="14.01"/>
+      <line x1="16" y1="14" x2="16" y2="14.01"/>
+    </svg>
+  ),
+  },
+  {
     to: "/listDemandes",
     label: "Listes demandes",
     icon: (
@@ -37,20 +51,6 @@ const navItems = [
         <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
       </svg>
     ),
-  },
-  {
-    to: "/listOrganismes",
-    label: "Liste Organismes",
-    icon: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="3" y1="22" x2="21" y2="22"/>
-      <rect x="5" y="10" width="14" height="12"/>
-      <path d="M9 22V16h6v6"/>
-      <path d="M5 10l7-7 7 7"/>
-      <line x1="8" y1="14" x2="8" y2="14.01"/>
-      <line x1="16" y1="14" x2="16" y2="14.01"/>
-    </svg>
-  ),
   },
   {
     to: "/dashboardsAdmin",

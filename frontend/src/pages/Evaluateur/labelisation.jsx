@@ -136,6 +136,9 @@ const Labellisation = () => {
     const [sortBy, setSortBy] = useState("score");
     const [isEmpty, setIsEmpty] = useState(false);
 
+    const [anneeSelectionnee, setAnneeSelectionnee] = useState(new Date().getFullYear());
+    const [anneesDisponibles, setAnneesDisponibles] = useState([]);
+
     const SidebarComponent =
         userData?.role === "ADMIN"
             ? SiderbarAdmin
@@ -145,9 +148,9 @@ const Labellisation = () => {
             
     // Fetch evaluation
   useEffect(() => {
-  const fetchData = async () => {
+  const fetchData = async (annee=anneeSelectionnee) => {
     try {
-        const res = await axios.get(`${backendUrl}/evaluation/all/latest/treated`,{withCredentials: true});
+        const res = await axios.get(`${backendUrl}/evaluation/all/latest/treated`,{params: { annee }, withCredentials: true});
         console.log(res.data);
         setEvaluations(res.data);
         //console.log(res.data);
@@ -163,7 +166,34 @@ const Labellisation = () => {
   };
 
   fetchData();
-}, [backendUrl]);
+}, [backendUrl, anneeSelectionnee]);
+
+  //fetch annee disponible
+useEffect(() => {
+  const fetchAnnees = async () => {
+    try {
+      const res = await axios.get(
+        `${backendUrl}/annee/disponibles`,
+        { withCredentials: true }
+      );
+      const currentYear = new Date().getFullYear();
+      const years = [...new Set([...res.data, currentYear])].sort((a, b) => b - a);
+      setAnneesDisponibles(years);
+      
+      // Set default year ONLY once
+      setAnneeSelectionnee(prev => prev || currentYear);
+      // set default selected year (latest)
+      /*if (res.data.length > 0) {
+        setAnneeSelectionnee(res.data[0]);
+      }*/
+    } catch (error) {
+      toast.error("Erreur chargement des années");
+      console.error(error);
+    }
+  };
+
+  fetchAnnees();
+}, [backendUrl,[]]);
 
   const rankedEvaluations = useMemo(() => {
   return [...evaluations]
@@ -188,59 +218,6 @@ const Labellisation = () => {
 
   // Badge for score label
   const getLabelBadge = (label) => {
-   /* let label = "Non évalué";
-    let colorClass = "bg-gray-100 text-gray-600 border-gray-300";
-
-    if (pct < 40) {
-    label = "Non conforme";
-    colorClass = "bg-red-100 text-red-700 border-red-300";  // light red style
-  } else if (pct >= 40 && pct <= 59) {
-    label = "Bronze";
-    colorClass = "bg-yellow-100 text-yellow-800 border-yellow-300"; // bronze-ish
-  } else if (pct >= 60 && pct <= 79) {
-    label = "Argent";
-    colorClass = "bg-gray-200 text-gray-800 border-gray-300"; // silver-ish
-  } else if (pct >= 80 && pct <= 89) {
-    label = "Or";
-    colorClass = "bg-yellow-200 text-yellow-800 border-yellow-300"; // gold-ish
-  } else { // pct >= 90
-    label = "Excellence governance";
-    colorClass = "bg-green-100 text-green-800 border-green-300"; // top label
-  }
-
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-bold border ${colorClass}`}
-      style={{
-  display: "inline-block",
-  padding: "4px 10px",         // smaller padding
-  borderRadius: 12,
-  fontSize: 15,                 // slightly smaller
-  fontWeight: 600,
-  color: pct < 40? "#b91c1c"      
-    : pct <= 59
-    ? "#78350f"       
-    : pct <= 79
-    ? "#374151"       
-    : pct <= 89
-    ? "#78350f"      
-    : "#065f46",     
-  background: pct < 40
-    ? "#fee2e2"   
-    : pct <= 59
-    ? "#fef3c7"     
-    : pct <= 79
-    ? "#e5e7eb"     
-    : pct <= 89
-    ? "#fde68a"     
-    : "#d1fae5",    
-  boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
-  letterSpacing: "0.5px",
-  transition: "all 0.2s ease",
-}}
-      >
-        {label}
-      </span>
-    );*/
     const styles = {
     "Excellence governance": { color: "#065f46", background: "#d1fae5" },
     "Or":                    { color: "#78350f", background: "#fde68a" },
@@ -309,6 +286,30 @@ const Labellisation = () => {
           Attribution automatique des labels selon le score global de gouvernance des organismes évalués.
         </p>
       </div>
+
+      {/* Year selector */}
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 8,  }}>
+        <label style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          Année
+        </label>
+        <select
+          value={anneeSelectionnee}
+          onChange={e => setAnneeSelectionnee(Number(e.target.value))}
+          style={{padding: "7px 32px 7px 12px",borderRadius: 10,border: "1px solid #e2e8f0",background: "#fff",color: "#0f172a",fontSize: 13,
+          fontWeight: 600,cursor: "pointer",outline: "none",appearance: "none",
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "no-repeat",
+          backgroundPosition: "right 10px center",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          }}
+          onFocus={e => { e.target.style.borderColor = "#6366f1"; e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.15)"; }}
+          onBlur={e =>  { e.target.style.borderColor = "#e2e8f0"; e.target.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"; }}
+          >
+          {anneesDisponibles.map(y => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+          </select>
+        </div>
 
       {/* ── Label grid ── */}
       <div style={card}>
@@ -536,7 +537,7 @@ const Labellisation = () => {
           <span>{getMedalIcon(org.rank)}</span>
           <span style={{ fontSize: 13, fontWeight: 600, color: "#1e293b" }}>{org.organismeName}</span>
           <span style={{ fontSize: 12, color: "#64748b" }}>{org.organismeType || "—"}</span>
-          <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "monospace" }}>{org.dateCreation || "—"}</span>
+          <span style={{ fontSize: 12, color: "#94a3b8", fontFamily: "monospace" }}>{org.dateUpdate || "—"}</span>
           <span style={{ fontWeight: 700, fontSize: 13 }}>{pct}%</span>
           {getLabelBadge(org.label)}
         </div>

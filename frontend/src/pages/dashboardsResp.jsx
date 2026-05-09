@@ -369,7 +369,12 @@ const CommentTooltip = ({ commentaires }) => {
     </div>
   );
 };
-const getSeenEvals = () => JSON.parse(localStorage.getItem("seenEvals") || "[]");
+const getSeenEvals = (year) => JSON.parse(localStorage.getItem(`seenEvals_${year}`) || "{}");
+const getCommentFingerprint = (commentaires) =>
+  (commentaires || [])
+  .slice()
+  .sort((a, b) => a.critereId - b.critereId)
+  .map(c => `${c.critereId}:${c.commentaire}:${c.statut}`).join("|");
 
 // ─── CSS keyframes injected once ─────────────────────────────────────────────
 const GLOBAL_STYLES = `
@@ -388,7 +393,8 @@ const GLOBAL_STYLES = `
 // ═══════════════════════════════════════════════════════════════════════════════
 export default function DashboardResp() {
   const { backendUrl, userData } = useContext(AppContext);
-  const [seenEvals, setSeenEvals] = useState(getSeenEvals());
+  const [seenEvals, setSeenEvals] = useState({});
+  //const [seenEvals, setSeenEvals] = useState(() => getSeenEvals(new Date().getFullYear()));
   //console.log("userData: ",userData);
   const navigate = useNavigate();
 
@@ -400,8 +406,16 @@ export default function DashboardResp() {
   const [rawScores, setRawScores] = useState([]);    // scoreParPrincipe entries
   const [principes, setPrincipes] = useState([]);    // full principes list
   const [certificatVisible, setCertificatVisible] = useState(false);
+  const [dernierEvalReponses, setDernierEvalReponses] = useState([]);
+
+  const [rangs, setRangs] = useState([]);
+
+
 
   const organismeId = userData?.organisme?.id;
+
+  const [anneeSelectionnee, setAnneeSelectionnee] = useState(new Date().getFullYear());
+  const [anneesDisponibles, setAnneesDisponibles] = useState([]);
 
   const startEvaluation=async()=>{
       if (!userData) return alert("Utilisateur introuvable !");
@@ -414,12 +428,24 @@ export default function DashboardResp() {
     [...evaluations]
       .sort((a, b) => (a.dateCreation || "").localeCompare(b.dateCreation || ""))
       .map((ev, i) => ({
-        index: `Eval ${i + 1}`,
+        index: `Eval ${i + 1}(${ev.dateUpdate || ev.dateCreation || ""})`,
         date:  ev.dateTermination || ev.dateCreation || "",
         score: ev.score && ev.scoreMax ? +((ev.score / ev.scoreMax) * 100).toFixed(1) : 0,
         label: ev.label,
       })),
   [evaluations]);
+
+  const EvolutionByAnnee = useMemo(() =>
+    [...rangs]
+      .sort((a, b) => (a.annee || "")-(b.annee || ""))
+      .map(r => ({
+        index: `${r.annee}`,
+        scoreRaw: `${r.score} / ${r.scoreMax}`,
+        score: r.scorePct,
+        label: r.label,
+      })),
+  [rangs]);
+
 
   const findCritereName = (id) => {
   for (const p of principes) {
@@ -431,7 +457,7 @@ export default function DashboardResp() {
   return `Critère ${id}`;
 };
 
-  const orgRefusedCriteres = useMemo(() => {
+  /*const orgRefusedCriteres = useMemo(() => {
     if (!dernierEval || !dernierEval.reponses) return [];
     return dernierEval?.reponses
       .filter(r=> r.statut?.toLowerCase()==="refusé")
@@ -440,7 +466,17 @@ export default function DashboardResp() {
         commentaire: r.commentaire || "",
         valeur:r.valeur,
       }));
-  },[dernierEval, principes]);
+  },[dernierEval, principes]);*/
+  const orgRefusedCriteres = useMemo(() => {
+  if (!dernierEvalReponses.length) return [];
+  return dernierEvalReponses
+    .filter(r => r.statut?.toLowerCase() === "refusé")
+    .map(r => ({
+      critere: findCritereName(r.critereId),
+      commentaire: r.commentaire || "",
+      valeur: r.valeur,
+    }));
+}, [dernierEvalReponses, principes]);
 
   //pour supprimer les evaluations
   const deleteEval = async (evaluationId) => {
@@ -477,10 +513,10 @@ export default function DashboardResp() {
   }, [backendUrl, organismeId]);
 
   // all evaluations
-  const fetchEvaluations = async () => {
+  const fetchEvaluations = async (annee = anneeSelectionnee) => {
     try {
       //const latestRes = await axios.get(`${backendUrl}/evaluation/latest/${userData?.organisme?.id}`,{withCredentials: true}
-      const res = await axios.get(`${backendUrl}/evaluation/all/treated`,{withCredentials: true});
+      const res = await axios.get(`${backendUrl}/evaluation/all/treated`,{params: { annee },withCredentials: true});
       const evalsByOrg = Array.isArray(res.data)
         ? res.data.filter(ev => ev.organismeId === organismeId)
         : null;
@@ -492,12 +528,21 @@ export default function DashboardResp() {
       setLoading(false);
     }
   };
+  /*const filteredEvaluations = useMemo(() => {
+  return evaluations.filter(ev => {
+    const date = ev.dateTermination || ev.dateCreation;
+    if (!date) return false;
+
+    return new Date(date).getFullYear() === anneeSelectionnee;
+  });
+}, [evaluations, anneeSelectionnee]);*/
 
   //latest evaluation
-  const fetchLatest = async () => {
+  const fetchLatest = async (annee = anneeSelectionnee) => {
     try {
       //const latestRes = await axios.get(`${backendUrl}/evaluation/latest/${userData?.organisme?.id}`,{withCredentials: true}
-      const latestRes = await axios.get(`${backendUrl}/evaluation/all/latest/treated`,{withCredentials: true});
+      const latestRes = await axios.get(`${backendUrl}/evaluation/all/latest/treated`,
+        {params: { annee },withCredentials: true});
       const filtered = Array.isArray(latestRes.data)
         ? latestRes.data.find(ev => ev.organismeId === organismeId)
         : null;
@@ -517,6 +562,34 @@ export default function DashboardResp() {
       .catch(() => {});
   }, [backendUrl]);
 
+  //fetch annee disponible
+useEffect(() => {
+  const fetchAnnees = async () => {
+    try {
+      const res = await axios.get(
+        `${backendUrl}/annee/disponibles/${userData?.organisme?.id}`,
+        { withCredentials: true }
+      );
+      const currentYear = new Date().getFullYear();
+      const years = [...new Set([...res.data, currentYear])].sort((a, b) => b - a);
+      setAnneesDisponibles(years);
+      
+      // Set default year ONLY once
+      setAnneeSelectionnee(prev => prev || currentYear);
+      // set default selected year (latest)
+      /*if (res.data.length > 0) {
+        setAnneeSelectionnee(res.data[0]);
+      }*/
+    } catch (error) {
+      toast.error("Erreur chargement des années");
+      console.error(error);
+    }
+  };
+
+  fetchAnnees();
+}, [backendUrl,[]]);
+
+
   // ── Fetch scores par principe ─────────────────────────────────────────────
   const fetchScores = async () => {
     if (!organismeId) return;
@@ -526,9 +599,27 @@ export default function DashboardResp() {
   } catch {}
   };
   //use effects
-  useEffect(() => { fetchEvaluations(); }, [backendUrl, organismeId]);
-  useEffect(() => { fetchLatest(); },     [backendUrl, organismeId]);
-  useEffect(() => { fetchScores(); },     [backendUrl, organismeId]);
+  //useEffect(() => { fetchEvaluations(); }, [backendUrl, organismeId]);
+  useEffect(() => {
+    if (!organismeId || !anneeSelectionnee) return; 
+    fetchEvaluations(anneeSelectionnee);          
+  }, [backendUrl, organismeId, anneeSelectionnee]);  
+  //useEffect(() => { fetchLatest(); },     [backendUrl, organismeId]);
+  useEffect(() => {
+    if (!organismeId || !anneeSelectionnee) return; 
+    fetchLatest(anneeSelectionnee);          
+  }, [backendUrl, organismeId, anneeSelectionnee]);  
+  useEffect(() => { fetchScores(); },[backendUrl, organismeId, anneeSelectionnee]);
+
+  useEffect(() => {
+  if (!latestEval?.id) {
+    setDernierEvalReponses([]);
+    return;
+  }
+  axios.get(`${backendUrl}/evaluation/${latestEval.id}/reponses`, { withCredentials: true })
+    .then(r => setDernierEvalReponses(r.data.reponses || []))
+    .catch(() => setDernierEvalReponses([]));
+}, [backendUrl, latestEval?.id]); 
 
   /*useEffect(() => {
     const refreshScoreMax = async (evaluationId) => {
@@ -545,14 +636,13 @@ export default function DashboardResp() {
   }, [latestEval, seenEvals]);*/
   // ── Sync scores, scoreMax, scoreParPrincipe and label when dashboard loads ──
 useEffect(() => {
-  if (!dernierEval?.id || !principes.length) return;
-  if (dernierEval.statut !== "terminé") return;
-
+  if (!latestEval?.id || !principes.length) return;
+  if (latestEval.statut !== "terminé") return;
   const syncScores = async () => {
     try {
       // 1. Fetch full reponses for the latest evaluation
       const res = await axios.get(
-        `${backendUrl}/evaluation/${dernierEval.id}/reponses`,
+        `${backendUrl}/evaluation/${latestEval.id}/reponses`,
         { withCredentials: true }
       );
       const reponses = res.data.reponses || [];
@@ -596,12 +686,12 @@ useEffect(() => {
           axios.post(
             `${backendUrl}/scoreParPrincipe/enregistrer`,
             {
-              evaluationId: dernierEval.id,
-              responsableId: dernierEval.responsableId,
+              evaluationId: latestEval.id,
+              responsableId: latestEval.responsableId,
               organismeId,
               principeId: sp.principeId,
               score: sp.score,
-              
+              scoreMax: sp.maxScore
             },
             { withCredentials: true }
           )
@@ -610,14 +700,14 @@ useEffect(() => {
 
       // 6. Persist total score
       await axios.put(
-        `${backendUrl}/evaluation/${dernierEval.id}/score`,
+        `${backendUrl}/evaluation/${latestEval.id}/score`,
         { score: totalScore},
         { withCredentials: true }
       );
 
       // 7. Update label
       await axios.put(
-        `${backendUrl}/evaluation/updateLabel/${dernierEval.id}`,
+        `${backendUrl}/evaluation/updateLabel/${latestEval.id}`,
         {},
         { withCredentials: true }
       );
@@ -632,13 +722,29 @@ useEffect(() => {
   };
 
   syncScores();
-}, [dernierEval?.id, principes]);
+}, [latestEval?.id, principes]);
+
+  useEffect(() => {
+    setSeenEvals(getSeenEvals(anneeSelectionnee));
+  }, [anneeSelectionnee]);
+
+  useEffect(() => {
+  if (!organismeId) return;
+  axios.get(`${backendUrl}/evaluation/rang/${organismeId}`, { withCredentials: true })
+    .then(r => setRangs(r.data))
+    .catch(() => {});
+  console.log("rangs:", rangs);
+}, [backendUrl, organismeId,anneeSelectionnee]);
+
+  const rangAnneeSelectionnee = rangs.find(r => r.annee === anneeSelectionnee) ?? null;
 
   // ── Computed: score moyen par principe ────────────────────────────────────
   const scoresMoyen = useMemo(() => {
     if (!rawScores.length && !principes.length) return [];
-    // If no scores yet, show all principles at 0
-    if (!rawScores.length) {
+    const filteredIds = new Set(evaluations.map(ev => ev.id));
+    const yearScores = rawScores.filter(s => filteredIds.has(s.evaluationId));
+    // If no scores yet, show all principles at 0 
+    if (!yearScores.length) {
       return principes.map(p => ({ principe: p.nom, score: 0 }));
     }
     const map = {};
@@ -648,7 +754,7 @@ useEffect(() => {
       if (!map[nom]) map[nom] = { total: pct, count: 1 };
       else { map[nom].total += pct; map[nom].count++; }
     });*/
-      rawScores.forEach(item=>{
+      yearScores.forEach(item=>{
         const principeObj=principes.find(p=>p.id===item.principeId);
         if (!principeObj) return;
         const nom = principeObj.nom;
@@ -662,7 +768,7 @@ useEffect(() => {
     return Object.entries(map).map(([principe, { total, count }]) => ({
       principe, score: Math.round(total / count)
     }));
-  }, [rawScores, principes]);
+  }, [rawScores, principes, evaluations]);
 
   // ── Computed: latest eval ─────────────────────────────────────────────────
   /*const latestEval = useMemo(() => {
@@ -695,7 +801,13 @@ useEffect(() => {
 
   const isLoading = loading && !evaluations.length;
 
+  /*useEffect(() => {
+  console.log("rawScores sample:", rawScores[0]);
+  console.log("has evaluationId:", rawScores.every(s => s.evaluationId != null));
+}, [rawScores]);*/
+
   // ─────────────────────────────────────────────────────────────────────────
+
   return (
     <>
       <style>{GLOBAL_STYLES}</style>
@@ -749,6 +861,7 @@ useEffect(() => {
               </div>
 
               {/* Score ring */}
+              
               {globalScore != null && (
                 <div style={{ position:"relative", display:"inline-flex", alignItems:"center", justifyContent:"center" }}>
                   <ProgressRing pct={globalScore} size={88} stroke={8} color={labelCfg.color} />
@@ -758,6 +871,7 @@ useEffect(() => {
                   </div>
                 </div>
               )}
+              
 
               {/* CTA */}
               <button
@@ -776,6 +890,7 @@ useEffect(() => {
               </button>
             </div>
           </div>
+          
 
           {isLoading ? (
             <div style={{ textAlign:"center", padding:"60px", color:"#94a3b8", animation:"pulse 1.5s infinite" }}>
@@ -783,6 +898,30 @@ useEffect(() => {
             </div>
           ) : (
             <>
+              {/* Year selector */}
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 20 }}>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Année
+              </label>
+              <select
+                value={anneeSelectionnee}
+                onChange={e => setAnneeSelectionnee(Number(e.target.value))}
+                style={{padding: "7px 32px 7px 12px",borderRadius: 10,border: "1px solid #e2e8f0",background: "#fff",color: "#0f172a",fontSize: 13,
+                  fontWeight: 600,cursor: "pointer",outline: "none",appearance: "none",
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 10px center",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                }}
+                onFocus={e => { e.target.style.borderColor = "#6366f1"; e.target.style.boxShadow = "0 0 0 3px rgba(99,102,241,0.15)"; }}
+                onBlur={e =>  { e.target.style.borderColor = "#e2e8f0"; e.target.style.boxShadow = "0 1px 3px rgba(0,0,0,0.06)"; }}
+              >
+                {anneesDisponibles.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              </div>
+
               {/* ── KPI cards ─────────────────────────────────────────── */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(170px, 1fr))", gap:"16px", marginBottom:"28px" }}>
                 <KpiCard icon="📊" label="Score global" accent={labelCfg.color}
@@ -805,6 +944,17 @@ useEffect(() => {
                   value={principes.length}
                   sub={`${principes.reduce((s,p)=>s+(p.pratiques?.length||0),0)} pratiques`}
                   delay={320} />
+
+                {rangs.length > 0 && (
+                <KpiCard
+                  icon="🏆"
+                  label="Classement national"
+                  value={`#${rangAnneeSelectionnee ? rangAnneeSelectionnee.rang : "—"}`}
+                  sub={`sur ${rangs[0].totalOrganismes} organismes pour l'année ${anneeSelectionnee}`}
+                  accent="#d97706"
+                  delay={240}
+                />
+)}
               </div>
 
               {/* ── Charts row ────────────────────────────────────────── */}
@@ -919,6 +1069,66 @@ useEffect(() => {
                 ) : <EmptyState label="Pas d'historique disponible" />}
               </ChartCard>
 
+              <ChartCard title="📈 Évolution du score par année" subtitle="Dernière évaluation terminée de chaque année">
+  {EvolutionByAnnee.length > 1 ? (
+    <ResponsiveContainer width="100%" height={260}>
+      <LineChart data={EvolutionByAnnee}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+        <XAxis
+          dataKey="annee"
+          tick={{ fontSize: 12, fill: "#64748b" }}
+        />
+        <YAxis
+          domain={[0, 100]}
+          tickFormatter={v => `${v}%`}
+          tick={{ fontSize: 11, fill: "#94a3b8" }}
+        />
+        <Tooltip
+          content={({ active, payload, label }) => {
+            if (!active || !payload?.length) return null;
+            const d = payload[0].payload;
+            const lc = LABEL_CONFIG[d.label] || LABEL_CONFIG["Non évalué"];
+            return (
+              <div style={{
+                background: "#0f172a", borderRadius: 10, padding: "10px 14px",
+                fontSize: 13, boxShadow: "0 4px 20px rgba(0,0,0,0.2)"
+              }}>
+                <div style={{ fontWeight: 700, color: "#f8fafc", marginBottom: 4 }}>
+                  Année {label}
+                </div>
+                <div style={{ color: "#818cf8", fontWeight: 700, fontSize: 15 }}>
+                  {d.score}%
+                </div>
+                <div style={{ color: "#94a3b8", fontSize: 12 }}>
+                  Score: {d.scoreRaw}
+                </div>
+                <div style={{ marginTop: 4 }}>
+                  <span style={{
+                    padding: "2px 8px", borderRadius: 20, fontSize: 11,
+                    fontWeight: 600, background: lc.bg, color: lc.color
+                  }}>
+                    {d.label}
+                  </span>
+                </div>
+              </div>
+            );
+          }}
+        />
+        <Line
+          type="monotone"
+          dataKey="score"
+          stroke="#3b82f6"
+          strokeWidth={2.5}
+          dot={{ fill: "#3b82f6", r: 5 }}
+          activeDot={{ r: 7 }}
+        />
+      </LineChart>
+    </ResponsiveContainer>
+  ) : (
+    <EmptyState label="Au moins deux années d'évaluation sont nécessaires pour afficher l'évolution" />
+  )}
+</ChartCard>
+
               {/* Refused criteria */}
                 <ChartCard title="🚫 Critères refusés" subtitle="Sur la derniére evaluation de cet organisme">
                   <OrgRefusedList rows={orgRefusedCriteres} />
@@ -972,7 +1182,7 @@ useEffect(() => {
                   <div style={{ display:"flex", flexDirection:"column", gap:"10px" }}>
                   {[...evaluations].sort((a, b) =>
                     (b.dateTermination || b.dateCreation || "")
-                    .localeCompare(b.dateTermination ||b.dateCreation || "")
+                    .localeCompare(a.dateTermination ||a.dateCreation || "")
                   )
                     .map((ev, i) => {
                   return (
@@ -982,16 +1192,17 @@ useEffect(() => {
                         index={i}
                         onDelete={deleteEval}
                         onClick={() => {
-                          if (!seenEvals.includes(ev.id)) {
-                            const updated = [...seenEvals, ev.id];
-                            localStorage.setItem("seenEvals", JSON.stringify(updated));
-                            setSeenEvals(updated);
-                      }
+                          /*const updated = { ...seenEvals, [ev.id]: ev.commentaires?.length ?? 0 };
+                          localStorage.setItem(`seenEvals_${anneeSelectionnee}`, JSON.stringify(updated));
+                          setSeenEvals(updated);*/
+                          const updated = { ...seenEvals, [String(ev.id)]: getCommentFingerprint(ev.commentaires) };
+                          localStorage.setItem(`seenEvals_${anneeSelectionnee}`, JSON.stringify(updated));
+                          setSeenEvals(updated);
                         navigate("/EvalEdit", { state: { evaluation: ev } });
                     }}/>
 
                     {/*Tooltip per evaluation */}
-                    {ev.commentaires?.length > 0 && !seenEvals.includes(ev.id) && (
+                    {/*ev.commentaires?.length > 0 && seenEvals[ev.id] !== ev.commentaires?.length && (
                       <div style={{
                         position: "absolute",
                         top: "-10px",        // ← floats above the card
@@ -999,7 +1210,46 @@ useEffect(() => {
                     }}>
                       <CommentTooltip commentaires={ev.commentaires} />
                     </div>
-                  )}
+                  )*/}
+                  
+                    {/*(() => {
+                      const seenCount = seenEvals[String(ev.id)] ?? 0;
+                      const newCommentaires = ev.commentaires?.slice(seenCount) ?? [];
+                      return newCommentaires.length > 0 && seenEvals[String(ev.id)] !== ev.commentaires?.length ? (
+                        <div style={{position: "absolute",top: "-10px",right: "16px",}}>
+                          <CommentTooltip commentaires={newCommentaires} />
+                        </div>
+                      ) : null;
+                    })()*/}
+
+                    {(() => {
+                      const currentComments = ev.commentaires || [];
+
+                      // previously seen fingerprint map
+                      const seenFingerprint = seenEvals[String(ev.id)] || "";
+
+                      // current comment fingerprints
+                      const currentFingerprints = currentComments.map(c =>
+                          `${c.critereId}:${c.commentaire}:${c.statut}`
+                      );
+
+                      // old fingerprints set
+                      const oldSet = new Set(
+                        seenFingerprint ? seenFingerprint.split("|") : []
+                      );
+
+                      // only comments that are NEW or EDITED
+                      const changedComments = currentComments.filter(c => {
+                        const fp = `${c.critereId}:${c.commentaire}:${c.statut}`;
+                        return !oldSet.has(fp);
+                    });
+
+                    return changedComments.length > 0 ? (
+                      <div style={{position: "absolute",top: "-10px",right: "16px",}}>
+                        <CommentTooltip commentaires={changedComments} />
+                      </div>
+                    ) : null;
+                  })()}
                   </div>
                   );
                 })}
@@ -1032,6 +1282,7 @@ useEffect(() => {
                     organisme={userData?.organisme}
                     responsable={userData}          /* userData has nom + prenom */
                     evaluation={latestEval}
+                    rang={rangAnneeSelectionnee}
                   />
                 </div>
               )}
