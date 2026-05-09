@@ -72,6 +72,9 @@ public class EvaluationEntity {
     @CreationTimestamp
     @Column(updatable = true) //  creation time should not be updated after creation
     private java.sql.Timestamp dateUpdate;
+
+    @Column(nullable = false)
+    private Integer annee;
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "organisme_id")

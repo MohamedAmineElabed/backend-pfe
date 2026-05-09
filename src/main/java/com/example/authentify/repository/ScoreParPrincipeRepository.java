@@ -9,8 +9,8 @@ import com.example.authentify.entity.ScoreParPrincipeEntity;
 
 @Repository
 public interface ScoreParPrincipeRepository extends JpaRepository<ScoreParPrincipeEntity, Long> {
-    Optional<ScoreParPrincipeEntity> findByEvaluationIdAndPrincipeId(Long evaluationId, Long principeId);
-    List<ScoreParPrincipeEntity> findByEvaluationId(Long evaluationId);
+    Optional<ScoreParPrincipeEntity> findByEvaluation_IdAndPrincipeId(Long evaluationId, Long principeId);
+    List<ScoreParPrincipeEntity> findByEvaluation_Id(Long evaluationId);
     List<ScoreParPrincipeEntity> findByOrganismeId(Long organismeId);
     List<ScoreParPrincipeEntity> findByPrincipeId(Long principeId);
 

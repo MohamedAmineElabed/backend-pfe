@@ -21,11 +21,14 @@ import com.example.authentify.io.UpdateReponseRequest;
 
 //import com.example.authentify.io.ReponseRequest;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.io.IOException;
 //import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Objects;
 
 //import com.example.authentify.io.OrganismeRequest;
 
@@ -71,18 +74,32 @@ public class EvaluationServiceImp {
 }
     public EvaluationEntity createEvaluation(EvaluationRequest request) {
         // Create evaluation
-        EvaluationEntity evaluation = new EvaluationEntity();
+        //EvaluationEntity evaluation = new EvaluationEntity();
         // Fetch the organisme entity first (you need an OrganismeRepository)
         OrganismeEntity organisme = organismeRepository.findById(request.getOrganismeId())
             .orElseThrow(() -> new RuntimeException("Organisme not found with id: " + request.getOrganismeId()));
+
+        int currentYear = LocalDate.now().getYear();
+        /* 
         evaluation.setOrganisme(organisme);
         evaluation.setResponsableId(request.getResponsableId());
         evaluation.setStatut("en attente");
         evaluation.setScore(0);
         evaluation.setScoreMax(calculerMaxScore());
-
+        evaluation.setAnnee(currentYear);
         evaluation = evaluationRepository.save(evaluation);
-        return evaluation; // return the entity so frontend can get its ID
+        return evaluation; // return the entity so frontend can get its ID*/
+        EvaluationEntity evaluation = EvaluationEntity.builder()
+            .organisme(organisme)
+            .responsableId(request.getResponsableId())
+            .statut("en attente")
+            .score(0)
+            .scoreMax(calculerMaxScore())
+            .annee(currentYear)
+            .build();
+        return evaluationRepository.save(evaluation);
+        
+        
 
         // Save responses
        /*  for (ReponseRequest r : request.getReponses()) {
@@ -99,6 +116,10 @@ public class EvaluationServiceImp {
 
     public List<EvaluationEntity> getEvaluationsByOrganisme(Long organismeId) {
         return evaluationRepository.findByOrganismeId(organismeId);
+    }
+
+    public List<EvaluationEntity> getEvaluationsByOrganismeByAnnee(Long organismeId, Integer annee) {
+        return evaluationRepository.findByOrganismeIdAndAnnee(organismeId, annee);
     }
 
     /*public ReponseEntity saveReponse(ReponseRequest request, Long evaluationId) {
@@ -178,9 +199,14 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
         return evaluationRepository.findByUserIdWithReponses(userId);
 }
 
-    public List<EvaluationEntity> getAllEvaluations() {
+        public List<EvaluationEntity> getAllEvaluations() {
     return evaluationRepository.findAllActive();
+    
 }
+
+    /*public List<EvaluationEntity> getAllEvaluationsByAnne(int annee) {
+        return evaluationRepository.findAllActiveByAnnee(annee);
+}*/
 
     public EvaluationEntity getEvaluationByIdWithResponsesAndPreuves(Long evaluationId) {
     EvaluationEntity evaluation = evaluationRepository.findById(evaluationId).orElse(null);
@@ -300,7 +326,7 @@ public EvaluationEntity setScoreForEvaluation(Long evaluationId, Integer score) 
     EvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
             .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
 
-    int maxScore = scoreParPrincipeRepository.findByEvaluationId(evaluationId)
+    int maxScore = scoreParPrincipeRepository.findByEvaluation_Id(evaluationId)
             .stream()
             .mapToInt(sp -> sp.getScoreMax() != null ? sp.getScoreMax() : 0)
             .sum();
@@ -463,6 +489,29 @@ private void updateEvalStatut(Long evaluationId){
         .values()
         .stream()
         .toList();
+}
+
+
+    // Replaces getAllEvaluations() when year filtering is needed
+public List<EvaluationEntity> getAllEvaluationsByAnnee(int annee) {
+    return evaluationRepository.findAll().stream()
+        .filter(e -> Objects.equals(e.getAnnee(), annee))
+        .collect(Collectors.toList());
+}
+
+// Replaces getLatestTreatedPerOrganisme() with year filter
+public List<EvaluationEntity> getLatestTreatedPerOrganismeByAnnee(int annee) {
+    // Get all terminées for this year, keep only the latest per organisme
+    Map<Long, EvaluationEntity> latestPerOrg = new HashMap<>();
+    evaluationRepository.findAllTermineesByAnnee(annee).forEach(e -> {
+        Long orgId = e.getOrganisme().getId();
+        latestPerOrg.merge(orgId, e, (existing, incoming) -> {
+            java.sql.Timestamp a = existing.getDateTermination();
+            java.sql.Timestamp b = incoming.getDateTermination();
+            return (b != null && (a == null || b.after(a))) ? incoming : existing;
+        });
+    });
+    return new ArrayList<>(latestPerOrg.values());
 }
 
 

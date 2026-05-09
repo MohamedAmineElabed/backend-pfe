@@ -5,6 +5,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 //import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 //import com.fasterxml.jackson.annotation.JsonBackReference;
 //import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -41,6 +42,11 @@ public class ScoreParPrincipeEntity {
     @JoinColumn(name = "evaluation_id")
     @JsonBackReference // To prevent infinite recursion during JSON serialization
     private EvaluationEntity evaluation;
+
+    @JsonProperty("evaluationId") // To include evaluationId in JSON output
+    public Long getEvaluationId() {
+        return evaluation != null ? evaluation.getId() : null;
+    }
 
     // Reference to the responsable
     private Long responsableId;

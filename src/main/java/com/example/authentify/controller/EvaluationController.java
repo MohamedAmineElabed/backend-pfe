@@ -19,12 +19,13 @@ import com.example.authentify.entity.ReponseEntity;
 import com.example.authentify.io.EvaluationRequest;
 import com.example.authentify.io.UpdateEvaluationRequest;
 //import com.example.authentify.io.ReponseRequest;
-//import com.example.authentify.repository.DemandeRepository;
+import com.example.authentify.repository.EvaluationRepository;
 import com.example.authentify.service.PrincipeService;
 import com.example.authentify.service.ProfileService;
 import com.example.authentify.service.EvaluationServiceImp;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 //import java.util.Map;
 import java.util.List;
 //import jakarta.validation.Valid;
@@ -51,7 +52,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @RequiredArgsConstructor
 public class EvaluationController {
     //private final EvaluationRepository evaluationRepository;
-    //private final EvaluationRepository evaluationRepository;
+    private final EvaluationRepository evaluationRepository;
     //private final ReponseRepository reponseRepository;
     private final EvaluationServiceImp evaluationService;
     private final PrincipeService principeService;
@@ -98,8 +99,9 @@ public class EvaluationController {
 
 
     @GetMapping("/organisme/{organismeId}")
-    public ResponseEntity<List<Map<String, Object>>> getEvaluationsByOrganisme(@PathVariable Long organismeId){
-        List<EvaluationEntity> evaluations = evaluationService.getEvaluationsByOrganisme(organismeId);
+    public ResponseEntity<List<Map<String, Object>>> getEvaluationsByOrganisme(@PathVariable Long organismeId, @RequestParam(required = false) Integer annee){
+        int year = (annee != null) ? annee : java.time.LocalDate.now().getYear();
+        List<EvaluationEntity> evaluations = evaluationService.getEvaluationsByOrganismeByAnnee(organismeId, year);
 
         List<Map<String, Object>> response = evaluations.stream().map((EvaluationEntity ev) -> {
             //int preuvesCount = ev.getReponses() != null ? ev.getReponses().size() : 0;
@@ -123,6 +125,7 @@ public class EvaluationController {
 
             String statut = ev.getStatut();
             String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
+            String dateUpdate= ev.getDateUpdate() != null ? ev.getDateUpdate().toLocalDateTime().toLocalDate().toString() : "";
             //String organisme = "Organisme #" + ev.getId();
             Integer score=ev.getScore();
             //Integer scoreMax=ev.getScoreMax();
@@ -134,14 +137,17 @@ public class EvaluationController {
             OrganismeEntity org = organismeService.getOrganismeById(ev.getOrganisme().getId());
             String organismeName = org != null ? org.getNomOrganisme() : "_";
             String responsableName = (org != null && org.getResponsable() != null) ? org.getResponsable().getNom() : "_";
+            String ResponsableRole=(org != null && org.getResponsable() != null) ? org.getResponsable().getJobRole() : "_";
 
             Map<String, Object> map = new java.util.HashMap<>();
             map.put("id", ev.getId());
             map.put("organismeId", ev.getId());
             map.put("organismeName", organismeName);
             map.put("responsableName", responsableName);
+            map.put("responsableRole", ResponsableRole);
             map.put("statut", statut);
             map.put("dateCreation", dateCreation);
+            map.put("dateUpdate", dateUpdate);
             map.put("progress", progress);
             map.put("preuves", preuvesCount);
             map.put("score", score);
@@ -389,8 +395,9 @@ public ResponseEntity<String> setEvaluationScore(
 
 
     @GetMapping("/all/treated")
-    public ResponseEntity<List<Map<String, Object>>> getAllEvaluationsWithTreatedProgress() {
-        List<EvaluationEntity> evaluations = evaluationService.getAllEvaluations();
+    public ResponseEntity<List<Map<String, Object>>> getAllEvaluationsWithTreatedProgress(@RequestParam(required = false) Integer annee) {
+        int year = (annee != null) ? annee : java.time.LocalDate.now().getYear();
+        List<EvaluationEntity> evaluations = evaluationService.getAllEvaluationsByAnnee(year);
 
     List<Map<String, Object>> response = evaluations.stream().map(ev -> {
 
@@ -423,6 +430,7 @@ public ResponseEntity<String> setEvaluationScore(
         //int maxScore = ev.getReponses() != null ? ev.getReponses().size() * 3 : 0;
         String label = evaluationService.getLabel(totalScore, maxScore);
         String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
+        String dateUpdate= ev.getDateUpdate() != null ? ev.getDateUpdate().toLocalDateTime().toLocalDate().toString() : "";
         String dateTermination = ev.getDateTermination() != null ? ev.getDateTermination().toLocalDateTime().toLocalDate().toString() : "";
 
         // Build commentaires list from responses
@@ -460,7 +468,7 @@ public ResponseEntity<String> setEvaluationScore(
         map.put("scoreMax", maxScore);
         map.put("logoUrl", org != null ? org.getLogoUrl() : "_");
         map.put("commentaires", commentaires);
-
+        map.put("dateUpdate", dateUpdate);
 
 
         return map;
@@ -492,8 +500,9 @@ public ResponseEntity<String> setEvaluationScore(
 
 
     @GetMapping("/all/latest/treated")
-    public ResponseEntity<List<Map<String, Object>>> getLatestTreatedPerOrganisme() {
-        List<EvaluationEntity> evaluations = evaluationService.getLatestTreatedPerOrganisme();
+    public ResponseEntity<List<Map<String, Object>>> getLatestTreatedPerOrganisme(@RequestParam(required = false) Integer annee) {
+        int year = (annee != null) ? annee : java.time.LocalDate.now().getYear();
+        List<EvaluationEntity> evaluations = evaluationService.getLatestTreatedPerOrganismeByAnnee(year);
 
     List<Map<String, Object>> response = evaluations.stream().map(ev -> {
 
@@ -527,6 +536,9 @@ public ResponseEntity<String> setEvaluationScore(
         String label = evaluationService.getLabel(totalScore, maxScore);
         String dateCreation = ev.getDateSoumission() != null ? ev.getDateSoumission().toLocalDateTime().toLocalDate().toString() : "";
         String dateTermination = ev.getDateTermination() != null ? ev.getDateTermination().toLocalDateTime().toLocalDate().toString() : "";
+        String dateUpdate= ev.getDateUpdate() != null ? ev.getDateUpdate().toLocalDateTime().toLocalDate().toString() : "";
+
+         // Build commentaires list from responses
 
         // Use HashMap instead of Map.ofEntries
         Map<String, Object> map = new java.util.HashMap<>();
@@ -548,12 +560,81 @@ public ResponseEntity<String> setEvaluationScore(
         map.put("dateTermination", dateTermination);
         map.put("scoreMax", maxScore);
         map.put("logoUrl", org != null ? org.getLogoUrl() : "_");
+        map.put("dateUpdate", dateUpdate);
 
         return map;
 
     }).toList();
 
     return ResponseEntity.ok(response);
+}
+
+
+
+@GetMapping("/rang/{organismeId}")
+public ResponseEntity<List<Map<String, Object>>> getRangOrganisme(
+        @PathVariable Long organismeId) {
+
+    // Step 1 — get all years that have terminée evaluations
+    List<Integer> annees = evaluationRepository.findDistinctAnnees();
+
+    int globalMaxScore = evaluationService.calculerMaxScore();
+
+    List<Map<String, Object>> result = new ArrayList<>();
+
+    for (Integer year : annees) {
+
+        // Step 2 — latest terminée per organisme for this year
+        List<EvaluationEntity> allTerminees = evaluationRepository.findAllTermineesByAnnee(year);
+
+        Map<Long, EvaluationEntity> latestPerOrg = new HashMap<>();
+        allTerminees.forEach(e -> {
+            Long orgId = e.getOrganisme().getId();
+            latestPerOrg.merge(orgId, e, (existing, incoming) ->
+                incoming.getDateTermination() != null &&
+                (existing.getDateTermination() == null ||
+                 incoming.getDateTermination().after(existing.getDateTermination()))
+                    ? incoming : existing
+            );
+        });
+
+        int totalOrganismes = latestPerOrg.size();
+
+        // Step 3 — check if this organisme participated this year
+        EvaluationEntity myEval = latestPerOrg.get(organismeId);
+        if (myEval == null) continue; // organisme had no terminée eval this year — skip
+
+        // Step 4 — compute score% for this organisme
+        double myPct = myEval.getScore() != null
+            ? (double) myEval.getScore() / globalMaxScore * 100 : 0;
+
+        // Step 5 — dense rank: count distinct scores strictly higher than mine
+        long higherCount = latestPerOrg.values().stream()
+            .mapToDouble(e -> e.getScore() != null
+                ? (double) e.getScore() / globalMaxScore * 100 : 0)
+            .distinct()
+            .filter(pct -> pct > myPct)
+            .count();
+
+        int rang = (int) higherCount + 1;
+
+        Map<String, Object> row = new HashMap<>();
+        row.put("annee", year);
+        row.put("rang", rang);
+        row.put("totalOrganismes", totalOrganismes);
+        row.put("score", myEval.getScore());
+        row.put("scoreMax", globalMaxScore);
+        row.put("scorePct", Math.round(myPct));
+        row.put("label", evaluationService.getLabel(
+            myEval.getScore() != null ? myEval.getScore() : 0, globalMaxScore));
+
+        result.add(row);
+    }
+
+    // Sort by year descending so frontend gets newest first
+    result.sort((a, b) -> Integer.compare((int) b.get("annee"), (int) a.get("annee")));
+
+    return ResponseEntity.ok(result);
 }
 
     

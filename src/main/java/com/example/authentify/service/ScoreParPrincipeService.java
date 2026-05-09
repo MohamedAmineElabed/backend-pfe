@@ -34,7 +34,7 @@ public ScoreParPrincipeEntity enregistrerScore(EvaluationEntity evaluation, Long
         throw new RuntimeException("Principe not found with id: " + principeId);
     }
     int scoreMax = principeRepository.countCriteresByPrincipeId(principeId) * 3;
-    return scoreParPrincipeRepository.findByEvaluationIdAndPrincipeId(evaluation.getId(), principeId)
+    return scoreParPrincipeRepository.findByEvaluation_IdAndPrincipeId(evaluation.getId(), principeId)
         .map(existing -> {
             existing.setScore(score);
             existing.setScoreMax(scoreMax);
@@ -56,7 +56,7 @@ public ScoreParPrincipeEntity enregistrerScore(EvaluationEntity evaluation, Long
 // Call this after any critère add/delete
 @Transactional
 public void refreshScoreMaxParPrincipe(Long evaluationId) {
-        List<ScoreParPrincipeEntity> scores =scoreParPrincipeRepository.findByEvaluationId(evaluationId);
+        List<ScoreParPrincipeEntity> scores =scoreParPrincipeRepository.findByEvaluation_Id(evaluationId);
         scores.forEach(s -> {
             int freshMax = principeRepository.countCriteresByPrincipeId(s.getPrincipeId()) * 3;
             s.setScoreMax(freshMax);
@@ -69,7 +69,7 @@ public List<ScoreParPrincipeEntity> getAllScores() {
 }
 
 public List<ScoreParPrincipeEntity>getScoresByEvaluationId(Long evaluationId){
-    return scoreParPrincipeRepository.findByEvaluationId(evaluationId);
+    return scoreParPrincipeRepository.findByEvaluation_Id(evaluationId);
 }
 public List<ScoreParPrincipeEntity>getScoresByOrganismeId(Long organismeId){
     return scoreParPrincipeRepository.findByOrganismeId(organismeId);

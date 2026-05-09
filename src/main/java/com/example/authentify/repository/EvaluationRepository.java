@@ -39,6 +39,52 @@ public interface EvaluationRepository extends JpaRepository<EvaluationEntity, Lo
         WHERE e.organisme.responsable.etat = "actif"
     """)
     List<EvaluationEntity> findAllActive();
+
+    // ── New year-aware methods ────────────────────────────────────────────
+
+    // All evaluations for an organisme in a specific year
+    List<EvaluationEntity> findByOrganismeIdAndAnnee(Long organismeId, Integer annee);
+
+    // Latest terminée for an organisme in a specific year
+    @Query("""
+        SELECT e FROM EvaluationEntity e
+        WHERE e.organisme.id = :organismeId
+          AND e.annee = :annee
+          AND e.statut = 'terminé'
+        ORDER BY e.dateTermination DESC
+        """)
+    List<EvaluationEntity> findLatestTermineeByOrganismeAndAnnee(
+        @Param("organismeId") Long organismeId,
+        @Param("annee") Integer annee
+    );
+
+  // All terminées across all organismes for a given year (for ranking/labelisation)
+    @Query("SELECT e FROM EvaluationEntity e WHERE e.annee = :annee AND e.statut = 'terminé'")
+    List<EvaluationEntity> findAllTermineesByAnnee(@Param("annee") Integer annee);
+
+    // All active evaluations for a given year
+    @Query("""
+        SELECT e FROM EvaluationEntity e
+        WHERE e.organisme.responsable.etat = 'actif'
+          AND e.annee = :annee
+        """)
+    List<EvaluationEntity> findAllActiveByAnnee(@Param("annee") Integer annee);
+
+    // Check if organisme already has a non-cancelled eval this year
+    // Used to block creating a second evaluation in the same year
+    boolean existsByOrganismeIdAndAnneeAndStatutNot(
+        Long organismeId, Integer annee, String statut
+    );
+
+    // All distinct years that have evaluations (for history dropdown)
+    @Query("SELECT DISTINCT e.annee FROM EvaluationEntity e WHERE e.annee IS NOT NULL ORDER BY e.annee DESC")
+    List<Integer> findDistinctAnnees();
+
+    // All distinct years that have evaluations (for history dropdown) for a specific organisme
+    @Query("SELECT DISTINCT e.annee FROM EvaluationEntity e WHERE e.organisme.id = :organismeId AND e.annee IS NOT NULL ORDER BY e.annee DESC")
+    List<Integer> findDistinctAnneesByOrganisme(@Param("organismeId") Long organismeId);
+
+
     
     
 
