@@ -32,13 +32,17 @@ const STATUS_COLORS = {
 
 // ─── Filter Bar ───────────────────────────────────────────────────────────────
 function FilterBar({
+  filterYear, setFilterYear, availableYears,
   filterDateFrom, setFilterDateFrom,
   filterDateTo, setFilterDateTo,
   filterOrgType, setFilterOrgType,
   filterOrgSecteur, setFilterOrgSecteur,
   organismesSecteurs, organismeTypes, onReset
 }) {
-  const isActive = filterDateFrom || filterDateTo || filterOrgType !== "all" || filterOrgSecteur !== "all";
+  const isActive =
+    filterYear !== "all" || filterDateFrom || filterDateTo ||
+    filterOrgType !== "all" || filterOrgSecteur !== "all";
+
   return (
     <div style={{
       display:"flex", flexWrap:"wrap", alignItems:"center", gap:"12px",
@@ -46,6 +50,16 @@ function FilterBar({
       boxShadow:"0 1px 3px rgba(0,0,0,0.1)", marginBottom:"24px"
     }}>
       <span style={{ fontWeight:600, color:"#374151", fontSize:"14px" }}>Filtres</span>
+
+      {/* Year selector */}
+      <div style={{ display:"flex", flexDirection:"column", gap:"2px" }}>
+        <label style={{ fontSize:"11px", color:"#6b7280", fontWeight:500 }}>Année</label>
+        <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
+          style={{ padding:"6px 10px", border:"1px solid #d1d5db", borderRadius:"8px", fontSize:"13px", color:"#374151", background:"#fff", cursor:"pointer", outline:"none", minWidth:"110px" }}>
+          <option value="all">Toutes</option>
+          {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
+      </div>
 
       {[
         { label:"Date début", type:"date", value:filterDateFrom, set:setFilterDateFrom },
@@ -191,7 +205,7 @@ function RefusedCriteresTable({ rows }) {
         <thead>
           <tr style={{ background:"#f9fafb" }}>
             {["Critère","Refus","Top commentaire"].map(h => (
-              <th key={h} style={{ padding:"10px 12px", textAlign:"left", color:"#6b7280", 
+              <th key={h} style={{ padding:"10px 12px", textAlign:"left", color:"#6b7280",
                 fontWeight:600, borderBottom:"1px solid #e5e7eb" }}>{h}</th>
             ))}
           </tr>
@@ -274,7 +288,7 @@ function TabNav({ active, onSelect }) {
   );
 }
 
-// Main Dashboard
+// ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashboardsEval() {
   const { backendUrl } = useContext(AppContext);
   const [loading, setLoading] = useState(true);
@@ -289,8 +303,7 @@ export default function DashboardsEval() {
   });
 
   // ── Raw data ─────────────────────────────────────────────────────────────────
-  const [listEvals,  setListEvals]  = useState([]);
-  const [latestEvalsByOrganisme, setLatestEvalsByOrganisme] = useState([]);
+  const [listEvals,  setListEvals]  = useState([]);  // all evaluations (for drill-down & stale)
   const [responses,  setResponses]  = useState([]);
   const [rawScores,  setRawScores]  = useState([]);
   const [organismes, setOrganismes] = useState([]);
@@ -298,33 +311,57 @@ export default function DashboardsEval() {
   const [allOrganismeSecteurs, setAllOrganismeSecteurs] = useState([]);
 
   // ── Filters ──────────────────────────────────────────────────────────────────
+  const [filterYear,      setFilterYear]      = useState("all");
   const [filterDateFrom,  setFilterDateFrom]  = useState("");
   const [filterDateTo,    setFilterDateTo]    = useState("");
   const [filterOrgType,   setFilterOrgType]   = useState("all");
   const [filterOrgSecteur,setFilterOrgSecteur]= useState("all");
 
   const handleReset = () => {
+    setFilterYear("all");
     setFilterDateFrom(""); setFilterDateTo("");
     setFilterOrgType("all"); setFilterOrgSecteur("all");
   };
 
+  // Available years derived from all evaluations
+  const availableYears = useMemo(() => {
+    const years = new Set();
+    listEvals.forEach(ev => {
+      const raw = ev.dateTermination || ev.dateSoumission || ev.dateCreation;
+      if (raw) {
+        const y = raw.substring(0, 4);
+        if (y && !isNaN(y)) years.add(y);
+      }
+    });
+    return [...years].sort((a, b) => b - a); // most recent first
+  }, [listEvals]);
+
   const valeurLabels = { 0:"n'existe pas", 1:"en cours", 2:"réalisé", 3:"validé" };
 
   // ── Filtered base sets ───────────────────────────────────────────────────────
+  // filteredEvals: all evaluations after applying every filter
   const filteredEvals = useMemo(() => {
     return listEvals.filter(ev => {
       const raw = ev.dateTermination || ev.dateSoumission || ev.dateCreation;
       const dateStr = raw ? raw.substring(0, 10) : null;
+
+      // Year filter
+      if (filterYear !== "all") {
+        if (!dateStr || dateStr.substring(0, 4) !== filterYear) return false;
+      }
+      // Date range filters
       if (filterDateFrom && dateStr && dateStr < filterDateFrom) return false;
       if (filterDateTo   && dateStr && dateStr > filterDateTo)   return false;
+      // Organisme type & sector
       if (filterOrgType    !== "all" && ev.organismeType    !== filterOrgType)    return false;
       if (filterOrgSecteur !== "all" && ev.organismeSecteur !== filterOrgSecteur) return false;
       return true;
     });
-  }, [listEvals, filterDateFrom, filterDateTo, filterOrgType, filterOrgSecteur]);
+  }, [listEvals, filterYear, filterDateFrom, filterDateTo, filterOrgType, filterOrgSecteur]);
 
-  // Latest eval per organisme (from filteredEvals)
-  /*const latestEvalsByOrganisme = useMemo(() => {
+  // filteredLatestEvals: keep only the most recent evaluation per organisme
+  // from the already-filtered set — this is what all "latest eval" charts use
+  const filteredLatestEvals = useMemo(() => {
     const map = {};
     filteredEvals.forEach(ev => {
       const orgId = ev.organismeId;
@@ -336,46 +373,45 @@ export default function DashboardsEval() {
     });
     return Object.values(map);
   }, [filteredEvals]);
-  console.log("latest evals ",latestEvalsByOrganisme);*/
 
+  // filteredResponses: responses filtered to match filteredEvals
   const filteredResponses = useMemo(() => {
+    // Build a set of eval IDs that pass filters (for fast lookup)
+    const filteredEvalIds = new Set(filteredEvals.map(ev => ev.id));
     return responses.filter(r => {
-      const dateStr = r.evalDate ? r.evalDate.substring(0, 10) : null;
-      if (filterDateFrom && dateStr && dateStr < filterDateFrom) return false;
-      if (filterDateTo   && dateStr && dateStr > filterDateTo)   return false;
-      if (filterOrgType    !== "all" && r.organismeType    !== filterOrgType)    return false;
-      if (filterOrgSecteur !== "all" && r.organismeSecteur !== filterOrgSecteur) return false;
+      if (!filteredEvalIds.has(r.evaluationId)) return false;
       return true;
     });
-  }, [responses, filterDateFrom, filterDateTo, filterOrgType, filterOrgSecteur]);
+  }, [responses, filteredEvals]);
 
-  // Responses scoped to latest evals only
+  // latestResponses: only responses belonging to the latest filtered eval of each org
   const latestResponses = useMemo(() => {
-    const ids = new Set(latestEvalsByOrganisme.map(ev => ev.id));
+    const ids = new Set(filteredLatestEvals.map(ev => ev.id));
     return filteredResponses.filter(r => ids.has(r.evaluationId));
-  }, [filteredResponses, latestEvalsByOrganisme]);
+  }, [filteredResponses, filteredLatestEvals]);
 
-  //Dimension lists 
-  const filteredOrganismeTypes = useMemo(() =>
-    [...new Set(latestEvalsByOrganisme.map(ev => ev.organismeType || "undefined"))],
-  [latestEvalsByOrganisme]);
-
+  // Dimension lists for filter dropdowns (always from full dataset)
   const orgIdToType = useMemo(() => {
     const map = {};
     organismes.forEach(o => { map[o.id] = o.type; });
     return map;
   }, [organismes]);
 
-  //Tab 1: Vue d'ensemble////////////////////////////////////
+  // Types present in the *filtered* latest set (used for multi-series charts)
+  const filteredOrganismeTypes = useMemo(() =>
+    [...new Set(filteredLatestEvals.map(ev => ev.organismeType || "undefined"))],
+  [filteredLatestEvals]);
+
+  // ── Tab 1: Vue d'ensemble ─────────────────────────────────────────────────
   const scoreMoyen = useMemo(() => {
-    if (!latestEvalsByOrganisme.length) return "—";
-    const total = latestEvalsByOrganisme.reduce((sum, ev) =>
+    if (!filteredLatestEvals.length) return "—";
+    const total = filteredLatestEvals.reduce((sum, ev) =>
       sum + (ev.score && ev.scoreMax ? (ev.score / ev.scoreMax) * 100 : 0), 0);
-    return (total / latestEvalsByOrganisme.length).toFixed(1) + "%";
-  }, [latestEvalsByOrganisme]);
+    return (total / filteredLatestEvals.length).toFixed(1) + "%";
+  }, [filteredLatestEvals]);
 
   const organismeData = useMemo(() => {
-    const map = latestEvalsByOrganisme.reduce((acc, ev) => {
+    const map = filteredLatestEvals.reduce((acc, ev) => {
       const k = ev.organismeType || "undefined";
       if (!acc[k]) acc[k] = { total: 0, count: 0 };
       acc[k].total += ev.score && ev.scoreMax ? (ev.score / ev.scoreMax) * 100 : 0;
@@ -383,10 +419,10 @@ export default function DashboardsEval() {
       return acc;
     }, {});
     return Object.entries(map).map(([organismeType, d]) => ({ organismeType, averageScore: d.total / d.count }));
-  }, [latestEvalsByOrganisme]);
+  }, [filteredLatestEvals]);
 
   const secteurData = useMemo(() => {
-    const map = latestEvalsByOrganisme.reduce((acc, ev) => {
+    const map = filteredLatestEvals.reduce((acc, ev) => {
       const k = ev.organismeSecteur || "undefined";
       if (!acc[k]) acc[k] = { total: 0, count: 0 };
       acc[k].total += ev.score && ev.scoreMax ? (ev.score / ev.scoreMax) * 100 : 0;
@@ -395,7 +431,7 @@ export default function DashboardsEval() {
     }, {});
     return Object.entries(map).map(([secteur, d]) => ({ secteur, averageScore: d.total / d.count }))
       .sort((a, b) => b.averageScore - a.averageScore);
-  }, [latestEvalsByOrganisme]);
+  }, [filteredLatestEvals]);
 
   const scoreDistribution = useMemo(() => {
     const buckets = [
@@ -405,14 +441,24 @@ export default function DashboardsEval() {
       { range: "60–80%",min: 60, max: 80,  count: 0, fill: "#3b82f6" },
       { range: "80–100%",min:80, max: 101, count: 0, fill: "#10b981" },
     ];
-    latestEvalsByOrganisme.forEach(ev => {
+    filteredLatestEvals.forEach(ev => {
       const pct = ev.score && ev.scoreMax ? (ev.score / ev.scoreMax) * 100 : 0;
       const b = buckets.find(b => pct >= b.min && pct < b.max) || buckets[4];
       b.count++;
     });
     return buckets;
-  }, [latestEvalsByOrganisme]);
+  }, [filteredLatestEvals]);
 
+  const filteredDonutDataLabels = useMemo(() => {
+    const map = filteredLatestEvals.reduce((acc, ev) => {
+      const k = ev.label ?? "Non évalué";
+      acc[k] = (acc[k] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(map).map(([name, count]) => ({ name, count }));
+  }, [filteredLatestEvals]);
+
+  // Monthly evolution — uses all filteredEvals (not just latest) for time series
   const monthData = useMemo(() => {
     if (!filteredEvals.length) return [];
     const dict = filteredEvals.reduce((acc, ev) => {
@@ -433,16 +479,7 @@ export default function DashboardsEval() {
     }).sort((a, b) => a.mois.localeCompare(b.mois));
   }, [filteredEvals]);
 
-  const filteredDonutDataLabels = useMemo(() => {
-    const map = latestEvalsByOrganisme.reduce((acc, ev) => {
-      const k = ev.label ?? "Non évalué";
-      acc[k] = (acc[k] || 0) + 1;
-      return acc;
-    }, {});
-    return Object.entries(map).map(([name, count]) => ({ name, count }));
-  }, [latestEvalsByOrganisme]);
-
-  //Tab 2: Analyse des réponses///////////////////////
+  // ── Tab 2: Analyse des réponses ───────────────────────────────────────────
   const filteredChartDataReponse = useMemo(() => {
     const map = latestResponses.reduce((acc, r) => {
       const k = r.valeur ?? "undefined";
@@ -458,7 +495,7 @@ export default function DashboardsEval() {
   ], [latestResponses]);
 
   const chartData = useMemo(() => {
-    const latestOrgIds = new Set(latestEvalsByOrganisme.map(ev => ev.organismeId));
+    const latestOrgIds = new Set(filteredLatestEvals.map(ev => ev.organismeId));
     const filtered = rawScores.filter(item => {
       if (!latestOrgIds.has(item.organismeId)) return false;
       if (filterOrgType !== "all") return orgIdToType[item.organismeId] === filterOrgType;
@@ -474,10 +511,10 @@ export default function DashboardsEval() {
       name: principesMap[pid] || `Principe ${pid}`,
       score: arr.reduce((a, b) => a + b, 0) / arr.length
     }));
-  }, [rawScores, filterOrgType, orgIdToType, principesMap, latestEvalsByOrganisme]);
+  }, [rawScores, filterOrgType, orgIdToType, principesMap, filteredLatestEvals]);
 
   const scoresParPrincipeParType = useMemo(() => {
-    const latestOrgIds = new Set(latestEvalsByOrganisme.map(ev => ev.organismeId));
+    const latestOrgIds = new Set(filteredLatestEvals.map(ev => ev.organismeId));
     const filtered = rawScores.filter(item => {
       if (!latestOrgIds.has(item.organismeId)) return false;
       if (filterOrgType !== "all") return orgIdToType[item.organismeId] === filterOrgType;
@@ -498,9 +535,8 @@ export default function DashboardsEval() {
       Object.entries(types).forEach(([typeOrg, d]) => { result[typeOrg] = d.total / d.count; });
       return result;
     });
-  }, [rawScores, filterOrgType, orgIdToType, principesMap, latestEvalsByOrganisme]);
+  }, [rawScores, filterOrgType, orgIdToType, principesMap, filteredLatestEvals]);
 
-  // Stacked reponses per principe
   const reponsesParPrincipe = useMemo(() => {
     const principesByCritere = {};
     Object.entries(criteresMap).forEach(([critereId, info]) => {
@@ -528,12 +564,12 @@ export default function DashboardsEval() {
     return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 10);
   }, [latestResponses, criteresMap]);
 
-  // Tab 3: Suivi & Certification//////////////////////////////
+  // ── Tab 3: Suivi & Certification ─────────────────────────────────────────
   const completionRanking = useMemo(() =>
-    [...latestEvalsByOrganisme]
+    [...filteredLatestEvals]
       .map(ev => ({ ...ev, name: ev.organismeName, progression: ev.progression || 0 }))
       .sort((a, b) => b.progression - a.progression),
-  [latestEvalsByOrganisme]);
+  [filteredLatestEvals]);
 
   const staleEvaluations = useMemo(() => {
     const now = new Date();
@@ -541,7 +577,7 @@ export default function DashboardsEval() {
       .filter(ev => ev.status !== "terminé")
       .map(ev => {
         const ref  = new Date(ev.dateCreation || now);
-        const days = Math.floor((now - ref) / 86400000); //86400000 =1day
+        const days = Math.floor((now - ref) / 86400000);
         return { ...ev, daysInactive: days };
       })
       .filter(ev => ev.daysInactive >= 15)
@@ -554,10 +590,10 @@ export default function DashboardsEval() {
     const termines = filteredEvals.filter(ev => ev.status === "terminé").length;
     const labelled = filteredEvals.filter(ev => ev.label && !["Non évalué"].includes(ev.label)).length;
     return [
-      { name:"Évaluations soumises", value:total,    fill:"#3b82f6" },
-      { name:"En cours de traitement",value:enCours,  fill:"#f59e0b" },
-      { name:"Terminées",            value:termines,  fill:"#10b981" },
-      { name:"Labellisées",          value:labelled,  fill:"#8b5cf6" },
+      { name:"Évaluations soumises",   value:total,    fill:"#3b82f6" },
+      { name:"En cours de traitement", value:enCours,  fill:"#f59e0b" },
+      { name:"Terminées",              value:termines,  fill:"#10b981" },
+      { name:"Labellisées",            value:labelled,  fill:"#8b5cf6" },
     ];
   }, [filteredEvals]);
 
@@ -571,7 +607,8 @@ export default function DashboardsEval() {
     return (total / completed.length).toFixed(0);
   }, [filteredEvals]);
 
-  //Tab 4: Par organisme
+  // ── Tab 4: Par organisme (drill-down) ─────────────────────────────────────
+  // uniqueOrganismes from ALL evals (no filter) so user can always drill into any org
   const uniqueOrganismes = useMemo(() => {
     const map = {};
     listEvals.forEach(ev => {
@@ -582,6 +619,7 @@ export default function DashboardsEval() {
     return Object.entries(map).map(([id, name]) => ({ id: Number(id), name }));
   }, [listEvals]);
 
+  // orgAllEvals from ALL evals (drill-down shows full history of selected org)
   const orgAllEvals = useMemo(() =>
     selectedOrgId ? listEvals.filter(ev => ev.organismeId === selectedOrgId) : [],
   [selectedOrgId, listEvals]);
@@ -600,59 +638,42 @@ export default function DashboardsEval() {
   const orgRadarData = useMemo(() => {
     if (!selectedOrgId) return [];
     const grouped = {};
-
     rawScores
       .filter(s => s.organismeId === selectedOrgId)
       .forEach(s => {
         const principeNom = principesMap[s.principeId];
-        if (!principeNom) return null;
+        if (!principeNom) return;
         const pct = s.scoreMax ? (s.score / s.scoreMax) * 100 : 0;
         if (!grouped[principeNom]) grouped[principeNom] = { total: 0, count: 0 };
         grouped[principeNom].total += pct;
         grouped[principeNom].count++;
       });
-        return Object.entries(grouped).map(([principe, d]) => ({
-          principe,
-          score: +(d.total / d.count).toFixed(1),
-          fullMark: 100,
-        }));
-}, [selectedOrgId, rawScores, principesMap]);
-
-  // Replace 0 scores with a small minimum just for display
-  const radarDisplayData = useMemo(() =>
-  orgRadarData.map(d => ({ ...d, score: d.score === 0 ? 1 : d.score })),
-[orgRadarData]);
-  
-
-  /*const orgRadarData = useMemo(() => {
-    if (!selectedOrgId) return [];
-    const grouped = {};
-
-    rawScores
-      .filter(s => s.organismeId === selectedOrgId)
-      .forEach(s => {
-        const pid = s.principeId;
-
-        if (!grouped[pid]) {
-          grouped[pid] = { total: 0, count: 0 };
-        }
-
-        const pct = s.scoreMax ? (s.score / s.scoreMax) * 100 : 0;
-        grouped[pid].total += pct;
-        grouped[pid].count++;
-      });
-
-    return Object.entries(grouped).map(([pid, d]) => ({
-      principe: principesMap[pid] || `P${pid}`,
+    return Object.entries(grouped).map(([principe, d]) => ({
+      principe,
       score: +(d.total / d.count).toFixed(1),
       fullMark: 100,
     }));
-  }, [selectedOrgId, rawScores, principesMap]);*/
+  }, [selectedOrgId, rawScores, principesMap]);
+
+  // Replace 0 scores with a small minimum just for display
+  const radarDisplayData = useMemo(() =>
+    orgRadarData.map(d => ({ ...d, score: d.score === 0 ? 1 : d.score })),
+  [orgRadarData]);
+
+  // selectedOrgInfo — use filteredLatestEvals so drill-down header reflects active filters
+  const selectedOrgInfo = useMemo(() => {
+    if (!selectedOrgId) return null;
+    return filteredLatestEvals.find(ev => ev.organismeId === selectedOrgId) ||
+           listEvals.find(ev => ev.organismeId === selectedOrgId) || null;
+  }, [selectedOrgId, filteredLatestEvals, listEvals]);
 
   const orgRefusedCriteres = useMemo(() => {
     if (!selectedOrgId) return [];
-    const orgEvalIds = new Set(latestEvalsByOrganisme.filter(ev => ev.organismeId === selectedOrgId) //filter les réponses
-    .map(ev => ev.id)); //extrat seulement les ids
+    const orgEvalIds = new Set(
+      filteredLatestEvals
+        .filter(ev => ev.organismeId === selectedOrgId)
+        .map(ev => ev.id)
+    );
     return responses
       .filter(r => orgEvalIds.has(r.evaluationId) && r.statut?.toLowerCase() === "refusé")
       .map(r => {
@@ -660,29 +681,18 @@ export default function DashboardsEval() {
         const nom  = (info && info.nom) ? info.nom : (info || `Critère ${r.critereId}`);
         return { critere: nom, commentaire: r.commentaire || "—", valeur: r.valeur };
       });
-  }, [selectedOrgId, listEvals, responses, criteresMap]);
+  }, [selectedOrgId, filteredLatestEvals, responses, criteresMap]);
 
-  const selectedOrgInfo = useMemo(() => {
-    if (!selectedOrgId) return null;
-      return latestEvalsByOrganisme.find(
-      ev => ev.organismeId === selectedOrgId
-      ) || null;
-  }, [selectedOrgId, latestEvalsByOrganisme]);
-
-  //Data fetching///////////////////////////
+  // ── Data fetching ─────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [allRes, latestRes] = await Promise.all([
-          axios.get(`${backendUrl}/evaluation/all/treated`, { withCredentials: true }),
-          axios.get(`${backendUrl}/evaluation/all/latest/treated`, { withCredentials: true }),
-        ]);
-        setListEvals(allRes.data);  // used for: monthData, orgAllEvals, staleEvals
-        setLatestEvalsByOrganisme (latestRes.data); //used for everything else
-          console.log("latest evals: ",latestRes.data);
+        const allRes = await axios.get(`${backendUrl}/evaluation/all/treated`, { withCredentials: true });
+        setListEvals(allRes.data);
+
         const types    = [...new Set(allRes.data.map(ev => ev.organismeType    || "undefined"))];
-        const secteurs = [...new Set(latestRes.data.map(ev => ev.organismeSecteur || "undefined"))];
+        const secteurs = [...new Set(allRes.data.map(ev => ev.organismeSecteur || "undefined"))];
         setAllOrganismeTypes(types);
         setAllOrganismeSecteurs(secteurs);
       } catch { toast.error("Erreur lors du chargement des évaluations"); }
@@ -706,7 +716,7 @@ export default function DashboardsEval() {
                   organismeType:    evalItem.organismeType,
                   organismeSecteur: evalItem.organismeSecteur,
                   evalDate:         evalItem.dateTermination || evalItem.dateSoumission || evalItem.dateCreation,
-                  evaluationId:     evalItem.id,        // ← required for latestResponses filtering
+                  evaluationId:     evalItem.id,
                 }));
               })
           )
@@ -751,12 +761,10 @@ export default function DashboardsEval() {
             criteres: (pr.criteres || []).map(c => ({ ...c }))
           }))
         }));
-        // Build principes map
         const pmap = {};
         mapped.forEach(p => { pmap[p.id] = p.nom; });
         setPrincipesMap(pmap);
 
-        // Build criteres map: critereId → { nom, principeName }
         const cmap = {};
         mapped.forEach(p => {
           (p.pratiques || []).forEach(pr => {
@@ -788,9 +796,8 @@ export default function DashboardsEval() {
     fetchScores();
   }, [backendUrl]);
 
-  //Grid helpers
+  // ── Grid helpers ──────────────────────────────────────────────────────────
   const grid2 = { display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(500px, 1fr))", gap:"20px", marginBottom:"24px" };
-  const grid1 = { display:"grid", gridTemplateColumns:"1fr", gap:"20px", marginBottom:"24px" };
 
   if (loading) {
     return (
@@ -803,7 +810,7 @@ export default function DashboardsEval() {
     );
   }
 
-  // RENDER
+  // ── RENDER ────────────────────────────────────────────────────────────────
   return (
     <div style={{ display:"flex", minHeight:"100vh", backgroundColor:"#f3f4f6" }}>
       <SidebarAdmin />
@@ -818,6 +825,8 @@ export default function DashboardsEval() {
 
         {/* Filter Bar */}
         <FilterBar
+          filterYear={filterYear}           setFilterYear={setFilterYear}
+          availableYears={availableYears}
           filterDateFrom={filterDateFrom}   setFilterDateFrom={setFilterDateFrom}
           filterDateTo={filterDateTo}       setFilterDateTo={setFilterDateTo}
           filterOrgType={filterOrgType}     setFilterOrgType={setFilterOrgType}
@@ -829,15 +838,15 @@ export default function DashboardsEval() {
         {/* Tab navigation */}
         <TabNav active={activeTab} onSelect={setActiveTab} />
 
-            {/*TAB 1 — Vue d'ensemble*/}
+        {/* TAB 1 — Vue d'ensemble */}
         {activeTab === "overview" && (
           <>
             {/* KPI cards */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))", gap:"16px", marginBottom:"28px" }}>
-              <StatCard title="👤 Responsables"     value={stats.totalUsers} />
-              <StatCard title="🏢 Organismes"       value={stats.totalOrganismes} />
-              <StatCard title="📄 Organismes évalués" value={latestEvalsByOrganisme.length} />
-              <StatCard title="📊 Score moyen"      value={scoreMoyen} />
+              <StatCard title="👤 Responsables"       value={stats.totalUsers} />
+              <StatCard title="🏢 Organismes"         value={stats.totalOrganismes} />
+              <StatCard title="📄 Organismes évalués" value={filteredLatestEvals.length} />
+              <StatCard title="📊 Score moyen"        value={scoreMoyen} />
               <StatCard
                 title="📌 Référentiel"
                 value={
@@ -919,8 +928,8 @@ export default function DashboardsEval() {
               </ChartCard>
             </div>
 
-            {/* Évolution mensuelle — full width — all evals */}
-            <ChartCard title="📈 Évolution des scores par mois" subtitle="Toutes les évaluations (historique complet)" style={{ marginBottom:"24px" }}>
+            {/* Évolution mensuelle — full width — all filtered evals */}
+            <ChartCard title="📈 Évolution des scores par mois" subtitle="Toutes les évaluations correspondant aux filtres" style={{ marginBottom:"24px" }}>
               {monthData.length ? (
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={monthData}>
@@ -941,7 +950,7 @@ export default function DashboardsEval() {
           </>
         )}
 
-        {/* TAB 2 — Analyse des réponses*/}
+        {/* TAB 2 — Analyse des réponses */}
         {activeTab === "analyses" && (
           <>
             <div style={grid2}>
@@ -1022,7 +1031,7 @@ export default function DashboardsEval() {
           </>
         )}
 
-        {/*TAB 3 — Suivi & Certification */}
+        {/* TAB 3 — Suivi & Certification */}
         {activeTab === "suivi" && (
           <>
             {/* Mini KPIs */}
@@ -1079,11 +1088,11 @@ export default function DashboardsEval() {
           </>
         )}
 
-        {/* TAB 4 — Par organisme (drill-down)*/}
+        {/* TAB 4 — Par organisme (drill-down) */}
         {activeTab === "organisme" && (
           <>
             {/* Organisme selector */}
-            <div style={{ background:"#fff", padding:"16px 20px", borderRadius:"12px", boxShadow:"0 1px 3px rgba(0,0,0,0.1)", marginBottom:"24px", display:"flex", alignItems:"center", gap:"16px" }}>
+            <div style={{ background:"#fff", padding:"16px 20px", borderRadius:"12px", boxShadow:"0 1px 3px rgba(0,0,0,0.1)", marginBottom:"24px", display:"flex", alignItems:"center", gap:"16px", flexWrap:"wrap" }}>
               <span style={{ fontWeight:600, color:"#374151", fontSize:"14px" }}>Sélectionner un organisme :</span>
               <select
                 value={selectedOrgId || ""}
@@ -1141,26 +1150,25 @@ export default function DashboardsEval() {
                     {orgRadarData.length ? (
                       <ResponsiveContainer width="100%" height={260}>
                         <RadarChart data={radarDisplayData} margin={{ top:10, right:30, bottom:10, left:30 }}>
-  <PolarGrid stroke="#e2e8f0" strokeDasharray="4 4" />
-  <PolarAngleAxis dataKey="principe" tick={{ fontSize:10, fill:"#475569" }} />
-  <PolarRadiusAxis 
-    domain={[0, 110]}
-    tick={false}
-    axisLine={false}
-    tickCount={5}
-  />
-  <Radar 
-    name="Score" 
-    dataKey="score" 
-    stroke="#3b82f6" 
-    fill="#3b82f6" 
-    fillOpacity={0.25}
-    strokeWidth={2}
-    dot={{ r:3, fill:"#3b82f6", strokeWidth:0 }}
-    // ← baseValue removed
-  />
-  <Tooltip formatter={v => [`${v}%`, "Score"]} />
-</RadarChart>
+                          <PolarGrid stroke="#e2e8f0" strokeDasharray="4 4" />
+                          <PolarAngleAxis dataKey="principe" tick={{ fontSize:10, fill:"#475569" }} />
+                          <PolarRadiusAxis
+                            domain={[0, 110]}
+                            tick={false}
+                            axisLine={false}
+                            tickCount={5}
+                          />
+                          <Radar
+                            name="Score"
+                            dataKey="score"
+                            stroke="#3b82f6"
+                            fill="#3b82f6"
+                            fillOpacity={0.25}
+                            strokeWidth={2}
+                            dot={{ r:3, fill:"#3b82f6", strokeWidth:0 }}
+                          />
+                          <Tooltip formatter={v => [`${v}%`, "Score"]} />
+                        </RadarChart>
                       </ResponsiveContainer>
                     ) : <EmptyState label="Scores par principe non disponibles" />}
                   </ChartCard>
@@ -1191,7 +1199,7 @@ export default function DashboardsEval() {
                 </ChartCard>
 
                 {/* Refused criteria */}
-                <ChartCard title="🚫 Critères refusés" subtitle="Sur la derniére evaluation de cet organisme">
+                <ChartCard title="🚫 Critères refusés" subtitle="Sur la dernière évaluation de cet organisme">
                   <OrgRefusedList rows={orgRefusedCriteres} />
                 </ChartCard>
               </>

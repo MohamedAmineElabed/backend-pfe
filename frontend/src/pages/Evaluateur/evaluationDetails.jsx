@@ -588,6 +588,7 @@ const EvaluationDetails = () => {
 
   useEffect(() => {
   const onFocus = () => {
+    // Refresh principes and evaluation responses when the window regains focus
     axios.get(`${backendUrl}/principes`, { withCredentials: true })
       .then(res => setPrincipes(res.data.map(p => ({
         ...p, label: p.nom,
@@ -596,6 +597,33 @@ const EvaluationDetails = () => {
           criteres: (pr.criteres || []).map(c => ({ ...c, label: c.nom })),
         })),
       }))));
+    axios.get(`${backendUrl}/evaluation/${id}/reponses`, { withCredentials: true })
+      .then(res => {
+        const evalData = res.data;
+        const mappedResponses = (evalData.reponses || []).map(r => ({
+          ...r,
+          commentaireEvaluateur: r.commentaire || "",
+          preuves: (r.preuves || []).map(p => ({
+            fileName: p.nomFichier,
+            fileUrl: `${backendUrl}/${p.cheminFichier.replace(/\\/g, "/")}`,
+          })),
+        }));
+        const states = {};
+        mappedResponses.forEach(r => {
+          if (r.statut) states[r.critereId] = {
+            comment: r.commentaireEvaluateur || "",
+            action: r.statut === "validé" ? "valider" : r.statut === "refusé" ? "refuser" : null,
+          };
+        });
+        setEvaluation({
+          ...evalData,
+          reponses: mappedResponses,
+          organismeName: evalData.organisme?.nomOrganisme || "—",
+          responsableName: evalData.organisme?.responsable?.nom,
+          responsableRole: evalData.organisme?.responsable?.role,
+        });
+        setCritereStates(states);
+      });
   };
   window.addEventListener("focus", onFocus);
   return () => window.removeEventListener("focus", onFocus);
@@ -717,7 +745,18 @@ console.log("scoreMax: ", maxScore);
         principeId: sp.principeId,
         score: sp.score, scoreMax: sp.maxScore,
       }, { withCredentials: true })
-    )).catch(err => { console.error(err); toast.error("Erreur enregistrement scores"); });
+    ))
+    .then(() => {
+      // ← Sync local state so hasScoreChanged computes correctly next time
+      setEvaluation(prev => ({
+        ...prev,
+        scoreParPrincipe: scorePerPrincipe.map(sp => ({
+        principeId: sp.principeId,
+        score: sp.score,
+        maxScore: sp.maxScore,})),
+      }));
+      toast.success("Scores par principe enregistrés");})
+    .catch(err => { console.error(err); toast.error("Erreur enregistrement scores"); });
   }, [isEvaluationComplete, scorePerPrincipe]);
 
   /*useEffect(() => {
@@ -737,7 +776,7 @@ console.log("scoreMax: ", maxScore);
 }, [evaluation.score,isEvaluationComplete]);*/
 
   useEffect(()=>{
-    if (!evaluation?.reponses || !evaluation) return;
+    if (!evaluation?.reponses || !evaluation ||!principes.length) return;
     const saveScore=async()=>{
       try{
       // Calculate current score from validated responses only
