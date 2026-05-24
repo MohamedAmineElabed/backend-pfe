@@ -1052,7 +1052,7 @@ useEffect(() => {
               )}
 
               {/* Score evolution */}
-              <ChartCard title="📈 Évolution du score" subtitle="Toutes les évaluations de cet organisme">
+              <ChartCard title="📈 Évolution du score" subtitle="Toutes les évaluations de cet organisme pour cette année">
                 {EvolutionData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={EvolutionData}>
@@ -1069,7 +1069,7 @@ useEffect(() => {
                 ) : <EmptyState label="Pas d'historique disponible" />}
               </ChartCard>
 
-              <ChartCard title="📈 Évolution du score par année" subtitle="Dernière évaluation terminée de chaque année">
+              {/*<ChartCard title="📈 Évolution du score par année" subtitle="Dernière évaluation terminée de chaque année">
   {EvolutionByAnnee.length > 1 ? (
     <ResponsiveContainer width="100%" height={260}>
       <LineChart data={EvolutionByAnnee}>
@@ -1127,7 +1127,7 @@ useEffect(() => {
   ) : (
     <EmptyState label="Au moins deux années d'évaluation sont nécessaires pour afficher l'évolution" />
   )}
-</ChartCard>
+</ChartCard>*/}
 
               {/* Refused criteria */}
                 <ChartCard title="🚫 Critères refusés" subtitle="Sur la derniére evaluation de cet organisme">

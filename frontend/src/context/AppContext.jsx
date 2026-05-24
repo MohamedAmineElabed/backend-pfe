@@ -6,7 +6,7 @@ import axios from "axios";
 
 export const AppContext = React.createContext();
 
-
+//axios.defaults.headers.common['ngrok-skip-browser-warning'] = 'true';
 export const AppContextProvider = (props) => {
     const backendUrl = Appconstants.BACKEND_URL; // Exemple d'URL de backend
     //const [isloggedIn, setIsloggedIn] = React.useState(false); // Exemple d'état de connexion

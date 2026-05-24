@@ -172,6 +172,19 @@ const ProfileInfoTab = ({ user }) => {
   };
 
   const handleSave = async () => {
+    const onlyLetters = /^[A-Za-zÀ-ÿ\s]*$/;
+    if(!onlyLetters.test(formData.nom)) {
+      toast.error("Le nom ne doit contenir que des lettres !");
+      return;
+    }
+    if(!onlyLetters.test(formData.prenom)) {
+      toast.error("Le prénom ne doit contenir que des lettres !");
+      return;
+    }
+    if(!onlyLetters.test(formData.jobRole)) {
+      toast.error("Le rôle ne doit contenir que des lettres !");
+      return;
+    }
     if (
       !formData.nom.trim() ||
       !formData.prenom.trim() ||

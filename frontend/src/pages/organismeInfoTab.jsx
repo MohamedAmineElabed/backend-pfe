@@ -170,7 +170,20 @@ const OrganismeInfoTab = ({ org }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    //setFormData({ ...formData, [name]: value });
+    if (name === "telephone") {
+      if (/^\d{0,8}$/.test(value)) {
+        setFormData({ ...formData, telephone: value });
+      }
+    }
+    else if (name === "fax") {
+      if (/^\d{0,8}$/.test(value)) {
+        setFormData({ ...formData, fax: value });
+      }
+    }
+    else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const handleCancel = () => {
@@ -190,6 +203,26 @@ const OrganismeInfoTab = ({ org }) => {
   };
 
   const handleSave = async () => {
+    const onlyLetters = /^[A-Za-zÀ-ÿ\s]*$/;
+    if(!onlyLetters.test(formData.nomOrganisme)) {
+      toast.error("Le nom de l'organisme ne doit contenir que des lettres !");
+      return;
+    }
+    if(!onlyLetters.test(formData.secteur)) {
+      toast.error("Le secteur ne doit contenir que des lettres !");
+      return;
+    }
+    if (!/^\d{8}$/.test(formData.telephone)) {
+      toast.error("Le numéro de téléphone doit contenir 8 chiffres !");
+      return;
+    }
+    if (!/^\d{8}$/.test(formData.fax)) {
+      toast.error("Le numéro de fax doit contenir 8 chiffres !");
+      return;
+    }
+
+    //formPayload.append("telephone", formData.telephone);
+    //formPayload.append("fax", formData.fax);
     if (
       !formData.nomOrganisme.trim() ||
       !formData.telephone.trim() ||
@@ -263,7 +296,7 @@ const OrganismeInfoTab = ({ org }) => {
 
         <div style={styles.group}>
           <label style={styles.label}>Type</label>
-          <input
+          {/*<input
             type="text"
             name="type"
             value={formData.type}
@@ -271,7 +304,14 @@ const OrganismeInfoTab = ({ org }) => {
             onChange={handleChange}
             required
             style={isEditing ? styles.inputEditing : styles.inputReadonly}
-          />
+          />*/}
+          <select style={isEditing ? styles.inputEditing : styles.inputReadonly} name="type" disabled={!isEditing}
+            value={formData.type} onChange={handleChange} required>
+              <option value="">Sélectionner...</option>
+              <option value="publique">Publique</option>
+              <option value="prive">Privé</option>
+              <option value="societe civile">Société civile</option>
+          </select>
         </div>
       </div>
 
