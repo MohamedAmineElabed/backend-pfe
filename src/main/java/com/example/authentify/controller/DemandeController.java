@@ -61,15 +61,6 @@ public class DemandeController {
         List<DemandeEntity> demandes = demandeService.getAllDemandes();
         return ResponseEntity.ok(demandes);
     }
-    
-   /*  @PostMapping("/registerDemande")
-    @ResponseStatus(HttpStatus.CREATED)
-    public DemandeEntity registerDemande(@RequestBody DemandeRequest request)  {   // Validate the incoming request using @Valid and @RequestBody annotations
-        //ProfileResponse response = demandeService.createDemande(request);
-        DemandeEntity savedDemande = demandeService.createDemande(request);
-        //to do :send welcome email
-        return savedDemande;
-    }*/
 
     @PostMapping("/registerDemande")
     @ResponseStatus(HttpStatus.CREATED)

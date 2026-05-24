@@ -25,15 +25,20 @@ public class DemandeServiceImp implements DemandeService {
     private final UserRepository userRepository;
     //private final OrganismeRepository organismeRepository;
     private final EmailService emailService;
-    // Check if a user with the same email already exists
+
+    
     public DemandeEntity createDemande(DemandeRequest request) {
+    // Check if a user with the same email already exists
     if (userRepository.existsByEmail(request.getEmail())) {
         throw new RuntimeException("Cet email est déjà utilisé");
     }
-
+    
     // Check if a demande with the same email already exists
     if (demandeRepository.existsByEmail(request.getEmail())) {
         throw new RuntimeException("Email already exists");
+    }
+    if(demandeRepository.existsByEmailOrganisme(request.getEmailOrganisme())) {
+        throw new RuntimeException("Cet email d'organisme est déjà utilisé");
     }
 
     // Convert the request to an entity using your existing method
@@ -46,51 +51,6 @@ public class DemandeServiceImp implements DemandeService {
     return savedDemande;
 }
 
-    /*  public ProfileResponse createDemande(DemandeRequest request) {
-        if(demandeRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
-    }
-        // create organisme
-    /*OrganismeEntity organisme = new OrganismeEntity();
-        organisme.setNomOrganisme(request.getNomOrganisme());
-        organisme.setType(request.getTypeOrganisme());
-        organisme.setDateCreation(request.getDateCreation());
-        organisme.setAdresse(request.getAdresse());
-        organisme.setEmailOrganisme(request.getEmailOrganisme());
-        organisme.setFax(request.getFax());
-        organisme.setSecteur(request.getSecteur());
-        organisme.setDateCreation(request.getDateCreation());
-
-        organismeRepository.save(organisme);
-
-         // Build the new DemandeEntity
-    DemandeEntity newDemande = DemandeEntity.builder()
-            .nom(request.getNom())
-            .prenom(request.getPrenom())
-            .email(request.getEmail())
-            .role(request.getRole())
-            .telephone(request.getTelephone())
-            .description(request.getDescription())
-            .nomOrganisme(request.getNomOrganisme())
-            .typeOrganisme(request.getTypeOrganisme())
-            .adresse(request.getAdresse())
-            .fax(request.getFax())
-            .secteur(request.getSecteur())
-            .emailOrganisme(request.getEmailOrganisme())
-            .dateCreation(request.getDateCreation())
-            .logoUrl(request.getLogoUrl())
-            .build();
-
-    // Save to database
-    DemandeEntity savedDemande = demandeRepository.save(newDemande);
-
-    return savedDemande;
-}
-*/
-            //return convertToDemandeResponse(savedDemande);
-
-
-    
 
     @Override
     public void deleteDemande(Long id) {

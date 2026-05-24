@@ -8,4 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface DemandeRepository extends JpaRepository<DemandeEntity, Long> {
     Optional<DemandeEntity> findByEmail(String email);
     boolean existsByEmail(String email); // Check if a user with the given email already exists
+    boolean existsByEmailOrganisme(String emailOrganisme); // Check if a user with the given organisme email already exists
 }
