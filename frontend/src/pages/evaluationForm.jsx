@@ -39,6 +39,8 @@ const EvaluationForm = () => {
   const [expandedCritere, setExpandedCritere] = useState({}); // object for multiple open criteres
   const [selectedOption, setSelectedOption] = useState({});
 
+  const AtLeastOneAnswer = Object.keys(selectedOption).length > 0;
+
   const getGlobalProgress = useMemo(() => {
   let totalCriteres = 0;
   let treatedCriteres = 0;
@@ -576,15 +578,18 @@ const EvaluationForm = () => {
             <button
               onClick={submitAllAnswers}
               //disabled={!allCriteresAnswered() || !allFilesUploaded()}
+              disabled={!AtLeastOneAnswer}
               style={{
                 padding: "8px 16px",
                 borderRadius: 6,
                 border: "none",
-                background: "#3b82f6",
+                background: AtLeastOneAnswer ? "#3b82f6" : "#cbd5e1",
                 color: "#fff",
                 fontWeight: 600,
                 cursor: "pointer",
                 marginBottom: 16,
+                cursor: AtLeastOneAnswer ? "pointer" : "not-allowed"
+
               }}
             >
               Enregistrer

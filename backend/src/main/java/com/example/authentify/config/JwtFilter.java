@@ -31,10 +31,10 @@ public class JwtFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
                 // Allow preflight CORS requests to pass through without authentication
-                if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+                /*if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
                     filterChain.doFilter(request, response);
                     return;
-                }
+                }*/
 
         String token = null;
 

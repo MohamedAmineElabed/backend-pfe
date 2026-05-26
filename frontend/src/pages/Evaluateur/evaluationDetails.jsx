@@ -629,21 +629,7 @@ const EvaluationDetails = () => {
   return () => window.removeEventListener("focus", onFocus);
 }, [backendUrl]);
 
-  // ── Auto-update status ──
-  useEffect(() => {
-    if (!evaluation?.reponses || evaluation.statut === "terminé") return;
-    const all = evaluation.reponses;
-    const done = all.every(r => r.statut === "validé" || r.statut === "refusé");
-    const newStatus = done ? "terminé" : all.length > 0 ? "en cours" : "en attente";
-    if (evaluation.statut !== newStatus) {
-      axios.put(`${backendUrl}/evaluation/${evaluation.id}/updateStatut`, { statut: newStatus }, { withCredentials: true })
-        .then(() => setEvaluation(prev => ({
-          ...prev, statut: newStatus,
-          dateTermination: newStatus === "terminé" ? new Date().toISOString() : prev.dateTermination,
-        })))
-        .catch(err => console.error(err));
-    }
-  }, [evaluation?.reponses]);
+
 
   const validCritereIds = useMemo(() => {
   return principes.flatMap(p =>
@@ -720,80 +706,69 @@ console.log("scoreMax: ", maxScore);
     });
   }, [principes, evaluation]);
 
-  // ── Save total score ──
- /* useEffect(() => {
-    if (!evaluation || !isEvaluationComplete || evaluation.score !== 0) return;
-    axios.put(`${backendUrl}/evaluation/${evaluation.id}/score`, { score: totalScore}, { withCredentials: true })
-      .then(r => { if (r.status === 200) toast.success("Score total enregistré"); })
-      .catch(err => { console.error(err); toast.error("Erreur enregistrement score"); });
-  }, [isEvaluationComplete, totalScore]);*/
+  // ── Finalize: runs after every valider/refuser to check if evaluation is complete ──
+  const checkAndFinalize = async (updatedReponses) => {
+    const allDecided = updatedReponses.every(
+      r => r.statut === "validé" || r.statut === "refusé"
+    );
+    if (!allDecided) return;
 
-  // ── Save per-principe scores ──
-  const hasScoreChanged = !evaluation?.scoreParPrincipe ||
-    evaluation.scoreParPrincipe.some(saved => {
-      const cur = scorePerPrincipe.find(sp => sp.principeId === saved.principeId);
-      return !cur || cur.score !== saved.score;
-    });
+    try {
+      // 1. Calculate final score from validated responses only
+      const finalScore = updatedReponses
+        .filter(r => r.statut === "validé")
+        .reduce((sum, r) => sum + (r.valeur || 0), 0);
 
-  useEffect(() => {
-    if (!isEvaluationComplete || !evaluation || !hasScoreChanged) return;
-    Promise.all(scorePerPrincipe.map(sp =>
-      axios.post(`${backendUrl}/scoreParPrincipe/enregistrer`, {
-        evaluationId: evaluation.id,
-        responsableId: evaluation.responsableId,
-        organismeId: evaluation?.organisme?.id,
-        principeId: sp.principeId,
-        score: sp.score, scoreMax: sp.maxScore,
-      }, { withCredentials: true })
-    ))
-    .then(() => {
-      // ← Sync local state so hasScoreChanged computes correctly next time
-      setEvaluation(prev => ({
-        ...prev,
-        scoreParPrincipe: scorePerPrincipe.map(sp => ({
-        principeId: sp.principeId,
-        score: sp.score,
-        maxScore: sp.maxScore,})),
-      }));
-      toast.success("Scores par principe enregistrés");})
-    .catch(err => { console.error(err); toast.error("Erreur enregistrement scores"); });
-  }, [isEvaluationComplete, scorePerPrincipe]);
+      // 2. Save per-principe scores
+      const spData = principes.map(p => {
+        let score = 0, max = 0;
+        (p.pratiques || []).forEach(pr =>
+          (pr.criteres || []).forEach(c => {
+            const r = updatedReponses.find(r => r.critereId === c.id);
+            if (r?.statut === "validé") score += r.valeur || 0;
+            max += 3;
+          })
+        );
+        return { principeId: p.id, score, maxScore: max };
+      });
 
-  /*useEffect(() => {
-  if (!evaluation || !isEvaluationComplete) return;
+      await Promise.all(spData.map(sp =>
+        axios.post(`${backendUrl}/scoreParPrincipe/enregistrer`, {
+          evaluationId: evaluation.id,
+          responsableId: evaluation.responsableId,
+          organismeId: evaluation?.organisme?.id,
+          principeId: sp.principeId,
+          score: sp.score,
+          scoreMax: sp.maxScore,
+        }, { withCredentials: true })
+      ));
 
-  // wait until score is actually saved
-  if (!evaluation.score || evaluation.score === 0) return;
+      // 3. Save total score (backend also sets label)
+      await axios.put(
+        `${backendUrl}/evaluation/${evaluation.id}/score`,
+        { score: finalScore },
+        { withCredentials: true }
+      );
 
-  axios.put(`${backendUrl}/evaluation/updateLabel/${evaluation.id}`,{},{ withCredentials: true })
-    .then(() => {
-      console.log("Label updated successfully");
-    })
-    .catch((err) => {
-      console.error("Error updating label", err);
-    });
+      // 4. Mark as terminé
+      await axios.put(
+        `${backendUrl}/evaluation/${evaluation.id}/updateStatut`,
+        { statut: "terminé" },
+        { withCredentials: true }
+      );
 
-}, [evaluation.score,isEvaluationComplete]);*/
+      // 5. Re-fetch fresh state from backend — no stale local data
+      const fresh = await axios.get(
+        `${backendUrl}/evaluation/${evaluation.id}/reponses`,
+        { withCredentials: true }
+      );
+      setEvaluation(fresh.data);
 
-  useEffect(()=>{
-    if (!evaluation?.reponses || !evaluation ||!principes.length) return;
-    const saveScore=async()=>{
-      try{
-      // Calculate current score from validated responses only
-            const currentScore = evaluation.reponses
-                .filter(r => r.statut === "validé")
-                .reduce((sum, r) => sum + (r.valeur || 0), 0);
-
-            await axios.put(`${backendUrl}/evaluation/${evaluation.id}/score`, { score: totalScore}, { withCredentials: true });
-            await axios.put(`${backendUrl}/evaluation/updateLabel/${evaluation.id}`,{},{ withCredentials: true });
-            console.log("Score and label updated:", currentScore);
-
-      }catch(error){
-        console.error("Erreur mise à jour score/label", error);
-      }
-    };saveScore();
-
-  },[totalScore,maxScore]);
+    } catch (err) {
+      console.error("Erreur finalisation évaluation", err);
+      toast.error("Erreur lors de la finalisation");
+    }
+  };
 
   // ── Valider ──
   const handleValiderCritere = async (responseId, comment) => {
@@ -806,15 +781,14 @@ console.log("scoreMax: ", maxScore);
       if (res.status === 200) {
         toast.success("Réponse validée avec succès");
         const critereId = evaluation.reponses.find(r => r.id === responseId)?.critereId;
-        setEvaluation(prev => ({
-          ...prev,
-          reponses: prev.reponses.map(r =>
-            r.id === responseId ? { ...r, statut: "validé", commentaireEvaluateur: comment } : r
-          ),
-        }));
+        const updatedReponses = evaluation.reponses.map(r =>
+          r.id === responseId ? { ...r, statut: "validé", commentaireEvaluateur: comment } : r
+        );
+        setEvaluation(prev => ({ ...prev, reponses: updatedReponses }));
         if (critereId) setCritereStates(prev => ({
           ...prev, [critereId]: { ...(prev[critereId] || {}), comment, action: "valider" },
         }));
+        await checkAndFinalize(updatedReponses);
       } else { toast.error("Erreur lors de la validation"); }
     } catch { toast.error("Erreur lors de la validation"); }
   };
@@ -830,15 +804,14 @@ console.log("scoreMax: ", maxScore);
       if (res.status === 200) {
         toast.success("Réponse refusée avec succès");
         const critereId = evaluation.reponses.find(r => r.id === responseId)?.critereId;
-        setEvaluation(prev => ({
-          ...prev,
-          reponses: prev.reponses.map(r =>
-            r.id === responseId ? { ...r, statut: "refusé", commentaireEvaluateur: comment } : r
-          ),
-        }));
+        const updatedReponses = evaluation.reponses.map(r =>
+          r.id === responseId ? { ...r, statut: "refusé", commentaireEvaluateur: comment } : r
+        );
+        setEvaluation(prev => ({ ...prev, reponses: updatedReponses }));
         if (critereId) setCritereStates(prev => ({
           ...prev, [critereId]: { ...(prev[critereId] || {}), comment, action: "refuser" },
         }));
+        await checkAndFinalize(updatedReponses);
       } else { toast.error("Erreur lors du refus"); }
     } catch { toast.error("Erreur lors du refus"); }
   };

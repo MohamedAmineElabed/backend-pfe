@@ -192,6 +192,8 @@ public ReponseEntity saveReponse(Long evaluationId, Long critereId, Integer vale
         preuveRepository.save(preuve);
     }}}
 
+    updateEvalStatut(evaluationId);
+
     return reponse;
 }
 
@@ -357,27 +359,22 @@ public EvaluationEntity getLatestEvaluation(Long organismeId){
     return evaluationRepository.findLatestEval(organismeId).orElse(null);
 }
 
-public EvaluationEntity updateEvaluation(Long evaluationId,UpdateEvaluationRequest request){
+public EvaluationEntity updateEvaluation(Long evaluationId, UpdateEvaluationRequest request) {
     EvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
             .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
-    
-    //Load all existing responses ONCE
-    List<ReponseEntity> existingResponses =reponseRepository.findByEvaluationId(evaluationId);
+
+    List<ReponseEntity> existingResponses = reponseRepository.findByEvaluationId(evaluationId);
     Map<Long, ReponseEntity> responseMap = existingResponses.stream()
             .collect(Collectors.toMap(ReponseEntity::getCritereId, r -> r));
 
     List<ReponseEntity> toSave = new ArrayList<>();
 
-
     for (UpdateReponseRequest r : request.getReponses()) {
-        if (r.getCritereId() == null) {
-            continue; // ignore invalid payload
-        }
+        if (r.getCritereId() == null) continue;
 
-        ReponseEntity reponse = responseMap.get(r.getCritereId());
+        ReponseEntity reponse = responseMap.getOrDefault(r.getCritereId(), new ReponseEntity());
 
-        if (reponse == null) {
-            reponse = new ReponseEntity();
+        if (reponse.getId() == null) {
             reponse.setEvaluation(evaluation);
             reponse.setCritereId(r.getCritereId());
         }
@@ -385,47 +382,28 @@ public EvaluationEntity updateEvaluation(Long evaluationId,UpdateEvaluationReque
         if (r.getValeur() != null) {
             Integer oldValue = reponse.getValeur();
             reponse.setValeur(r.getValeur());
-
-            // Only update statut if value actually changed OR it's a new response
             if (oldValue == null || !oldValue.equals(r.getValeur())) {
-
-                if (r.getValeur() == 0 || r.getValeur() == 1) {
-                    reponse.setStatut("validé");
-                } 
-                else{
-                    reponse.setStatut(null);
-                }
+                reponse.setStatut(r.getValeur() == 0 || r.getValeur() == 1 ? "validé" : null);
             }
         }
 
         toSave.add(reponse);
-
-        /*reponse.setEvaluation(evaluation);
-        reponse.setCritereId(r.getCritereId());*/
-
-        //reponseRepository.save(reponse);
-        reponseRepository.saveAll(toSave);
-            //update evaluation statut
-        updateEvalStatut(evaluationId);
-
-        evaluation.setDateUpdate(new java.sql.Timestamp(System.currentTimeMillis()));
-
+        //  NO saveAll or updateEvalStatut here
     }
-    
-    //save score
-    /*List<ReponseEntity> savedResponses = reponseRepository.saveAll(toSave);
-    int score = savedResponses.stream()
-        .filter(r -> r.getValeur() != null)
-        .mapToInt(ReponseEntity::getValeur)
-        .sum();
-    int maxScore = savedResponses.size() * 3;
 
-    evaluation.setScore(score);
-    evaluation.setScoreMax(maxScore);
-    evaluation.setLabel(getLabel(score,maxScore));*/
+    // Save ALL responses at once AFTER the loop
+    reponseRepository.saveAll(toSave);
 
-    return evaluationRepository.save(evaluation);
+    // NOW check statut — all responses are persisted at this point
+    updateEvalStatut(evaluationId);
 
+    // Re-fetch the fresh entity (updateEvalStatut may have changed statut/score/label)
+    EvaluationEntity updated = evaluationRepository.findById(evaluationId)
+            .orElseThrow(() -> new RuntimeException("Evaluation not found"));
+    updated.setDateUpdate(new Timestamp(System.currentTimeMillis()));
+
+    // Save and return the FRESH entity, not the stale one
+    return evaluationRepository.save(updated);
 }
 
 public EvaluationEntity updateLabel(Long evaluationId){
@@ -446,34 +424,56 @@ public EvaluationEntity updateLabel(Long evaluationId){
 
 }
 
-private void updateEvalStatut(Long evaluationId){
+private void updateEvalStatut(Long evaluationId) {
     EvaluationEntity evaluation = evaluationRepository.findById(evaluationId)
             .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
-    List<ReponseEntity> reponses =reponseRepository.findByEvaluationId(evaluationId);
-    if(reponses.isEmpty()){
-        evaluation.setStatut(null);
+
+    List<ReponseEntity> reponses = reponseRepository.findByEvaluationId(evaluationId);
+
+    if (reponses.isEmpty()) {
+        evaluation.setStatut("en attente");
         evaluationRepository.save(evaluation);
         return;
-    };
+    }
 
-    boolean allDecided = reponses.stream()
-        .allMatch(r -> "validé".equals(r.getStatut()) || "refusé".equals(r.getStatut()));
+    // Filter only responses that have a value
+    List<ReponseEntity> answered = reponses.stream()
+            .filter(r -> r.getValeur() != null)
+            .collect(Collectors.toList());
 
-    boolean anyFilled = reponses.stream()
-        .anyMatch(r -> r.getValeur() != null);
+    if (answered.isEmpty()) {
+        evaluation.setStatut("en attente");
+        evaluationRepository.save(evaluation);
+        return;
+    }
 
-    if (allDecided) {
+    // ✅ If ALL answered responses are 0 or 1 → no proof needed → terminé immediately
+    boolean allLowLevel = answered.stream()
+            .allMatch(r -> r.getValeur() == 0 || r.getValeur() == 1);
+
+    if (allLowLevel) {
         evaluation.setStatut("terminé");
         evaluation.setDateTermination(new Timestamp(System.currentTimeMillis()));
-    } else if (anyFilled) {
-        evaluation.setStatut("en cours");
+
+        int score = answered.stream().mapToInt(ReponseEntity::getValeur).sum();
+
+        int maxScore = scoreParPrincipeRepository.findByEvaluation_Id(evaluationId)
+                .stream()
+                .mapToInt(sp -> sp.getScoreMax() != null ? sp.getScoreMax() : 0)
+                .sum();
+        if (maxScore == 0) maxScore = calculerMaxScore(); // fallback
+
+        evaluation.setScore(score);
+        evaluation.setScoreMax(maxScore);
+        evaluation.setLabel(getLabel(score, maxScore));
+
     } else {
-        evaluation.setStatut("en attente");
+        // Some responses have value >= 2, still waiting for proof/completion
+        evaluation.setStatut("en cours");
     }
 
     evaluationRepository.save(evaluation);
 }
-
 
     public List<EvaluationEntity> getLatestTreatedPerOrganisme() {
     return evaluationRepository.findAll()

@@ -587,7 +587,7 @@ useEffect(() => {
   };
 
   fetchAnnees();
-}, [backendUrl,[]]);
+}, [backendUrl]);
 
 
   // ── Fetch scores par principe ─────────────────────────────────────────────
@@ -634,6 +634,8 @@ useEffect(() => {
       }
     };
   }, [latestEval, seenEvals]);*/
+
+  
   // ── Sync scores, scoreMax, scoreParPrincipe and label when dashboard loads ──
 useEffect(() => {
   if (!latestEval?.id || !principes.length) return;
@@ -1256,7 +1258,7 @@ useEffect(() => {
               </div>
                 )}
               </div>
-
+              {latestEval && latestEval.label!=="Non conforme" ?(
               <button
                 onClick={() => setCertificatVisible(!certificatVisible)}
                 style={{
@@ -1269,7 +1271,14 @@ useEffect(() => {
                 onMouseEnter={e => { e.target.style.background="#4f46e5"; e.target.style.transform="translateY(-1px)"; }}
                 onMouseLeave={e => { e.target.style.background="#6366f1"; e.target.style.transform="none"; }}>
                 {certificatVisible ? "Cacher le certificat" : "Afficher le certificat"}
-              </button>
+              </button>):(
+                <div style={{marginTop: 30, padding: "20px", background: "#fef2f2", color: "#b91c1c", borderRadius: 10}}>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 10 }}>Certificat de conformité indisponible</h3>
+                  <p style={{ fontSize: 13, color: "#991b1b" }}>
+                    Le certificat de conformité n'est pas disponible pour cette évaluation.
+                  </p>
+                </div>
+              )}
               {/* ── Certificat de conformité ─────────────────────────────────────────── */}
 
 
