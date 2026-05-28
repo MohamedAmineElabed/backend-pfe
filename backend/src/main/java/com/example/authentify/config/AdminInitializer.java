@@ -27,12 +27,12 @@ public class AdminInitializer {
     private final PasswordEncoder passwordEncoder;
     private final OrganismeRepository organismeRepository;
     @Bean
-    public CommandLineRunner createAdmin() {
+    public CommandLineRunner createAdmin() { //CommandLineRunner pour initialiser un utilisateur admin à l'application au démarrage
         String adminEmail = "admin@example.com";
-        return args -> {      
+        return args -> {      //args contains values typed when launching the application.
                 // Create organisme admin
                 OrganismeEntity orgAdmin = organismeRepository
-                    .findByEmailOrganisme("admin@cni.tn")
+                    .findByEmailOrganisme("admin@cni.tn") // Check if an organisme with this email already exists
                     .orElseGet(() -> {
                         OrganismeEntity org = new OrganismeEntity();
                         org.setNomOrganisme("CNI Admin");
@@ -56,8 +56,8 @@ public class AdminInitializer {
                         org.setEmailOrganisme("eval@cni.tn");
                         org.setAdresse("Tunis");
                         org.setSecteur("Public");
-                        org.setTelephone("70000001"); // numéro différent
-                        org.setFax("333334");        // fax différent
+                        org.setTelephone("70000001");
+                        org.setFax("333334"); 
                         org.setType("publique");
                         org.setDateCreation(LocalDate.of(2005, 6, 15)); // date différente
                         return organismeRepository.save(org);

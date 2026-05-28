@@ -629,6 +629,16 @@ const EvaluationDetails = () => {
   return () => window.removeEventListener("focus", onFocus);
 }, [backendUrl]);
 
+  // ── On load: if evaluation is "en cours", re-fetch fresh data ──
+useEffect(() => {
+  if (!evaluation?.id) return;
+  if (evaluation.statut === "en cours") {
+    axios.get(`${backendUrl}/evaluation/${evaluation.id}/reponses`, { withCredentials: true })
+      .then(r => setEvaluation(r.data))
+      .catch(err => console.error("Erreur re-fetch évaluation", err));
+  }
+}, [evaluation?.id]); // only on mount, not on every statut change
+
 
 
   const validCritereIds = useMemo(() => {
@@ -693,7 +703,7 @@ console.log("scoreMax: ", maxScore);
       let score = 0, max = 0;
       (principe.pratiques || []).forEach(pr =>
         (pr.criteres || []).forEach(c => {
-          const r = evaluation.reponses.filter(r => r.statut !== "refusé").find(r => r.critereId === c.id);
+          const r = evaluation.reponses.find(r => r.critereId === c.id && r.statut === "validé");
           if (r) score += r.valeur || 0;
           max += 3;
         })

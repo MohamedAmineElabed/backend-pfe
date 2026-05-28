@@ -5,9 +5,11 @@ import org.springframework.transaction.annotation.Transactional;
 //import org.springframework.web.bind.annotation.PathVariable;
 //import java.util.Optional;
 import java.util.List;
+import java.util.stream.Collectors;
 
 //import com.example.authentify.entity.DemandeEntity;
 import com.example.authentify.entity.PrincipeEntity;
+import com.example.authentify.entity.ReponseEntity;
 //import com.example.authentify.entity.UserEntity;
 import com.example.authentify.entity.PratiqueEntity;
 import com.example.authentify.entity.CritereEntity;
@@ -15,6 +17,7 @@ import com.example.authentify.entity.EvaluationEntity;
 //import com.example.authentify.entity.OrganismeEntity;
 import com.example.authentify.io.PrincipeRequest;
 import com.example.authentify.io.PrincipeResponse;
+import java.util.Set;
 
 
 //import com.example.authentify.io.OrganismeRequest;
@@ -26,6 +29,7 @@ import com.example.authentify.repository.PrincipeRepository;
 import com.example.authentify.repository.PratiqueRepository;
 import com.example.authentify.repository.CritereRepository;
 import com.example.authentify.repository.EvaluationRepository;
+import com.example.authentify.repository.ReponseRepository;
 //import java.lang.Long;
 //import java.util.concurrent.ThreadLocalRandom;
 
@@ -37,6 +41,7 @@ public class PrincipeServiceImp implements PrincipeService {
     private final PrincipeRepository principeRepository;
     private final PratiqueRepository pratiqueRepository;
     private final CritereRepository  critereRepository;
+    private final ReponseRepository  reponseRepository;
     private final EvaluationRepository  evaluationRepository;
     private final EvaluationServiceImp evaluationService;
     
@@ -238,6 +243,9 @@ public class PrincipeServiceImp implements PrincipeService {
     public void deleteCritere(Long id) {
         CritereEntity critere = critereRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Pratique not found with id: " + id));
+        //Delete all responses linked to this critère to avoid orphaned responses
+        List<ReponseEntity> orphanedReponses = reponseRepository.findByCritereId(id);
+            reponseRepository.deleteAll(orphanedReponses);
         critereRepository.delete(critere);
 }
 
@@ -272,14 +280,47 @@ public class PrincipeServiceImp implements PrincipeService {
 ///////////////////////////////////////////////////////////////////////////////
 
 // Synchronize all evaluations' scoreMax when criteria are updated
-    @Transactional
+    /*@Transactional
     public void syncAllEvaluationsScoreMax() {
     int newMax = critereRepository.findAll().size() * 3;
     List<EvaluationEntity> all = evaluationRepository.findAll();
     for (EvaluationEntity ev : all) {
         ev.setScoreMax(newMax);
         // Recalculate label with new max
-        int score = ev.getScore() != null ? ev.getScore() : 0;
+        List<ReponseEntity> reponses =reponseRepository.findByEvaluationId(ev.getId());
+        int score = reponses.stream()
+            .filter(r -> r.getValeur() != null)
+            .mapToInt(ReponseEntity::getValeur)
+            .sum();
+        ev.setScore(score);
+        //int score = ev.getScore() != null ? ev.getScore() : 0;
+        ev.setLabel(evaluationService.getLabel(score, newMax));
+        evaluationRepository.save(ev);
+    }
+}*/
+
+    @Transactional
+public void syncAllEvaluationsScoreMax() {
+    List<CritereEntity> activeCriteres = critereRepository.findAll();
+    int newMax = activeCriteres.size() * 3;
+
+    //Build a set of still-existing critère IDs
+    Set<Long> validCritereIds = activeCriteres.stream()
+        .map(CritereEntity::getId)
+        .collect(Collectors.toSet());
+
+    List<EvaluationEntity> all = evaluationRepository.findAll();
+    for (EvaluationEntity ev : all) {
+        List<ReponseEntity> reponses = reponseRepository.findByEvaluationId(ev.getId());
+
+        //Only sum responses whose critère still exists
+        int score = reponses.stream()
+            .filter(r -> "validé".equals(r.getStatut()) && validCritereIds.contains(r.getCritereId()) && r.getValeur() != null)
+            .mapToInt(ReponseEntity::getValeur)
+            .sum();
+
+        ev.setScore(score);
+        ev.setScoreMax(newMax);
         ev.setLabel(evaluationService.getLabel(score, newMax));
         evaluationRepository.save(ev);
     }

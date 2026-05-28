@@ -11,10 +11,10 @@ import java.util.stream.Collectors;
 
 import java.util.List;
 
-@Service
+@Service // Service pour assembler un contexte textuel à partir d'une évaluation
 public class ContextAssembler {
 
-    @Autowired private PrincipeRepository principeRepo;
+    @Autowired private PrincipeRepository principeRepo; // Inject(give me) an object of type PrincipeRepository from the Spring context automatically
     @Autowired private CritereRepository critereRepo;
 
     private String mapValeur(Integer valeur) {
@@ -32,7 +32,7 @@ public class ContextAssembler {
 
         //ONE query — load all criteres for this evaluation upfront
         List<Long> critereIds = evaluation.getReponses()
-            .stream()
+            .stream() // Converts the list into a stream so you can process elements one by one.
             .map(ReponseEntity::getCritereId)
             .toList();
 

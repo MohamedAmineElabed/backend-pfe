@@ -13,5 +13,7 @@ public interface ReponseRepository extends JpaRepository<ReponseEntity, Long> {
     Optional<ReponseEntity> findByEvaluationIdAndCritereId(Long evaluationId, Long critereId);
     // Récupérer toutes les réponses d'une évaluation
     List<ReponseEntity> findByEvaluationId(Long evaluationId);
+    // Récupérer toutes les réponses d'un critère
+    List<ReponseEntity> findByCritereId(Long critereId);
     
 }

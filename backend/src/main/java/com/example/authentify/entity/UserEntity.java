@@ -32,6 +32,7 @@ public class UserEntity {
     @Id // Assuming you have an ID field for the user entity
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY) // Assuming you want the ID to be generated automatically
     private Long id;
+
     private String nom;
     private String prenom;
     @Column(unique = true) //  email should be unique
@@ -46,11 +47,12 @@ public class UserEntity {
     private String password;
     private String verify_code;
     private Long code_expiration_time;
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.EAGER) // 1-to-1 relationship with OrganismeEntity, fetch it eagerly when loading the user
     @JoinColumn(name = "organisme_id",unique =true)
     @JsonIgnoreProperties("responsable") // pour éviter la boucle infinie
     //@JsonBackReference
-    @JsonManagedReference
+
+    @JsonManagedReference // pour sérialiser l'organisme avec le user
     private OrganismeEntity organisme;
     @Builder.Default
     @Column(nullable = false)

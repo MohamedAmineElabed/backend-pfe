@@ -637,7 +637,7 @@ useEffect(() => {
 
   
   // ── Sync scores, scoreMax, scoreParPrincipe and label when dashboard loads ──
-useEffect(() => {
+/*useEffect(() => {
   if (!latestEval?.id || !principes.length) return;
   if (latestEval.statut !== "terminé") return;
   const syncScores = async () => {
@@ -724,7 +724,7 @@ useEffect(() => {
   };
 
   syncScores();
-}, [latestEval?.id, principes]);
+}, [latestEval?.id, principes]);*/
 
   useEffect(() => {
     setSeenEvals(getSeenEvals(anneeSelectionnee));
@@ -744,10 +744,13 @@ useEffect(() => {
   const scoresMoyen = useMemo(() => {
     if (!rawScores.length && !principes.length) return [];
     const filteredIds = new Set(evaluations.map(ev => ev.id));
+    const principesAvecCriteres = principes.filter(p =>
+      (p.pratiques || []).some(pr =>(pr.criteres || []).length > 0)
+    );
     const yearScores = rawScores.filter(s => filteredIds.has(s.evaluationId));
     // If no scores yet, show all principles at 0 
     if (!yearScores.length) {
-      return principes.map(p => ({ principe: p.nom, score: 0 }));
+      return principesAvecCriteres.map(p => ({ principe: p.nom, score: 0 }));
     }
     const map = {};
     /*rawScores.forEach(item => {
@@ -757,18 +760,18 @@ useEffect(() => {
       else { map[nom].total += pct; map[nom].count++; }
     });*/
       yearScores.forEach(item=>{
-        const principeObj=principes.find(p=>p.id===item.principeId);
+        const principeObj=principesAvecCriteres.find(p=>p.id===item.principeId);
         if (!principeObj) return;
         const nom = principeObj.nom;
-        const pct = item.scoreMax ? Math.round((item.score / item.scoreMax) * 100) : 0;
-        if (!map[nom]) map[nom] = { total: pct, count: 1 };
+        const pct = item.scoreMax ? (item.score / item.scoreMax * 100).toFixed(2) : 0;
+        if (!map[nom]) map[nom] = { total: parseFloat(pct), count: 1 };
         else {
-          map[nom].total += pct;
+          map[nom].total += parseFloat(pct);
           map[nom].count++;
     }
       })
     return Object.entries(map).map(([principe, { total, count }]) => ({
-      principe, score: Math.round(total / count)
+      principe, score: (total / count).toFixed(2)
     }));
   }, [rawScores, principes, evaluations]);
 
@@ -1275,7 +1278,7 @@ useEffect(() => {
                 <div style={{marginTop: 30, padding: "20px", background: "#fef2f2", color: "#b91c1c", borderRadius: 10}}>
                   <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 10 }}>Certificat de conformité indisponible</h3>
                   <p style={{ fontSize: 13, color: "#991b1b" }}>
-                    Le certificat de conformité n'est pas disponible pour cette évaluation.
+                    Le certificat de conformité n'est pas disponible pour cet organisme.
                   </p>
                 </div>
               )}
