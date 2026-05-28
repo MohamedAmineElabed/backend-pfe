@@ -23,10 +23,10 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "users") //  table name is "users"
-@Data
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@Data //  generates getters, setters, toString, equals, and hashCode methods
+@Builder //  builder pattern for creating instances of UserEntity
+@AllArgsConstructor //  constructor with all fields as parameters
+@NoArgsConstructor  //  default constructor with no parameters
 public class UserEntity {
 
     @Id // Assuming you have an ID field for the user entity
@@ -54,9 +54,9 @@ public class UserEntity {
 
     @JsonManagedReference // pour sérialiser l'organisme avec le user
     private OrganismeEntity organisme;
-    @Builder.Default
+    /*@Builder.Default
     @Column(nullable = false)
-    private boolean enabled = false;
+    private boolean enabled = false;*/
     
 
     @CreationTimestamp

@@ -56,11 +56,6 @@ public class OrganismeController {
     }
 
     //update organisme
-    /*@PutMapping(value="/update/{id}",consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody OrganismeEntity organisme) {
-        organisme.setId(id);
-        profileService.updateOrganisme(organisme);
-        return ResponseEntity.ok("Updated");*/
     @PutMapping("/update/{id}")
     public ResponseEntity<?> updateOrganisme(@PathVariable Long id,
         //@RequestBody OrganismeRequest request
@@ -74,15 +69,6 @@ public class OrganismeController {
             }
 }
 
-
-    /*@PostMapping("/registerOrganisme")
-    @ResponseStatus(HttpStatus.CREATED)
-    public OrganismeEntity registerOrganisme(@RequestBody OrganismeRequest request)  {   // Validate the incoming request using @Valid and @RequestBody annotations
-        //ProfileResponse response = demandeService.createDemande(request);
-        OrganismeEntity savedorg = savedorg.createOrganisme(request);
-        //to do :send welcome email
-        return savedorg;
-    }*/
    @PostMapping("/createOrganisme")
     public OrganismeResponse addOrganisme(@RequestBody OrganismeRequest request) {
         return profileService.createOrganisme(request);

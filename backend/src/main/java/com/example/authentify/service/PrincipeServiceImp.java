@@ -144,7 +144,7 @@ public class PrincipeServiceImp implements PrincipeService {
     private PratiqueEntity convertToPratiqueEntity(PrincipeRequest request) {     
         PratiqueEntity pratiqueEntity = PratiqueEntity.builder()
             .nom(request.getNom())
-            .description(request.getDescription())
+            //.description(request.getDescription())
             .build();
 
         return pratiqueEntity;
@@ -155,7 +155,7 @@ public class PrincipeServiceImp implements PrincipeService {
     PrincipeResponse response = PrincipeResponse.builder()
             .id(pratiqueEntity.getId())
             .nom(pratiqueEntity.getNom())
-            .description(pratiqueEntity.getDescription())
+            //.description(pratiqueEntity.getDescription())
             .build();
     return response;
 }
@@ -189,7 +189,7 @@ public class PrincipeServiceImp implements PrincipeService {
         }*/
 
     pratique.setNom(newPratique.getNom());
-    pratique.setDescription(newPratique.getDescription());
+    //pratique.setDescription(newPratique.getDescription());
 
     /*if(newCritere.getPratique() != null){
         PratiqueEntity pratique = pratiqueRepository
@@ -223,7 +223,7 @@ public class PrincipeServiceImp implements PrincipeService {
     private CritereEntity convertToCritereEntity(PrincipeRequest request) {     
         CritereEntity critereEntity = CritereEntity.builder()
             .nom(request.getNom())
-            .description(request.getDescription())
+            //.description(request.getDescription())
             .build();
 
         return critereEntity;
@@ -234,7 +234,7 @@ public class PrincipeServiceImp implements PrincipeService {
     PrincipeResponse response = PrincipeResponse.builder()
             .id(critereEntity.getId())
             .nom(critereEntity.getNom())
-            .description(critereEntity.getDescription())
+            //.description(critereEntity.getDescription())
             .build();
     return response;
 }
@@ -261,7 +261,7 @@ public class PrincipeServiceImp implements PrincipeService {
         {throw new RuntimeException("Critere ne doit étre pas vide");}
 
     critere.setNom(newCritere.getNom());
-    critere.setDescription(newCritere.getDescription());
+    //critere.setDescription(newCritere.getDescription());
 
     if(newCritere.getPratique() != null){
         PratiqueEntity pratique = pratiqueRepository

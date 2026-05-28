@@ -64,7 +64,7 @@ public class PratiqueController {
         //create new pratiqie
         PratiqueEntity pratique = new PratiqueEntity();
         pratique.setNom(request.getNom());
-        pratique.setDescription(request.getDescription());
+        //pratique.setDescription(request.getDescription());
         pratique.setPrincipe(principe); 
 
         //save new pratique 
@@ -74,7 +74,7 @@ public class PratiqueController {
         PrincipeResponse response = new PrincipeResponse();
         response.setId(pratique.getId());
         response.setNom(pratique.getNom());
-        response.setDescription(pratique.getDescription());
+        //response.setDescription(pratique.getDescription());
 
     return ResponseEntity.ok(response);
     }

@@ -395,9 +395,8 @@ public ResponseEntity<String> setEvaluationScore(
 
 
     @GetMapping("/all/treated")
-    public ResponseEntity<List<Map<String, Object>>> getAllEvaluationsWithTreatedProgress(@RequestParam(required = false) Integer annee) {
-        int year = (annee != null) ? annee : java.time.LocalDate.now().getYear();
-        List<EvaluationEntity> evaluations = evaluationService.getAllEvaluationsByAnnee(year);
+    public ResponseEntity<List<Map<String, Object>>> getAllEvaluationsWithTreatedProgress() {
+        List<EvaluationEntity> evaluations = evaluationService.getAllEvaluations();
 
     List<Map<String, Object>> response = evaluations.stream().map(ev -> {
 
@@ -469,7 +468,7 @@ public ResponseEntity<String> setEvaluationScore(
         map.put("logoUrl", org != null ? org.getLogoUrl() : "_");
         map.put("commentaires", commentaires);
         map.put("dateUpdate", dateUpdate);
-
+        map.put("annee", ev.getAnnee());
 
         return map;
 

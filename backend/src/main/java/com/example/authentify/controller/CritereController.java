@@ -70,7 +70,7 @@ public class CritereController {
         //create new critere
         CritereEntity critere = new CritereEntity();
         critere.setNom(request.getNom());
-        critere.setDescription(request.getDescription());
+        //critere.setDescription(request.getDescription());
         critere.setPratique(pratique); 
 
         //save new critere
@@ -86,7 +86,7 @@ public class CritereController {
         PrincipeResponse response = new PrincipeResponse();
         response.setId(critere.getId());
         response.setNom(critere.getNom());
-        response.setDescription(critere.getDescription());
+        //response.setDescription(critere.getDescription());
 
         principeService.syncAllEvaluationsScoreMax();
 

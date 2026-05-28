@@ -47,11 +47,11 @@ public class PratiqueEntity {
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY) // Assuming you want the ID to be generated automatically
     private Long id;
     private String nom;
-    private String description;
+    //private String description;
 
     @ManyToOne
     @JoinColumn(name = "principe_id")
-    @JsonBackReference
+    @JsonBackReference  // pour éviter la boucle infinie lors de la sérialisation
     private PrincipeEntity principe;
 
     @OneToMany(mappedBy = "pratique", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

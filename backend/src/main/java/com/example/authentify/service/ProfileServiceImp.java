@@ -55,37 +55,16 @@ public class ProfileServiceImp implements ProfileService {
     if (request == null || request.getOrganisme() == null) {
         return null; // rien à créer
     }
-
     OrganismeEntity organisme = new OrganismeEntity();
     organisme.setNomOrganisme(request.getOrganisme());
     organisme.setType(request.getTypeOrganisme());
-    organisme.setEmailOrganisme(request.getEmailOrganisme()); // si disponible
-    organisme.setAdresse(request.getAdresse()); // si disponible
-    organisme.setTelephone(request.getTelephoneOrganisme()); // si disponible
-    // ajouter d'autres champs si nécessaire
+    organisme.setEmailOrganisme(request.getEmailOrganisme()); 
+    organisme.setAdresse(request.getAdresse()); 
+    organisme.setTelephone(request.getTelephoneOrganisme()); 
 
     return organisme;
 }
 
-
-
-    @Override
-    public ProfileResponse createProfile(ProfileRequest request) {
-        UserEntity newProfile = convertToUserEntity(request);
-        if(!userRepository.existsByEmail(request.getEmail())) {
-            UserEntity savedProfile = userRepository.save(newProfile);
-            return convertToProfileResponse(savedProfile);
-
-        }
-        throw new RuntimeException("Email already exists");
-        
-    }
-
-     @Override
-    public List<UserEntity> getAllUsers() {
-        return userRepository.findAll();
-    }
-    
     private UserEntity convertToUserEntity(ProfileRequest request) {     
         OrganismeEntity organisme = buildOrganismeFromRequest(request);
         UserEntity userEntity = UserEntity.builder()
@@ -98,6 +77,25 @@ public class ProfileServiceImp implements ProfileService {
 
         return userEntity;
     }
+
+
+    @Override
+    public ProfileResponse createProfile(ProfileRequest request) { 
+        UserEntity newProfile = convertToUserEntity(request);
+        if(!userRepository.existsByEmail(request.getEmail())) {
+            UserEntity savedProfile = userRepository.save(newProfile);
+            return convertToProfileResponse(savedProfile);
+
+        }else{
+        throw new RuntimeException("Email already exists");
+        }
+    }
+
+    @Override
+    public List<UserEntity> getAllUsers() {
+        return userRepository.findAll();
+    }
+    
     
     private ProfileResponse convertToProfileResponse(UserEntity userEntity) {
     // Construire le ProfileResponse de base
@@ -120,6 +118,7 @@ public class ProfileServiceImp implements ProfileService {
                 .adresse(organisme.getAdresse())
                 .telephone(organisme.getTelephone())
                 .type(organisme.getType())
+                .secteur(organisme.getSecteur())
                 .dateCreation(organisme.getDateCreation())
                 .build()
         );
@@ -156,7 +155,7 @@ public UserEntity registerUserFromDemande(String email, RegisterFromDemandeReque
             "Email invalide"
         );
     }
-    email = email.trim();
+    //email = email.trim(); // Nettoyer les espaces
 
     //Vérifier si la demande existe
     DemandeEntity demande = demandeRepository.findByEmail(email)
@@ -164,7 +163,7 @@ public UserEntity registerUserFromDemande(String email, RegisterFromDemandeReque
             HttpStatus.NOT_FOUND, 
             "Demande non trouvée"
         ));
-    email = demande.getEmail();
+    email = demande.getEmail().trim(); // Nettoyer les espaces de l'email de la demande
 
     //Vérifier si l'utilisateur existe déjà
     if (userRepository.findByEmail(email).isPresent()){
@@ -179,7 +178,7 @@ public UserEntity registerUserFromDemande(String email, RegisterFromDemandeReque
     }
     // Step 1: create the user
     UserEntity user = new UserEntity();
-    user.setEmail(demande.getEmail());
+    user.setEmail(demande.getEmail().trim());
     user.setNom(demande.getNom());
     user.setPrenom(demande.getPrenom());
     user.setRole("RESPONSABLE");
@@ -215,13 +214,12 @@ public UserEntity registerUserFromDemande(String email, RegisterFromDemandeReque
 
 private boolean isStrongPassword(String password) {
     if (password == null) return false;
-    return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,}$");
+    // Minimum 8 characters, at least one uppercase, one lowercase, one digit and one special character
+    return password.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?]).{8,}$"); 
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////
 
-    
-    /////////////
     @Override
     public UserEntity getUserByEmail(String email) {
         return userRepository.findByEmail(email)
@@ -248,22 +246,6 @@ private boolean isStrongPassword(String password) {
     user.setRole(request.getRole());
     user.setJobRole(request.getJobRole());
 
-    /*// Optional: update organisme if provided
-    if (request.getOrganisme() != null) {
-        OrganismeEntity organisme = user.getOrganisme();
-        if (organisme == null) {
-            organisme = new OrganismeEntity();
-        }
-        organisme.setNomOrganisme(request.getOrganisme());
-        organisme.setType(request.getTypeOrganisme());
-        organisme.setEmailOrganisme(request.getEmailOrganisme());
-        organisme.setAdresse(request.getAdresse());
-        organisme.setTelephone(request.getTelephoneOrganisme());
-
-        organisme = organismeRepository.save(organisme);
-        user.setOrganisme(organisme);
-    }*/
-
     // Save and return
     return userRepository.save(user);
 }
@@ -287,15 +269,15 @@ private boolean isStrongPassword(String password) {
     UserEntity user = userRepository.findByEmail(email)
         .orElseThrow(() -> new RuntimeException("User not found"));
 
-    // ⏱️ set expiration (15 min)
+    //set expiration (15 min)
     long expirationTime = System.currentTimeMillis() + (15 * 60 * 1000);
 
     user.setCode_expiration_time(expirationTime);
-    user.setEnabled(false);
+    //user.setEnabled(false);
 
     userRepository.save(user);
 
-    // 🔗 simple link (only email)
+    //simple link (only email)
     String validationUrl = "http://localhost:8080/api/auth/validate?email=" + email;
 
     emailService.sendValidationEmailAsync(email, validationUrl);
@@ -307,7 +289,7 @@ private boolean isStrongPassword(String password) {
         UserEntity existingUser=userRepository.findByEmail(toEmail)
             .orElseThrow(()->new RuntimeException("user not found: "+toEmail));
 
-        //generate 6digit otp
+        //generate random 6digit otp
         String otp=String.valueOf(ThreadLocalRandom.current().nextInt(100000,1000000));
         
         //calculate expiring time(30min in milliseconds)
@@ -317,7 +299,7 @@ private boolean isStrongPassword(String password) {
         existingUser.setVerify_code(otp);
         existingUser.setCode_expiration_time(expiringTime);
 
-        //save inti database
+        //save into database
         userRepository.save(existingUser);
 
         try{
@@ -411,32 +393,6 @@ private boolean isStrongPassword(String password) {
     public List<OrganismeEntity> getAllOrganismes() {
         return organismeRepository.findAll();
     }
-    //update les organismes
-    /*public OrganismeEntity updateOrganisme(OrganismeEntity neworg){
-
-    OrganismeEntity organisme = organismeRepository.findById(neworg.getId())
-        .orElseThrow(() -> new RuntimeException("Organisme not found"));
-
-    organisme.setNomOrganisme(neworg.getNomOrganisme());
-    organisme.setAdresse(neworg.getAdresse());
-    organisme.setEmailOrganisme(neworg.getEmailOrganisme());
-    organisme.setType(neworg.getType());
-    organisme.setTelephone(neworg.getTelephone());
-    organisme.setFax(neworg.getFax());
-    organisme.setSecteur(neworg.getSecteur());
-    organisme.setDateCreation(neworg.getDateCreation());
-    
-
-    /*if(newUser.getOrganisme() != null){
-        OrganismeEntity organisme = organismeRepository
-            .findById(newUser.getOrganisme().getId())
-            .orElseThrow(() -> new RuntimeException("Organisme not found"));
-
-        user.setOrganisme(organisme);
-    }
-
-    return organismeRepository.save(organisme);
-}*/
 
     public OrganismeEntity getOrganismeById(Long organismeId) {
         return organismeRepository.findById(organismeId).orElse(null);
@@ -517,7 +473,7 @@ public OrganismeResponse createOrganisme(OrganismeRequest request) {
 }
 
 
-    @Transactional
+    @Transactional //pour gérer la suppression de l'organisme et la mise à jour de l'utilisateur responsable dans une même transaction
     public void deleteOrganisme(Long id){
         OrganismeEntity organisme = organismeRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Organisme not found"));

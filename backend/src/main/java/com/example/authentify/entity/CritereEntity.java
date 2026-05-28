@@ -48,7 +48,7 @@ public class CritereEntity {
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY) // Assuming you want the ID to be generated automatically
     private Long id;
     private String nom;
-    private String description;
+    //private String description;
     
     @ManyToOne
     @JoinColumn(name = "pratique_id")

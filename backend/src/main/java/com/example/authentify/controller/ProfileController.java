@@ -101,7 +101,7 @@ public class ProfileController {
             .secure(true)      // set true in production
             .sameSite("None")
             .path("/")
-            .maxAge(Duration.ofHours(8))
+            .maxAge(Duration.ofHours(8)) // token valid for 8 hours
             //.sameSite("Lax")
             //.secure(false)
             .build();
@@ -205,20 +205,6 @@ public class ProfileController {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 }
-
-    /*@GetMapping("/users/me")
-    public ResponseEntity<UserEntity> getCurrentUser(HttpServletRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // For simplicity, fetch by email (or implement proper auth with JWT)
-        if (auth == null || auth.getPrincipal() == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-         String email = (String) auth.getPrincipal();
-        
-            return userRepository.findByEmail(email)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.status(HttpStatus.NOT_FOUND).build());
-    }*/
 
     private ResponseCookie clearCookie() {
     return ResponseCookie.from("token", "")
