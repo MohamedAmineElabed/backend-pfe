@@ -182,7 +182,7 @@ public class SecurityConfig {
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource(){
         CorsConfiguration config = new CorsConfiguration();
         //config.setAllowedOrigins(List.of("http://localhost:5173","https://fragrant-collapse-cuddly.ngrok-free.dev","https://projet-pfe-three.vercel.app"));
-        config.setAllowedOrigins(List.of("http://localhost:5173","https://frontend-pfe-mu.vercel.app/"));
+        config.setAllowedOrigins(List.of("http://localhost:5173","https://frontend-pfe-mu.vercel.app"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         //config.setAllowedHeaders(List.of("Authorization", "Cache-Control", "Content-Type"));
         config.setAllowedHeaders(List.of("*"));
