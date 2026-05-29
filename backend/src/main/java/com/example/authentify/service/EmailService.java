@@ -1,3 +1,4 @@
+//JavaMailSender
 /*package com.example.authentify.service;
 
 import org.springframework.stereotype.Service;
@@ -102,7 +103,7 @@ public boolean sendValidationEmail(String toEmail, String validationUrl){
 }*/
 
 
-
+//Brevo API
 package com.example.authentify.service;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -160,10 +161,11 @@ public class EmailService {
             return true;
 
         } catch (ApiException e) {
-            System.out.println("Brevo API error: " + e.getResponseBody());
+            System.out.println("Brevo status code: " + e.getCode());
+            System.out.println("Brevo response: " + e.getResponseBody());
             e.printStackTrace();
             return false;
-        }
+}
     }
 
     private boolean sendText(String toEmail, String subject, String textContent) {
