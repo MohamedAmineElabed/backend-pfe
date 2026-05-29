@@ -32,7 +32,7 @@ const STATUS_COLORS = {
 
 // ─── Filter Bar ───────────────────────────────────────────────────────────────
 function FilterBar({
-  filterYear, setFilterYear, availableYears,
+  filterYear, setFilterYear, availableYears, defaultYear,
   filterDateFrom, setFilterDateFrom,
   filterDateTo, setFilterDateTo,
   filterOrgType, setFilterOrgType,
@@ -40,8 +40,10 @@ function FilterBar({
   organismesSecteurs, organismeTypes, onReset
 }) {
   const isActive =
-    filterYear !== "all" || filterDateFrom || filterDateTo ||
+    filterYear !== defaultYear || filterDateFrom || filterDateTo ||
     filterOrgType !== "all" || filterOrgSecteur !== "all";
+
+  //const [anneeSelectionnee, setAnneeSelectionnee] = useState(new Date().getFullYear());
 
   return (
     <div style={{
@@ -52,11 +54,24 @@ function FilterBar({
       <span style={{ fontWeight:600, color:"#374151", fontSize:"14px" }}>Filtres</span>
 
       {/* Year selector */}
-      <div style={{ display:"flex", flexDirection:"column", gap:"2px" }}>
-        <label style={{ fontSize:"11px", color:"#6b7280", fontWeight:500 }}>Année</label>
-        <select value={filterYear} onChange={e => setFilterYear(e.target.value)}
-          style={{ padding:"6px 10px", border:"1px solid #d1d5db", borderRadius:"8px", fontSize:"13px", color:"#374151", background:"#fff", cursor:"pointer", outline:"none", minWidth:"110px" }}>
-          <option value="all">Toutes</option>
+      <div style={{ display:"inline-flex", alignItems:"center", gap:8 }}>
+        {/*<label style={{ fontSize:12, fontWeight:600, color:"#94a3b8", textTransform:"uppercase", letterSpacing:"0.08em" }}>
+          Année
+        </label> */}
+        <select
+          value={filterYear}
+          onChange={e => setFilterYear(e.target.value)}
+          style={{
+            padding:"7px 32px 7px 12px", borderRadius:10, border:"1px solid #e2e8f0",
+            background:"#fff", color:"#0f172a", fontSize:13, fontWeight:600,
+            cursor:"pointer", outline:"none", appearance:"none",
+            backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+            backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center",
+            boxShadow:"0 1px 3px rgba(0,0,0,0.06)",
+          }}
+          onFocus={e => { e.target.style.borderColor="#6366f1"; e.target.style.boxShadow="0 0 0 3px rgba(99,102,241,0.15)"; }}
+          onBlur={e =>  { e.target.style.borderColor="#e2e8f0"; e.target.style.boxShadow="0 1px 3px rgba(0,0,0,0.06)"; }}
+        >
           {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
         </select>
       </div>
@@ -311,30 +326,44 @@ export default function DashboardsEval() {
   const [allOrganismeSecteurs, setAllOrganismeSecteurs] = useState([]);
 
   // ── Filters ──────────────────────────────────────────────────────────────────
-  const [filterYear,      setFilterYear]      = useState("all");
+  const [filterYear,      setFilterYear]      = useState(String(new Date().getFullYear()));
   const [filterDateFrom,  setFilterDateFrom]  = useState("");
   const [filterDateTo,    setFilterDateTo]    = useState("");
   const [filterOrgType,   setFilterOrgType]   = useState("all");
   const [filterOrgSecteur,setFilterOrgSecteur]= useState("all");
 
   const handleReset = () => {
-    setFilterYear("all");
+    setFilterYear(availableYears[0] || String(new Date().getFullYear()));
     setFilterDateFrom(""); setFilterDateTo("");
     setFilterOrgType("all"); setFilterOrgSecteur("all");
   };
 
-  // Available years derived from all evaluations
+  // Available years — from real data; always guarantees at least the current year as fallback
   const availableYears = useMemo(() => {
-    const years = new Set();
+    const currentYear = String(new Date().getFullYear());
+    const years = new Set([currentYear]);
     listEvals.forEach(ev => {
-      const raw = ev.dateTermination || ev.dateSoumission || ev.dateCreation;
-      if (raw) {
-        const y = raw.substring(0, 4);
-        if (y && !isNaN(y)) years.add(y);
+      if (ev.annee) {
+        years.add(String(ev.annee));
+      } else {
+        const raw = ev.dateTermination || ev.dateSoumission || ev.dateCreation;
+        if (raw) {
+          const y = raw.substring(0, 4);
+          if (y && !isNaN(y)) years.add(y);
+        }
       }
     });
+    // Guarantee the dropdown is never empty
+    if (years.size === 0) years.add(String(new Date().getFullYear()));
     return [...years].sort((a, b) => b - a); // most recent first
   }, [listEvals]);
+
+  // Auto-select the most recent year with real data when evaluations load
+  useEffect(() => {
+    if (availableYears.length > 0 && !availableYears.includes(filterYear)) {
+      setFilterYear(availableYears[0]);
+    }
+  }, [availableYears]);
 
   const valeurLabels = { 0:"n'existe pas", 1:"en cours", 2:"réalisé", 3:"validé" };
 
@@ -345,10 +374,11 @@ export default function DashboardsEval() {
       const raw = ev.dateTermination || ev.dateSoumission || ev.dateCreation;
       const dateStr = raw ? raw.substring(0, 10) : null;
 
-      // Year filter
-      if (filterYear !== "all") {
-        if (!dateStr || dateStr.substring(0, 4) !== filterYear) return false;
-      }
+      // Year filter: use ev.annee if present, fall back to parsing date fields
+      const evYear = ev.annee
+        ? String(ev.annee)
+        : (ev.dateTermination || ev.dateSoumission || ev.dateCreation || "").substring(0, 4);
+      if (!evYear || evYear !== filterYear) return false;
       // Date range filters
       if (filterDateFrom && dateStr && dateStr < filterDateFrom) return false;
       if (filterDateTo   && dateStr && dateStr > filterDateTo)   return false;
@@ -826,7 +856,7 @@ export default function DashboardsEval() {
         {/* Filter Bar */}
         <FilterBar
           filterYear={filterYear}           setFilterYear={setFilterYear}
-          availableYears={availableYears}
+          availableYears={availableYears}   defaultYear={availableYears[0] || filterYear}
           filterDateFrom={filterDateFrom}   setFilterDateFrom={setFilterDateFrom}
           filterDateTo={filterDateTo}       setFilterDateTo={setFilterDateTo}
           filterOrgType={filterOrgType}     setFilterOrgType={setFilterOrgType}
