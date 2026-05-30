@@ -206,8 +206,12 @@ public class PrincipeServiceImp implements PrincipeService {
 //////////////////Critere/////////////////////////////////////////
     @Override
     public PrincipeResponse createCritere(PrincipeRequest request) {
-        if (critereRepository.existsByNom(request.getNom())) {
+        /*if (critereRepository.existsByNom(request.getNom())) {
             throw new RuntimeException("Critere already exists");
+        }*/
+       boolean exists = critereRepository.existsByNomAndPratiqueId(request.getNom(), request.getPratiqueId());
+        if (exists) {
+            throw new RuntimeException("Critere already exists in this pratique");
         }
 
         CritereEntity newCritere = convertToCritereEntity(request);
@@ -253,12 +257,15 @@ public class PrincipeServiceImp implements PrincipeService {
 
     CritereEntity critere = critereRepository.findById(newCritere.getId())
         .orElseThrow(() -> new RuntimeException("Critere not found"));
-    /*boolean exists = critereRepository.existsByNom(newCritere.getNom());
-    if (exists) {
-        throw new RuntimeException("Critére already exists");
-    }*/
-   if(newCritere.getNom().trim().isEmpty())
+    if(newCritere.getNom().trim().isEmpty())
         {throw new RuntimeException("Critere ne doit étre pas vide");}
+    
+    // Check duplicate within same pratique, excluding itself
+    Long pratiqueId = critere.getPratique() != null ? critere.getPratique().getId() : null;
+    boolean exists = critereRepository.existsByNomAndPratiqueId(newCritere.getNom(), pratiqueId);
+    if (exists && !critere.getId().equals(newCritere.getId())) {
+        throw new RuntimeException("Critère with this name already exists in this pratique");
+    }
 
     critere.setNom(newCritere.getNom());
     //critere.setDescription(newCritere.getDescription());

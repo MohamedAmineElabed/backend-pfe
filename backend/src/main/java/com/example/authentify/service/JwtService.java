@@ -54,7 +54,7 @@ public class JwtService {
             System.out.println("TOKEN VALID");
             return true;
         } catch (ExpiredJwtException e) {
-            System.out.println("TOKEN EXPIRED"); // ← likely this
+            System.out.println("TOKEN EXPIRED");
         return false;
         } catch (JwtException e) {
             System.out.println("TOKEN INVALID: " + e.getMessage());

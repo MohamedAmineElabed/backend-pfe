@@ -205,7 +205,7 @@ public class ProfileController {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 }
-
+    // Helper method to clear the token cookie on unauthorized access
     private ResponseCookie clearCookie() {
     return ResponseCookie.from("token", "")
             .httpOnly(true)
@@ -213,7 +213,6 @@ public class ProfileController {
             .maxAge(0)
             .build();
 }
-
     @GetMapping("/users/me")
     public ResponseEntity<UserEntity> getCurrentUser(HttpServletRequest request) {
 

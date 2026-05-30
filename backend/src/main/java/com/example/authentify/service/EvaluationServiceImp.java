@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.authentify.entity.ReponseEntity;
+import com.example.authentify.entity.ScoreParPrincipeEntity;
 import com.example.authentify.entity.CritereEntity;
 import com.example.authentify.entity.EvaluationEntity;
 import com.example.authentify.entity.OrganismeEntity;
@@ -31,6 +32,7 @@ import com.example.authentify.repository.OrganismeRepository;
 import com.example.authentify.repository.ReponseRepository;
 import com.example.authentify.repository.PreuveRepository;
 import com.example.authentify.repository.CritereRepository;
+import com.example.authentify.repository.PrincipeRepository;
 import com.example.authentify.repository.ScoreParPrincipeRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,8 @@ public class EvaluationServiceImp {
     private final OrganismeRepository organismeRepository;
     private final CritereRepository critereRepository;
     private final ScoreParPrincipeRepository scoreParPrincipeRepository;
+    private final PrincipeRepository principeRepository;
+    private final ScoreParPrincipeService scoreParPrincipeService;
 
     // ─────────────────────────────────────────────────────────────
     // HELPERS
@@ -174,6 +178,7 @@ long answeredCount = allReponses.stream()
     .filter(r -> r.getValeur() != null)
     .count();
 
+
 // CASE 1:
 // Responsable modified a finished evaluation
 // from 0/1 -> 2/3
@@ -210,11 +215,11 @@ else {
     evaluation.setScore(score);
     evaluation.setScoreMax(maxScore);
     evaluation.setLabel(getLabel(score, maxScore));
-
-    evaluation.setDateTermination(
-        new Timestamp(System.currentTimeMillis())
-    );
+    evaluation.setDateTermination(new Timestamp(System.currentTimeMillis()));
+    
 }
+    // Update score par principe
+   // scoreParPrincipeService.UpdateScoreParPrincipe(evaluationId, evaluation);
 
 evaluationRepository.save(evaluation);
         return reponse;
@@ -257,6 +262,9 @@ evaluationRepository.save(evaluation);
 
         // Save ALL responses at once AFTER the loop, then update statut once
         reponseRepository.saveAll(toSave);
+        // Update score par principe
+        scoreParPrincipeService.UpdateScoreParPrincipe(evaluationId, evaluation);
+
         updateEvalStatut(evaluationId);
 
         // Re-fetch so we return the updated statut/score/label

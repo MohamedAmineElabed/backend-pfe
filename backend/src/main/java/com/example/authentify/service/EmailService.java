@@ -174,15 +174,16 @@ public class EmailService {
     }
 
 // ── public API ─────────────────────────────────────────────────────────────
-    public boolean sendWelcomeEmail(String toEmail, String subject, String body) {
+    //test
+    /*public boolean sendWelcomeEmail(String toEmail, String subject, String body) {
         if (toEmail == null || !toEmail.contains("@")) {
             System.out.println("Invalid email address");
             return false;
         }
         return sendText(toEmail, subject, body);
-    }
+    }*/
 
-    @Async
+    @Async // Send asynchronously to avoid blocking the main thread and to allow retries without affecting user experience
     public void sendValidationEmailAsync(String email, String url) {
         try {
             sendValidationEmail(email, url);

@@ -254,16 +254,15 @@ private boolean isStrongPassword(String password) {
         UserEntity existingUser = userRepository.findById(requestUser.getUserId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilisateur non trouvé"));
         if (!passwordEncoder.matches(requestUser.getOldPassword(), existingUser.getPassword())) {
-            throw new ResponseStatusException(
-                HttpStatus.BAD_REQUEST,"Ancien mot de passe incorrect");
-    }
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Ancien mot de passe incorrect");
+        }
 
         existingUser.setPassword(passwordEncoder.encode(requestUser.getNewPassword()));
         return userRepository.save(existingUser);
 }
 
 
-    @Override
+    /*@Override
     public void sendValidationEmail(String email) {
 
     UserEntity user = userRepository.findByEmail(email)
@@ -281,7 +280,7 @@ private boolean isStrongPassword(String password) {
     String validationUrl = "http://localhost:8080/api/auth/validate?email=" + email;
 
     emailService.sendValidationEmailAsync(email, validationUrl);
-}
+}*/
 
 
     @Override

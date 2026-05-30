@@ -121,7 +121,6 @@ public class DemandeServiceImp implements DemandeService {
         DemandeEntity savedDemande= demandeRepository.save(demande);
 
     // Generate a validation URL
-        //String validationUrl = "http://localhost:3000/auth/verify?token=" + generateTokenFor(demande);
         /*String validationUrl = "http://localhost:5173/verifyAccount?email="
             + URLEncoder.encode(savedDemande.getEmail(), StandardCharsets.UTF_8); */
         String validationUrl = "https://frontend-pfe-mu.vercel.app/verifyAccount?email="

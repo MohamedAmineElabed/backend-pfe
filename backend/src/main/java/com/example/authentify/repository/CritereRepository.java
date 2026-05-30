@@ -5,5 +5,6 @@ import com.example.authentify.entity.CritereEntity;
 
 public interface CritereRepository extends JpaRepository<CritereEntity, Long> {
     boolean existsByNom(String nom);
+    boolean existsByNomAndPratiqueId(String nom, Long pratiqueId);
 
 }

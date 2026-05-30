@@ -24,16 +24,6 @@ public class AnneeController {
     }
 
     // All years that have evaluations (for history dropdown)
-    /*@GetMapping("/disponibles")
-    public ResponseEntity<List<Integer>> getAnneesDisponibles() {
-        List<Integer> years = evaluationRepository.findAll().stream()
-            .map(e -> e.getAnnee())
-            .filter(a -> a != null)
-            .distinct()
-            .sorted((a, b) -> b - a)   // newest first
-            .collect(Collectors.toList());
-        return ResponseEntity.ok(years);
-    }*/
    @GetMapping("/disponibles")
     public ResponseEntity<List<Integer>> getAnneesDisponibles() {
         return ResponseEntity.ok(evaluationRepository.findDistinctAnnees());

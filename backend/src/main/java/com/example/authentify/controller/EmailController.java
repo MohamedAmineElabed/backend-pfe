@@ -25,10 +25,8 @@ public class EmailController {
     private final ProfileService profileService;
     //private final PasswordRequest passwordRequest;
 
-    @PostMapping("/send-welcome")
+   /* @PostMapping("/send-welcome")
     public ResponseEntity<String> sendWelcomeEmail(@RequestBody Map<String,String> request){
-            /*@RequestParam String email,
-            @RequestParam String name) {*/
             String email = request.get("email");
             String subject = request.get("subject");
             String body = request.get("body");
@@ -41,7 +39,7 @@ public class EmailController {
         } else {
             return ResponseEntity.status(500).body("Failed to send email");
         }
-    }
+    }*/
 
     /*@PostMapping("/send-valide")
     public ResponseEntity<String> sendValidationEmail(@RequestBody Map<String,String> request){
