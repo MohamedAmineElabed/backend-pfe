@@ -11,6 +11,8 @@ const Login = () => {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const onlyLetters = (value) => /^[A-Za-zÀ-ÿ\s]*$/.test(value); 
+
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
   const [email, setEmail] = useState('');
@@ -42,6 +44,26 @@ const Login = () => {
       if (iscreateAccount) {
         if (telephone.length !== 8) { toast.error("Le téléphone doit contenir exactement 8 chiffres"); setLoading(false); return; }
         if (fax.length !== 8) { toast.error("Le fax doit contenir exactement 8 chiffres"); setLoading(false); return; }
+        if (!onlyLetters(nom)) {
+          toast.error("Le champ Nom ne doit contenir que des lettres et des espaces");
+          setLoading(false);
+          return;
+        }
+        if (!onlyLetters(prenom)) {
+          toast.error("Le champ Prénom ne doit contenir que des lettres et des espaces");
+          setLoading(false);
+          return;
+        }
+        if (!onlyLetters(organisme)) {
+          toast.error("Le champ Nom de l'organisme ne doit contenir que des lettres et des espaces");
+          setLoading(false);
+          return;
+        }
+        if (!onlyLetters(secteur)) {
+          toast.error("Le champ Secteur ne doit contenir que des lettres et des espaces");
+          setLoading(false);
+          return;
+        }
         const formData = new FormData();
         formData.append("nom", nom); formData.append("prenom", prenom);
         formData.append("email", email); formData.append("nomOrganisme", organisme);formData.append("role","RESPONSABLE");
@@ -210,23 +232,15 @@ const Login = () => {
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                         {[
-                          //{ label: "Nom", value: nom, set: setNom, type: "text" },
-                          { label: "Nom", value: nom, set: (value) => {
+                          { label: "Nom", value: nom, set: setNom, type: "text" },
+                          /*{ label: "Nom", value: nom, set: (value) => {
                             if (/^[A-Za-zÀ-ÿ\s]*$/.test(value)) {  // Autoriser uniquement les lettres et les espaces
                               setNom(value);
                             }
-                          }, type: "text" },
-                          { label: "Prénom", value: prenom, set: (value) => {
-                            if (/^[A-Za-zÀ-ÿ\s]*$/.test(value)) { 
-                              setPrenom(value);
-                            }
-                          }, type: "text" },
+                          }, type: "text" },*/ 
+                          { label: "Prénom", value: prenom, set: setPrenom, type: "text" },
                           { label: "Email personnel", value: email, set: setEmail, type: "email" },
-                          { label: "Rôle dans l'organisme", value: jobRole, set: (value) => {
-                            if (/^[A-Za-zÀ-ÿ\s]*$/.test(value)) { 
-                              setJobRole(value);
-                            }
-                          }, type: "text" },
+                          { label: "Rôle dans l'organisme", value: jobRole, set: setJobRole, type: "text" },
                         ].map(f => (
                           <div key={f.label}>
                             <label style={labelStyle}>{f.label}</label>
@@ -251,13 +265,14 @@ const Login = () => {
                         <div>
                           <label style={labelStyle}>Nom de l'organisme</label>
                           <input className="login-input" style={inputStyle} placeholder="Nom de l'organisme"
-                            value={organisme} onChange={e =>{
+                            /*value={organisme} onChange={e =>{
                               if (/^[A-Za-zÀ-ÿ\s]*$/.test(e.target.value)) {
                                 setOrganisme(e.target.value);
                               }
                             }
-                            //setOrganisme(e.target.value)
-                            } required />
+                            }*/
+                            value={organisme} onChange={e => setOrganisme(e.target.value)}
+                            required />
                         </div>
 
                         <div>

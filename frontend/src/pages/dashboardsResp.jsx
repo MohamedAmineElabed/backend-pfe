@@ -92,6 +92,21 @@ const ICONS = {
   ),
 };
 
+const LABEL_CONFIG = {
+  "Excellence governance": { color:"#7c3aed", bg:"#f5f3ff", rank:5 },
+  "Or":                    { color:"#d97706", bg:"#fffbeb", rank:4 },
+  "Argent":                { color:"#475569", bg:"#f8fafc", rank:3 },
+  "Bronze":                { color:"#92400e", bg:"#fef3c7", rank:2 },
+  "Non conforme":          { color:"#dc2626", bg:"#fef2f2", rank:1 },
+  "Non évalué":            { color:"#9ca3af", bg:"#f9fafb", rank:0 },
+};
+
+const STATUS_CONFIG = {
+  "terminé":    { color:"#10b981", bg:"#ecfdf5", label:"Terminée"    },
+  "en cours":   { color:"#f59e0b", bg:"#fffbeb", label:"En cours"    },
+  "en attente": { color:"#6b7280", bg:"#f9fafb", label:"En attente"  },
+};
+
 // In your badge component:
 function LabelBadge({ label }) {
   const cfg = LABEL_CONFIG[label];
@@ -109,21 +124,6 @@ function LabelBadge({ label }) {
     </span>
   );
 }
-
-const LABEL_CONFIG = {
-  "Excellence governance": { color:"#7c3aed", bg:"#f5f3ff", rank:5 },
-  "Or":                    { color:"#d97706", bg:"#fffbeb", rank:4 },
-  "Argent":                { color:"#475569", bg:"#f8fafc", rank:3 },
-  "Bronze":                { color:"#92400e", bg:"#fef3c7", rank:2 },
-  "Non conforme":          { color:"#dc2626", bg:"#fef2f2", rank:1 },
-  "Non évalué":            { color:"#9ca3af", bg:"#f9fafb", rank:0 },
-};
-
-const STATUS_CONFIG = {
-  "terminé":    { color:"#10b981", bg:"#ecfdf5", label:"Terminée"    },
-  "en cours":   { color:"#f59e0b", bg:"#fffbeb", label:"En cours"    },
-  "en attente": { color:"#6b7280", bg:"#f9fafb", label:"En attente"  },
-};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function getLabelConfig(label) {
@@ -276,6 +276,7 @@ function PrincipleBar({ principe, score, color, delay }) {
   );
 }
 
+// Custom tooltip for radar chart
 const CustomRadarTooltip = ({ active, payload }) => {
   if (!active || !payload?.length) return null;
   return (
@@ -417,6 +418,8 @@ export default function DashboardResp() {
   const [anneeSelectionnee, setAnneeSelectionnee] = useState(new Date().getFullYear());
   const [anneesDisponibles, setAnneesDisponibles] = useState([]);
 
+  const [evolutionMode, setEvolutionMode] = useState("annee");
+
   const startEvaluation=async()=>{
       if (!userData) return alert("Utilisateur introuvable !");
       console.log("current user: ",userData);
@@ -426,6 +429,7 @@ export default function DashboardResp() {
 
   const EvolutionData = useMemo(() =>
     [...evaluations]
+      // Trier par date de création ou de mise à jour (la plus ancienne en premier)
       .sort((a, b) => (a.dateCreation || "").localeCompare(b.dateCreation || ""))
       .map((ev, i) => ({
         index: `Eval ${i + 1}(${ev.dateUpdate || ev.dateCreation || ""})`,
@@ -457,17 +461,7 @@ export default function DashboardResp() {
   return `Critère ${id}`;
 };
 
-  /*const orgRefusedCriteres = useMemo(() => {
-    if (!dernierEval || !dernierEval.reponses) return [];
-    return dernierEval?.reponses
-      .filter(r=> r.statut?.toLowerCase()==="refusé")
-      .map(r => ({
-        critere:findCritereName(r.critereId),
-        commentaire: r.commentaire || "",
-        valeur:r.valeur,
-      }));
-  },[dernierEval, principes]);*/
-  const orgRefusedCriteres = useMemo(() => {
+const orgRefusedCriteres = useMemo(() => {
   if (!dernierEvalReponses.length) return [];
   return dernierEvalReponses
     .filter(r => r.statut?.toLowerCase() === "refusé")
@@ -528,19 +522,11 @@ export default function DashboardResp() {
       setLoading(false);
     }
   };
-  /*const filteredEvaluations = useMemo(() => {
-  return evaluations.filter(ev => {
-    const date = ev.dateTermination || ev.dateCreation;
-    if (!date) return false;
-
-    return new Date(date).getFullYear() === anneeSelectionnee;
-  });
-}, [evaluations, anneeSelectionnee]);*/
 
   //latest evaluation
   const fetchLatest = async (annee = anneeSelectionnee) => {
     try {
-      //const latestRes = await axios.get(`${backendUrl}/evaluation/latest/${userData?.organisme?.id}`,{withCredentials: true}
+      //fetch latest treated evaluation for every organisme, then filter for current organisme
       const latestRes = await axios.get(`${backendUrl}/evaluation/all/latest/treated`,
         {params: { annee },withCredentials: true});
       const filtered = Array.isArray(latestRes.data)
@@ -574,12 +560,8 @@ useEffect(() => {
       const years = [...new Set([...res.data, currentYear])].sort((a, b) => b - a);
       setAnneesDisponibles(years);
       
-      // Set default year ONLY once
+      // Set default year to current year if not already set
       setAnneeSelectionnee(prev => prev || currentYear);
-      // set default selected year (latest)
-      /*if (res.data.length > 0) {
-        setAnneeSelectionnee(res.data[0]);
-      }*/
     } catch (error) {
       toast.error("Erreur chargement des années");
       console.error(error);
@@ -611,7 +593,7 @@ useEffect(() => {
   }, [backendUrl, organismeId, anneeSelectionnee]);  
   useEffect(() => { fetchScores(); },[backendUrl, organismeId, anneeSelectionnee]);
 
-  useEffect(() => {
+useEffect(() => {
   if (!latestEval?.id) {
     setDernierEvalReponses([]);
     return;
@@ -726,11 +708,12 @@ useEffect(() => {
   syncScores();
 }, [latestEval?.id, principes]);*/
 
+  // ── Track seen evaluations in localStorage to show "new" badge ─────────────
   useEffect(() => {
     setSeenEvals(getSeenEvals(anneeSelectionnee));
   }, [anneeSelectionnee]);
 
-  useEffect(() => {
+useEffect(() => {
   if (!organismeId) return;
   axios.get(`${backendUrl}/evaluation/rang/${organismeId}`, { withCredentials: true })
     .then(r => setRangs(r.data))
@@ -1057,7 +1040,7 @@ useEffect(() => {
               )}
 
               {/* Score evolution */}
-              <ChartCard title="📈 Évolution du score" subtitle="Toutes les évaluations de cet organisme pour cette année">
+              {/*<ChartCard title="📈 Évolution du score" subtitle="Toutes les évaluations de cet organisme pour cette année">
                 {EvolutionData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={EvolutionData}>
@@ -1072,6 +1055,83 @@ useEffect(() => {
                   </LineChart>
                 </ResponsiveContainer>
                 ) : <EmptyState label="Pas d'historique disponible" />}
+              </ChartCard>*/}
+
+              {/* Score evolution — toggleable */}
+              <ChartCard
+                title="📈 Évolution du score"
+                subtitle={evolutionMode === "annee"
+                  ? `Toutes les évaluations de ${anneeSelectionnee}`
+                  : "Dernière évaluation terminée par année"}
+              >
+                {/* Toggle buttons */}
+                <div style={{ display:"flex", gap:6, marginBottom:16 }}>
+                  {[
+                    { id:"annee",  label:`Par éval. (${anneeSelectionnee})` },
+                    { id:"global", label:"Par année" },
+                  ].map(btn => (
+                    <button key={btn.id} onClick={() => setEvolutionMode(btn.id)}
+                      style={{
+                        padding:"5px 14px", borderRadius:8, border:"1px solid",
+                        fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.15s",
+                        background: evolutionMode === btn.id ? "#0f172a" : "#f8fafc",
+                        color:      evolutionMode === btn.id ? "#fff"    : "#64748b",
+                        borderColor:evolutionMode === btn.id ? "#0f172a" : "#e2e8f0",
+                      }}>
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Mode 1 — all evals in selected year */}
+                {evolutionMode === "annee" && (
+                  EvolutionData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={260}>
+                      <LineChart data={EvolutionData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis dataKey="index" tick={{ fontSize:11, fill:"#64748b" }} />
+                        <YAxis domain={[0,100]} tickFormatter={v=>`${v}%`} tick={{ fontSize:11, fill:"#94a3b8" }} />
+                        <Tooltip
+                          formatter={(v, _, props) => [`${v}%`, `Score — ${props.payload.label || ""}`]}
+                          labelFormatter={l => l} />
+                        <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2.5}
+                          dot={{ fill:"#3b82f6", r:5 }} activeDot={{ r:7 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : <EmptyState label="Pas d'historique disponible pour cette année" />
+                )}
+
+                {/* Mode 2 — latest eval per year */}
+                {evolutionMode === "global" && (
+                  EvolutionByAnnee.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={260}>
+                      <LineChart data={EvolutionByAnnee}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                        <XAxis dataKey="index" tick={{ fontSize:12, fill:"#64748b" }} />
+                        <YAxis domain={[0,100]} tickFormatter={v=>`${v}%`} tick={{ fontSize:11, fill:"#94a3b8" }} />
+                        <Tooltip
+                          content={({ active, payload, label }) => {
+                            if (!active || !payload?.length) return null;
+                            const d = payload[0].payload;
+                            const lc = LABEL_CONFIG[d.label] || LABEL_CONFIG["Non évalué"];
+                            return (
+                              <div style={{ background:"#0f172a", borderRadius:10, padding:"10px 14px", fontSize:13, boxShadow:"0 4px 20px rgba(0,0,0,0.2)" }}>
+                                <div style={{ fontWeight:700, color:"#f8fafc", marginBottom:4 }}>Année {label}</div>
+                                <div style={{ color:"#818cf8", fontWeight:700, fontSize:15 }}>{d.score}%</div>
+                                <div style={{ color:"#94a3b8", fontSize:12 }}>Score: {d.scoreRaw}</div>
+                                <div style={{ marginTop:4 }}>
+                                  <span style={{ padding:"2px 8px", borderRadius:20, fontSize:11, fontWeight:600, background:lc.bg, color:lc.color }}>{d.label}</span>
+                                </div>
+                              </div>
+                            );
+                          }}
+                        />
+                        <Line type="monotone" dataKey="score" stroke="#6366f1" strokeWidth={2.5}
+                          dot={{ fill:"#6366f1", r:5 }} activeDot={{ r:7 }} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : <EmptyState label="Aucune donnée multi-année disponible" />
+                )}
               </ChartCard>
 
               {/*<ChartCard title="📈 Évolution du score par année" subtitle="Dernière évaluation terminée de chaque année">

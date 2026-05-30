@@ -122,12 +122,14 @@ const Principes = () => {
   const [newPratique, setNewPratique] = useState({ nom: "", description: "" });
   const [newCritere, setNewCritere]   = useState({ nom: "", description: "" });
 
+  const lettersOnly = (val) => val.replace(/[^a-zA-ZÀ-ÿ\s]/g, "");
+
   useEffect(() => { fetchPrincipes(); fetchPratiques(); fetchCriteres(); }, []);
 
-  const handleChangeNew = e => setNewPrincipe(p => ({ ...p, [e.target.name]: e.target.value }));
-  const handleChangeNewPratique = e => setNewPratique(p => ({ ...p, [e.target.name]: e.target.value }));
-  const handleChangeNewCritere  = e => setNewCritere(p  => ({ ...p, [e.target.name]: e.target.value }));
-
+  const handleChangeNew = e =>setNewPrincipe(p => ({ ...p, [e.target.name]: e.target.name === "nom" ? lettersOnly(e.target.value) : e.target.value }));
+  const handleChangeNewPratique = e =>setNewPratique(p => ({ ...p, [e.target.name]: e.target.name === "nom" ? lettersOnly(e.target.value) : e.target.value }));
+  const handleChangeNewCritere = e =>setNewCritere(p => ({ ...p, [e.target.name]: e.target.name === "nom" ? lettersOnly(e.target.value) : e.target.value }));
+  
   const fetchPrincipes = async () => {
     try { const r = await axios.get(`${backendUrl}/principes`, { withCredentials: true }); setPrincipes(r.data); }
     catch (e) { console.error("Erreur chargement principes", e); }
@@ -168,7 +170,7 @@ const Principes = () => {
   };
 
   const handleAddCritere = async (e) => {
-    e.preventDefault();
+    e.preventDefault(); //prevents form submission which causes page reload and loss of state
     if (!selectedPratiqueId) return;
     try {
       const res = await axios.post(`${backendUrl}/criteres/create/${selectedPratiqueId}`, 
@@ -364,7 +366,7 @@ const Principes = () => {
                             style={{ ...inputStyle, fontSize: 14, padding: "10px 14px" }}
                             type="text"
                             value={editingPrincipeData.nom}
-                            onChange={e => setEditingPrincipeData(p => ({ ...p, nom: e.target.value }))}
+                            onChange={e => setEditingPrincipeData(p => ({ ...p, nom: lettersOnly(e.target.value) }))}
                             placeholder="Nom du principe"
                           />
                         </div>
@@ -443,7 +445,7 @@ const Principes = () => {
                                           className="pp-input"
                                           style={{ ...inputStyle, fontSize: 14, padding: "10px 14px" }}
                                           value={editingPratiqueData.nom}
-                                          onChange={e => setEditingPratiqueData(p => ({ ...p, nom: e.target.value }))}
+                                          onChange={e => setEditingPratiqueData(p => ({ ...p, nom: lettersOnly(e.target.value) }))}
                                           placeholder="Nom de la pratique"
                                         />
                                       </div>
@@ -499,7 +501,7 @@ const Principes = () => {
                                             <>
                                               <input className="pp-input" style={{ ...inputStyle, flex: 1, marginRight: 8, padding: "6px 10px" }}
                                                 value={editingCritereData.nom}
-                                                onChange={e => setEditingCritereData(p => ({ ...p, nom: e.target.value }))} />
+                                                onChange={e => setEditingCritereData(p => ({ ...p, nom: lettersOnly(e.target.value) }))} />
                                               <div style={{ display: "flex", gap: 6 }}>
                                                 <button style={btnSave} onClick={(e) => { e.stopPropagation(); handleSave(); setIsEditing(false); }}>Enregistrer</button>
                                                 <button style={btnCancel} onClick={(e) => { e.stopPropagation(); setIsEditing(false); setCritereId(null); }}>Annuler</button>
