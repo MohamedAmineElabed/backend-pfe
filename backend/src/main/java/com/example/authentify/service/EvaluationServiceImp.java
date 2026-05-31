@@ -4,7 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.authentify.entity.ReponseEntity;
-import com.example.authentify.entity.ScoreParPrincipeEntity;
+//import com.example.authentify.entity.ScoreParPrincipeEntity;
 import com.example.authentify.entity.CritereEntity;
 import com.example.authentify.entity.EvaluationEntity;
 import com.example.authentify.entity.OrganismeEntity;
@@ -47,7 +47,7 @@ public class EvaluationServiceImp {
     private final OrganismeRepository organismeRepository;
     private final CritereRepository critereRepository;
     private final ScoreParPrincipeRepository scoreParPrincipeRepository;
-    private final PrincipeRepository principeRepository;
+    //private final PrincipeRepository principeRepository;
     private final ScoreParPrincipeService scoreParPrincipeService;
 
     // ─────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ public class EvaluationServiceImp {
         else if (pct <= 59) return "Bronze";
         else if (pct <= 79) return "Argent";
         else if (pct <= 89) return "Or";
-        else                return "Excellence governance";
+        else return "Excellence governance";
     }
 
     // ─────────────────────────────────────────────────────────────
@@ -100,8 +100,7 @@ public class EvaluationServiceImp {
             .orElseThrow(() -> new RuntimeException("Evaluation not found with id: " + evaluationId));
 
         // 2. Upsert the response
-        ReponseEntity reponse = reponseRepository
-            .findByEvaluationIdAndCritereId(evaluationId, critereId)
+        ReponseEntity reponse = reponseRepository.findByEvaluationIdAndCritereId(evaluationId, critereId)
             .orElse(new ReponseEntity());
 
         reponse.setEvaluation(evaluation);
@@ -110,9 +109,10 @@ public class EvaluationServiceImp {
         Integer oldValeur = reponse.getValeur();
         reponse.setValeur(valeur);
 
-        boolean switchedToLowLevel    = valeur != null && (valeur == 0 || valeur == 1);
-        boolean switchedToHighLevel   = valeur != null && (valeur == 2 || valeur == 3);
-        boolean wasHighLevel          = oldValeur != null && (oldValeur == 2 || oldValeur == 3);
+        // Determine if we switched between low-level (0/1) and high-level (2/3) values
+        boolean switchedToLowLevel = valeur != null && (valeur == 0 || valeur == 1);
+        boolean switchedToHighLevel = valeur != null && (valeur == 2 || valeur == 3);
+        boolean wasHighLevel = oldValeur != null && (oldValeur == 2 || oldValeur == 3);
         boolean evaluationWasTerminee = "terminé".equals(evaluation.getStatut());
 
         if (switchedToLowLevel) {
@@ -158,59 +158,48 @@ public class EvaluationServiceImp {
         }
 
         // 5. Recompute evaluation score / label / statut
+        List<ReponseEntity> allReponses = reponseRepository.findByEvaluationId(evaluationId);
 
-List<ReponseEntity> allReponses =
-    reponseRepository.findByEvaluationId(evaluationId);
+        int score = allReponses.stream()
+            .filter(r -> "validé".equals(r.getStatut()) && r.getValeur() != null)
+            .mapToInt(ReponseEntity::getValeur)
+            .sum();
 
-int score = allReponses.stream()
-    .filter(r -> "validé".equals(r.getStatut()) && r.getValeur() != null)
-    .mapToInt(ReponseEntity::getValeur)
-    .sum();
+        int maxScore = calculerMaxScore();
 
-int maxScore = calculerMaxScore();
+        long pendingCount = allReponses.stream()
+            .filter(r -> r.getValeur() != null)
+            .filter(r -> r.getStatut() == null)
+            .count();
 
-long pendingCount = allReponses.stream()
-    .filter(r -> r.getValeur() != null)
-    .filter(r -> r.getStatut() == null)
-    .count();
-
-long answeredCount = allReponses.stream()
-    .filter(r -> r.getValeur() != null)
-    .count();
+        long answeredCount = allReponses.stream()
+            .filter(r -> r.getValeur() != null)
+            .count();
 
 
-// CASE 1:
-// Responsable modified a finished evaluation
-// from 0/1 -> 2/3
+// CASE 1: Responsable modified a finished evaluation from 0/1 -> 2/3
 if (evaluationWasTerminee && switchedToHighLevel) {
-
     evaluation.setStatut("en cours");
     evaluation.setScore(0);
     evaluation.setLabel(null);
 }
 
-// CASE 2:
-// First submission and ALL responses pending review
+// CASE 2: First submission and ALL responses pending review
 else if (pendingCount == answeredCount && pendingCount > 0) {
-
     evaluation.setStatut("en attente");
     evaluation.setScore(0);
     evaluation.setLabel(null);
 }
 
-// CASE 3:
-// Some reviewed, some pending
+// CASE 3: Some reviewed, some pending
 else if (pendingCount > 0) {
-
     evaluation.setStatut("en cours");
     evaluation.setScore(0);
     evaluation.setLabel(null);
 }
 
-// CASE 4:
-// Everything reviewed
+// CASE 4: Everything reviewed
 else {
-
     evaluation.setStatut("terminé");
     evaluation.setScore(score);
     evaluation.setScoreMax(maxScore);
@@ -241,9 +230,8 @@ evaluationRepository.save(evaluation);
 
         for (UpdateReponseRequest r : request.getReponses()) {
             if (r.getCritereId() == null) continue;
-
+            //Looks up an existing response for this critereId in the map. If none exists, it creates a new ReponseEntity
             ReponseEntity reponse = responseMap.getOrDefault(r.getCritereId(), new ReponseEntity());
-
             if (reponse.getId() == null) {
                 reponse.setEvaluation(evaluation);
                 reponse.setCritereId(r.getCritereId());
@@ -536,4 +524,27 @@ evaluationRepository.save(evaluation);
         });
         return new ArrayList<>(latestPerOrg.values());
     }
+
+
+
+    ///////////////////test personnel
+    public List<EvaluationEntity> getOrganismeWithNoEvaluation() {
+        List<Long> evaluationsIds=evaluationRepository.findAll().stream().map(e->e.getOrganisme().getId()).toList();
+        List<EvaluationEntity> organismesWithNoEvaluations = new ArrayList<>();
+        List<OrganismeEntity> allOrganismes = organismeRepository.findAll();
+        for (OrganismeEntity org : allOrganismes) {
+            if (!evaluationsIds.contains(org.getId())) {
+                EvaluationEntity dummyEval = new EvaluationEntity();
+                dummyEval.setOrganisme(org);
+                organismesWithNoEvaluations.add(dummyEval);
+            }
+        }
+        return organismesWithNoEvaluations;
+    }
+
+    public int countEvaluationsByOrganisme(Long organismeId) {
+        List<EvaluationEntity> evaluations = evaluationRepository.findByOrganismeId(organismeId);
+        return evaluations.size();
+    }
+
 }

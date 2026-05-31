@@ -94,10 +94,10 @@ public class ScoreParPrincipeController {
         return scoreParPrincipeService.getScoresByOrganismeId(organismeId);
     }
 
-    @PutMapping("/refresh/{evaluationId}")
+   /*  @PutMapping("/refresh/{evaluationId}")
     public ResponseEntity<Void> refreshScoreMax(@PathVariable Long evaluationId) {
         scoreParPrincipeService.refreshScoreMaxParPrincipe(evaluationId);
         return ResponseEntity.ok().build();
-}
+}*/
     
 }

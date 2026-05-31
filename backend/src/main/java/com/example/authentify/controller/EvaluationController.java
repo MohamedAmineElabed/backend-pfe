@@ -58,10 +58,6 @@ public class EvaluationController {
     private final PrincipeService principeService;
     private final ProfileService organismeService;
 
-    /*EvaluationController(EvaluationRepository evaluationRepository) {
-        this.evaluationRepository = evaluationRepository;
-    }*/
-
    @PostMapping("/new")
     public ResponseEntity<Long> createEvaluation(@RequestBody EvaluationRequest request) {
         EvaluationEntity evaluation = evaluationService.createEvaluation(request);
@@ -80,7 +76,7 @@ public class EvaluationController {
         @RequestParam Long critereId,
         @RequestParam Integer valeur,
         @RequestParam(required = false) MultipartFile[] files // optional file
-) {
+    ) {
     try {
         ReponseEntity savedEvaluation = evaluationService.saveReponse(evaluationId, critereId, valeur, files);
         return ResponseEntity.ok(savedEvaluation);
@@ -128,7 +124,6 @@ public class EvaluationController {
             String dateUpdate= ev.getDateUpdate() != null ? ev.getDateUpdate().toLocalDateTime().toLocalDate().toString() : "";
             //String organisme = "Organisme #" + ev.getId();
             Integer score=ev.getScore();
-            //Integer scoreMax=ev.getScoreMax();
             int scoreMax = evaluationService.calculerMaxScore();
             String label=evaluationService.getLabel(score != null ? score : 0, scoreMax);
             ev.setLabel(label); // update label in the entity (optional, if you want to save it back to DB later)
@@ -139,7 +134,7 @@ public class EvaluationController {
             String responsableName = (org != null && org.getResponsable() != null) ? org.getResponsable().getNom() : "_";
             String ResponsableRole=(org != null && org.getResponsable() != null) ? org.getResponsable().getJobRole() : "_";
 
-            Map<String, Object> map = new java.util.HashMap<>();
+            Map<String, Object> map = new java.util.HashMap<>(); // create a mutable map to put values in
             map.put("id", ev.getId());
             map.put("organismeId", ev.getId());
             map.put("organismeName", organismeName);
@@ -381,7 +376,7 @@ public ResponseEntity<String> setEvaluationScore(
     Object scoreObj = body.get("score");
     //Object scoreMaxObj = body.get("scoreMax");
 
-    if (scoreObj instanceof Number) score = ((Number) scoreObj).intValue();
+    if (scoreObj instanceof Number) score = ((Number) scoreObj).intValue(); //handle numbers from a Map<String, Object>
     //if (scoreMaxObj instanceof Number) scoreMax = ((Number) scoreMaxObj).intValue(); // ← and this
 
     if (score == null) {
@@ -584,19 +579,18 @@ public ResponseEntity<List<Map<String, Object>>> getRangOrganisme(
     for (Integer year : annees) {
 
         // Step 2 — latest terminée per organisme for this year
+            // get all terminée evals for this year, then pick the latest per organisme in Java
         List<EvaluationEntity> allTerminees = evaluationRepository.findAllTermineesByAnnee(year);
-
         Map<Long, EvaluationEntity> latestPerOrg = new HashMap<>();
         allTerminees.forEach(e -> {
             Long orgId = e.getOrganisme().getId();
             latestPerOrg.merge(orgId, e, (existing, incoming) ->
                 incoming.getDateTermination() != null &&
-                (existing.getDateTermination() == null ||
-                 incoming.getDateTermination().after(existing.getDateTermination()))
+                (existing.getDateTermination() == null || incoming.getDateTermination().after(existing.getDateTermination()))
                     ? incoming : existing
             );
         });
-
+        //size() returns the numbers of keys in the map
         int totalOrganismes = latestPerOrg.size();
 
         // Step 3 — check if this organisme participated this year
@@ -604,8 +598,7 @@ public ResponseEntity<List<Map<String, Object>>> getRangOrganisme(
         if (myEval == null) continue; // organisme had no terminée eval this year — skip
 
         // Step 4 — compute score% for this organisme
-        double myPct = myEval.getScore() != null
-            ? (double) myEval.getScore() / globalMaxScore * 100 : 0;
+        double myPct = myEval.getScore() != null ? (double) myEval.getScore() / globalMaxScore * 100 : 0;
 
         // Step 5 — dense rank: count distinct scores strictly higher than mine
         long higherCount = latestPerOrg.values().stream()

@@ -305,8 +305,8 @@ public class PrincipeServiceImp implements PrincipeService {
         evaluationRepository.save(ev);
     }
 }*/
-
-    @Transactional
+ 
+@Transactional
 public void syncAllEvaluationsScoreMax() {
     List<CritereEntity> activeCriteres = critereRepository.findAll();
     int newMax = activeCriteres.size() * 3;

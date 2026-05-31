@@ -42,6 +42,7 @@ public ScoreParPrincipeEntity enregistrerScore(EvaluationEntity evaluation, Long
         throw new RuntimeException("Principe not found with id: " + principeId);
     }
     int scoreMax = principeRepository.countCriteresByPrincipeId(principeId) * 3;
+    
     return scoreParPrincipeRepository.findByEvaluation_IdAndPrincipeId(evaluation.getId(), principeId)
         .map(existing -> {
             existing.setScore(score);
