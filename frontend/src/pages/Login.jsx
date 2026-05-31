@@ -64,6 +64,11 @@ const Login = () => {
           setLoading(false);
           return;
         }
+        if (!onlyLetters(jobRole)) {
+          toast.error("Le champ Poste ne doit contenir que des lettres et des espaces");
+          setLoading(false);
+          return;
+        }
         const formData = new FormData();
         formData.append("nom", nom); formData.append("prenom", prenom);
         formData.append("email", email); formData.append("nomOrganisme", organisme);formData.append("role","RESPONSABLE");
@@ -291,11 +296,12 @@ const Login = () => {
                           { label: "Adresse", value: adresse, set: setAdresse },
                           { label: "N° Fax (8 chiffres)", value: fax, set: v => /^\d{0,8}$/.test(v) && setFax(v) },
                           { label: "Email de l'organisme", value: emailOrganisme, set: setEmailOrganisme, type: "email" },
-                          { label: "Secteur d'activité", value: secteur, set: (value) => {
+                          { label: "Secteur d'activité", value: secteur, set: setSecteur },
+                            /*set: (value) => {
                             if (/^[A-Za-zÀ-ÿ\s]*$/.test(value)) { 
                               setSecteur(value);
                             }
-                          } },
+                          }*/,
                         ].map(f => (
                           <div key={f.label}>
                             <label style={labelStyle}>{f.label}</label>
