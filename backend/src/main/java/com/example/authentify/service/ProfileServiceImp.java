@@ -262,7 +262,7 @@ private boolean isStrongPassword(String password) {
 }
 
 
-    @Override
+   /*  @Override
     public void sendValidationEmail(String email) {
 
     UserEntity user = userRepository.findByEmail(email)
@@ -280,7 +280,7 @@ private boolean isStrongPassword(String password) {
     String validationUrl = "http://localhost:8080/api/auth/validate?email=" + email;
 
     emailService.sendValidationEmailAsync(email, validationUrl);
-}
+}*/
 
 
     @Override
