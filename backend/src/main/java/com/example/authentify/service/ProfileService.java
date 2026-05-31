@@ -54,7 +54,7 @@ public interface ProfileService {
     OrganismeEntity getOrganismeById(Long organismeId);
     void deleteOrganisme(Long id);
     void deleteUser(Long id);
-    //void sendValidationEmail(String email);
+    void sendValidationEmail(String email);
 
 
 
