@@ -57,22 +57,25 @@ export default function RecommendationEngine({ evaluationId, nomOrganisme }) {
 };
 
   const regenerate = async () => {
-    setLoading(true);
-    setError(null);
-    try{
-        await axios.delete(`${backendUrl}/recommendations/${evaluationId}/cache`, {withCredentials: true});
+    try {
+        // 1. Vider le cache
+        await axios.delete(
+            `${backendUrl}/recommendations/${evaluationId}/cache`,
+            { withCredentials: true }
+        );
         setReport(null);
         setCached(false);
+
+        // 2. Regénérer — generate() gère son propre loading/error
         await generate();
 
-    }catch(err){
+    } catch(err) {
         console.error(err);
         console.log(err.response?.data);
-        setError("Erreur lors de la génération. Veuillez réessayer.");
-
+        setError("Erreur lors de la régénération. Veuillez réessayer.");
+        setLoading(false); // ← sécurité si le DELETE échoue
     }
-    
-  };
+};
 
   return (
     <div className="card shadow-sm p-4 mt-4">
