@@ -138,6 +138,7 @@ public class SecurityConfig {
 
                 //Public routes — no token needed
                 .requestMatchers(
+                    "/actuator/health",
                     "/api/v1.0/login",
                     "/api/v1.0/register",
                     "/api/v1.0/verify-otp",
