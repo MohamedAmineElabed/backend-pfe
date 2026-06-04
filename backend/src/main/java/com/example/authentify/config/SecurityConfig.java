@@ -136,6 +136,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                // Healthcheck endpoint — must be accessible without authentication
+                .requestMatchers("/actuator/health").permitAll()
+
                 //Public routes — no token needed
                 .requestMatchers(
                     "/api/v1.0/login",
