@@ -65,6 +65,7 @@ public class DemandeServiceImp implements DemandeService {
                 .prenom(request.getPrenom())
                 .email(request.getEmail())
                 .telephone(request.getTelephone())
+                .adresseResp(request.getAdresseResp())
                 .nomOrganisme(request.getNomOrganisme())
                 .typeOrganisme(request.getTypeOrganisme())
                 .role(request.getRole())

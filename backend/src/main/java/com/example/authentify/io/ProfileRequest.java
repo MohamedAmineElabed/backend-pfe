@@ -51,6 +51,7 @@ public class ProfileRequest {
     private String telephoneOrganisme;
     @NotBlank(message = "Type d'organisme is required")
     private String typeOrganisme;
+    private String adresseResp;
 
 
     

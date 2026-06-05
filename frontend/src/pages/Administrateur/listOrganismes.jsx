@@ -87,12 +87,15 @@ const ListOrganismes = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState(null);  // detail modal
 
-  /*const [newOrganisme, setNewOrganisme] = useState({
+  const [newOrganisme, setNewOrganisme] = useState({
     nomOrganisme: "", adresse: "", emailOrganisme: "",
     type: "", telephone: "", fax: "", dateCreation: "",
-  });*/
+  });
 
   const { backendUrl } = useContext(AppContext);
+
+  const onlyLetters = (value) => /^[A-Za-zÀ-ÿ\s]*$/.test(value); 
+
 
   const fetchOrganismes = async () => {
     try {
@@ -113,16 +116,34 @@ const ListOrganismes = () => {
     } catch { toast.error("Erreur lors de la suppression"); }
   };
 
-  /*const handleAdd = async (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault(); //to prevent page reload
-    try {
+    const dateLimit = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    if (new Date(newOrganisme.dateCreation) > dateLimit) {
+        toast.error("La date de création doit être au moins un année avant aujourd'hui");
+        return;
+            }
+    try { 
+      if(newOrganisme.telephone.length < 8) {
+        toast.error("Le téléphone doit contenir au moins 8 caractères");
+        return;
+      }
+      if(newOrganisme.fax.length < 8) {
+        toast.error("Le fax doit contenir au moins 8 caractères");
+        return;
+      }
+      if(!onlyLetters(newOrganisme.nomOrganisme)) {
+        toast.error("Le nom de l'organisme ne doit contenir que des lettres");
+        return;
+      }
+
       const res = await axios.post(`${backendUrl}/organismes/createOrganisme`, newOrganisme, { withCredentials: true });
       setOrganismes(p => [...p, res.data]);
       toast.success("Organisme ajouté avec succès");
       setShowAddModal(false);
       setNewOrganisme({ nomOrganisme: "", adresse: "", emailOrganisme: "", type: "", telephone: "", fax: "", dateCreation: "" });
     } catch { toast.error("Erreur lors de l'ajout de l'organisme"); }
-  };*/
+  };
 
   useEffect(() => { if (backendUrl) fetchOrganismes(); }, [backendUrl]);
 
@@ -153,7 +174,7 @@ const ListOrganismes = () => {
               Consultez et gérez tous les organismes enregistrés.
             </p>
           </div>
-         {/* <button onClick={() => setShowAddModal(true)} style={{
+          {/*<button onClick={() => setShowAddModal(true)} style={{
             display: "flex", alignItems: "center", gap: 7,
             padding: "9px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700,
             background: T.accent, color: "#fff", border: "none", cursor: "pointer",
@@ -369,7 +390,7 @@ const ListOrganismes = () => {
       </AnimatePresence>
 
       {/* ─────────────── Add Modal ─────────────── */}
-      <AnimatePresence>
+     {/* <AnimatePresence>
         {showAddModal && (
           <motion.div key="add-overlay"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -382,7 +403,7 @@ const ListOrganismes = () => {
               style={{ background: T.surface, borderRadius: 18, width: "100%", maxWidth: 560, overflow: "hidden", boxShadow: "0 32px 80px rgba(15,23,42,0.2)", border: `1px solid ${T.border}` }}>
 
               {/* Header */}
-              <div style={{ padding: "18px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              {/*<div style={{ padding: "18px 24px", borderBottom: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 9, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", color: T.accent }}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
@@ -394,22 +415,24 @@ const ListOrganismes = () => {
               </div>
 
               {/* Form */}
-              <form onSubmit={handleAdd}>
+             { /* <form onSubmit={handleAdd}>
                 <div style={{ padding: "22px 24px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <Field label="Nom de l'organisme *">
                       <input type="text" name="nomOrganisme" placeholder="Ex: Ministère de l'Éducation" value={newOrganisme.nomOrganisme}
                         onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                        required style={inputStyle}
+                        required 
+                        style={inputStyle}
                         onFocus={e => e.target.style.borderColor = T.accent}
                         onBlur={e => e.target.style.borderColor = T.border} />
                     </Field>
                   </div>
-                  <div style={{ gridColumn: "1 / -1" }}>
+                  <div style={{ gridColumn: "1 / -1" }} required>
                     <Field label="Adresse *">
                       <input type="text" name="adresse" placeholder="Ex: 12 Rue de la République, Tunis" value={newOrganisme.adresse}
                         onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                        required style={inputStyle}
+                        required 
+                        style={inputStyle}
                         onFocus={e => e.target.style.borderColor = T.accent}
                         onBlur={e => e.target.style.borderColor = T.border} />
                     </Field>
@@ -417,14 +440,16 @@ const ListOrganismes = () => {
                   <Field label="Email *">
                     <input type="email" name="emailOrganisme" placeholder="contact@organisme.tn" value={newOrganisme.emailOrganisme}
                       onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                      required style={inputStyle}
+                      required 
+                      style={inputStyle}
                       onFocus={e => e.target.style.borderColor = T.accent}
                       onBlur={e => e.target.style.borderColor = T.border} />
                   </Field>
                   <Field label="Type *">
                     <select name="type" value={newOrganisme.type}
                       onChange={e => setNewOrganisme(p => ({ ...p, type: e.target.value }))}
-                      required style={{ ...inputStyle, cursor: "pointer" }}
+                      required 
+                      style={{ ...inputStyle, cursor: "pointer" }}
                       onFocus={e => e.target.style.borderColor = T.accent}
                       onBlur={e => e.target.style.borderColor = T.border}>
                       <option value="">Choisir…</option>
@@ -434,15 +459,16 @@ const ListOrganismes = () => {
                     </select>
                   </Field>
                   <Field label="Téléphone *">
-                    <input type="text" name="telephone" placeholder="+216 XX XXX XXX" value={newOrganisme.telephone}
-                      onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                      required style={inputStyle}
+                    <input type="text" name="telephone" placeholder="XX XXX XXX" value={newOrganisme.telephone} 
+                      onChange={e => /^\d{0,8}$/.test(e.target.value) && setNewOrganisme(p => ({ ...p, telephone: e.target.value }))}
+                      required 
+                      style={inputStyle}
                       onFocus={e => e.target.style.borderColor = T.accent}
                       onBlur={e => e.target.style.borderColor = T.border} />
                   </Field>
                   <Field label="Fax">
-                    <input type="text" name="fax" placeholder="+216 XX XXX XXX" value={newOrganisme.fax}
-                      onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
+                    <input type="text" name="fax" placeholder="XX XXX XXX" value={newOrganisme.fax}
+                      onChange={e => /^\d{0,8}$/.test(e.target.value) && setNewOrganisme(p => ({ ...p, fax: e.target.value }))}
                       style={inputStyle}
                       onFocus={e => e.target.style.borderColor = T.accent}
                       onBlur={e => e.target.style.borderColor = T.border} />
@@ -450,14 +476,15 @@ const ListOrganismes = () => {
                   <Field label="Date de création *">
                     <input type="date" name="dateCreation" value={newOrganisme.dateCreation}
                       onChange={e => setNewOrganisme(p => ({ ...p, [e.target.name]: e.target.value }))}
-                      required style={inputStyle}
+                      required 
+                      style={inputStyle}
                       onFocus={e => e.target.style.borderColor = T.accent}
                       onBlur={e => e.target.style.borderColor = T.border} />
                   </Field>
                 </div>
 
                 {/* Footer */}
-                <div style={{ padding: "13px 24px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end", gap: 10 }}>
+               {/*</AnimatePresence> <div style={{ padding: "13px 24px", borderTop: `1px solid ${T.border}`, display: "flex", justifyContent: "flex-end", gap: 10 }}>
                   <button type="button" onClick={() => setShowAddModal(false)}
                     style={{ padding: "8px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: "pointer", border: `1px solid ${T.border}`, background: T.bg, color: T.muted }}>
                     Annuler
@@ -471,7 +498,7 @@ const ListOrganismes = () => {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>*/}
     </>
   );
 };

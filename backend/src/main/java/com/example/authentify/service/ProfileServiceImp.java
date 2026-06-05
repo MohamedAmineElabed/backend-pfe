@@ -71,6 +71,7 @@ public class ProfileServiceImp implements ProfileService {
             .nom(request.getNom())
             .prenom(request.getPrenom())
             .email(request.getEmail())
+            .adresseResp(request.getAdresseResp())
             .organisme(organisme)
             .role(request.getRole())
             .build();
@@ -103,6 +104,7 @@ public class ProfileServiceImp implements ProfileService {
             .id(userEntity.getId())
             .nom(userEntity.getNom())
             .prenom(userEntity.getPrenom())
+            .addresseResp(userEntity.getAdresseResp())
             .email(userEntity.getEmail())
             .role(userEntity.getRole())
             .build();
@@ -185,6 +187,7 @@ public UserEntity registerUserFromDemande(String email, RegisterFromDemandeReque
     user.setEmail(demande.getEmail().trim());
     user.setNom(demande.getNom());
     user.setPrenom(demande.getPrenom());
+    user.setAdresseResp(demande.getAdresseResp());
     user.setRole("RESPONSABLE");
     user.setJobRole(demande.getJobRole());
     user.setEtat("actif");
@@ -246,6 +249,7 @@ private boolean isStrongPassword(String password) {
 
     user.setNom(request.getNom());
     user.setPrenom(request.getPrenom());
+    user.setAdresseResp(request.getAdresseResp());
     user.setEmail(request.getEmail());
     user.setRole(request.getRole());
     user.setJobRole(request.getJobRole());

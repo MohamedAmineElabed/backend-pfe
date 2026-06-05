@@ -58,5 +58,7 @@ public class DemandeEntity {
     private java.sql.Timestamp created_at;
     @UpdateTimestamp
     private java.sql.Timestamp updated_at;
+    @Column(name = "adresse_resp")
+    private String adresseResp;
     
 }

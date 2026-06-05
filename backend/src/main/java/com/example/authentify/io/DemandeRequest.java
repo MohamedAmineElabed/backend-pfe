@@ -38,6 +38,9 @@ public class DemandeRequest {
     @NotBlank(message = "Role is required")
     private String role;
 
+    @NotBlank(message = "Adresse personnelle is required")
+    private String adresseResp;
+
     //private String description;
     private String jobRole;
     private String adresse;

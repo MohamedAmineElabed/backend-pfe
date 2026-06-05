@@ -603,6 +603,7 @@ const ListDemandes = () => {
                   <InfoRow icon="✉" label="Email" value={selected.email} accent />
                   <InfoRow icon="🏷" label="Poste dans l'organisme" value={selected.jobRole} />
                   <InfoRow icon="📅" label="Date de demande" value={selected.created_at ? new Date(selected.created_at).toLocaleDateString("fr-FR") : null} />
+                  <InfoRow icon="📌" label="Adresse personnelle" value={selected.adresseResp} />
                 </div>
 
                 {/* Right: organisme */}

@@ -15,6 +15,7 @@ public class ProfileResponse {
     private String nom;
     private String prenom;
     private String email;
+    private String addresseResp;
     private String role;
     private OrganismeResponse organisme;
     private String token;

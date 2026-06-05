@@ -164,6 +164,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/v1.0/users/*/desactiver").hasAuthority("ADMIN")
                 .requestMatchers("/api/v1.0/principes/update/**").hasAuthority("ADMIN")
                 .requestMatchers("/api/v1.0/*/listOrganismesEval/").hasAuthority("EVALUATEUR")
+                //Pour les tests de santé railway
+                .requestMatchers("/actuator/health").permitAll()
 
                 //Everything else requires login
                 .anyRequest().authenticated()

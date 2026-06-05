@@ -286,28 +286,11 @@ public class PrincipeServiceImp implements PrincipeService {
 }
 ///////////////////////////////////////////////////////////////////////////////
 
-// Synchronize all evaluations' scoreMax when criteria are updated
-    /*@Transactional
-    public void syncAllEvaluationsScoreMax() {
-    int newMax = critereRepository.findAll().size() * 3;
-    List<EvaluationEntity> all = evaluationRepository.findAll();
-    for (EvaluationEntity ev : all) {
-        ev.setScoreMax(newMax);
-        // Recalculate label with new max
-        List<ReponseEntity> reponses =reponseRepository.findByEvaluationId(ev.getId());
-        int score = reponses.stream()
-            .filter(r -> r.getValeur() != null)
-            .mapToInt(ReponseEntity::getValeur)
-            .sum();
-        ev.setScore(score);
-        //int score = ev.getScore() != null ? ev.getScore() : 0;
-        ev.setLabel(evaluationService.getLabel(score, newMax));
-        evaluationRepository.save(ev);
-    }
-}*/
  
 @Transactional
 public void syncAllEvaluationsScoreMax() {
+    //int anneeActuel = java.time.Year.now().getValue();
+    //List<CritereEntity> activeCriteres = critereRepository.findAllByAnnee(anneeActuel);
     List<CritereEntity> activeCriteres = critereRepository.findAll();
     int newMax = activeCriteres.size() * 3;
 
@@ -315,7 +298,7 @@ public void syncAllEvaluationsScoreMax() {
     Set<Long> validCritereIds = activeCriteres.stream()
         .map(CritereEntity::getId)
         .collect(Collectors.toSet());
-
+    //List<EvaluationEntity> all = evaluationRepository.findAll();
     List<EvaluationEntity> all = evaluationRepository.findAll();
     for (EvaluationEntity ev : all) {
         List<ReponseEntity> reponses = reponseRepository.findByEvaluationId(ev.getId());

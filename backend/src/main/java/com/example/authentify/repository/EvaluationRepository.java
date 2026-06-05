@@ -83,6 +83,13 @@ public interface EvaluationRepository extends JpaRepository<EvaluationEntity, Lo
     @Query("SELECT DISTINCT e.annee FROM EvaluationEntity e WHERE e.organisme.id = :organismeId AND e.annee IS NOT NULL ORDER BY e.annee DESC")
     List<Integer> findDistinctAnneesByOrganisme(@Param("organismeId") Long organismeId);
 
+    // All evaluations for a given year
+    @Query("""
+        SELECT e FROM EvaluationEntity e
+        WHERE e.annee = :annee
+        """)
+    List<EvaluationEntity> findAllByAnnee(@Param("annee") Integer annee); 
+
 
     
     

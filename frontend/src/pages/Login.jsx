@@ -15,6 +15,7 @@ const Login = () => {
 
   const [nom, setNom] = useState('');
   const [prenom, setPrenom] = useState('');
+  const [adresseResp, setAdresseResp] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [organisme, setOrganisme] = useState('');
@@ -69,11 +70,18 @@ const Login = () => {
           setLoading(false);
           return;
         }
+        const dateLimit = new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+        if (new Date(dateCreation) > dateLimit) {
+          toast.error("La date de création doit être au moins un année avant aujourd'hui");
+          setLoading(false);
+          return;
+        }
         const formData = new FormData();
         formData.append("nom", nom); formData.append("prenom", prenom);
         formData.append("email", email); formData.append("nomOrganisme", organisme);formData.append("role","RESPONSABLE");
         formData.append("typeOrganisme", typeOrganisme); formData.append("jobRole", jobRole);
         formData.append("telephone", telephone); //formData.append("description", description);
+        formData.append("adresseResp", adresseResp);
         formData.append("adresse", adresse); formData.append("secteur", secteur);
         formData.append("fax", fax); formData.append("dateCreation", dateCreation);
         formData.append("emailOrganisme", emailOrganisme);
@@ -245,7 +253,8 @@ const Login = () => {
                           }, type: "text" },*/ 
                           { label: "Prénom", value: prenom, set: setPrenom, type: "text" },
                           { label: "Email personnel", value: email, set: setEmail, type: "email" },
-                          { label: "Rôle dans l'organisme", value: jobRole, set: setJobRole, type: "text" },
+                          { label: "Poste dans l'organisme", value: jobRole, set: setJobRole, type: "text" },
+                          { label: "Adresse Personnelle", value: adresseResp, set: setAdresseResp, type: "text" },
                         ].map(f => (
                           <div key={f.label}>
                             <label style={labelStyle}>{f.label}</label>

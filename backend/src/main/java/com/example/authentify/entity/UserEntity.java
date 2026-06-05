@@ -35,6 +35,7 @@ public class UserEntity {
 
     private String nom;
     private String prenom;
+    private String adresseResp;
     @Column(unique = true) //  email should be unique
     private String email;
     //private String organisme;
